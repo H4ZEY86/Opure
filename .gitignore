@@ -1,0 +1,46 @@
+# Logs
+logs/
+*.log
+
+# Node
+node_modules/
+
+# Environment
+.env
+.env.*
+
+# Build
+dist/
+build/
+out/
+
+# Cache
+.cache/
+.tmp/
+.temp/
+
+# IDE
+.vscode/settings.json
+.idea/
+
+# OS
+Thumbs.db
+Desktop.ini
+
+# Runtime
+coverage/
+
+# SQLite temporary files
+*.db-wal
+*.db-shm
+
+# Electron
+release/
+
+# AI
+models/
+downloads/
+
+# Misc
+*.tmp
+*.bak
