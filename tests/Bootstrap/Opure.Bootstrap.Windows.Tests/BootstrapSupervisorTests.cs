@@ -31,6 +31,11 @@ public sealed class BootstrapSupervisorTests
 
         Assert.Equal(BootstrapExitCode.Success, result);
         Assert.Equal(2, launcher.RuntimeStartCount);
+        Assert.Equal(2, launcher.RuntimeSessions.Count);
+        Assert.Equal(2, launcher.DesktopSessions.Count);
+        Assert.Equal(launcher.RuntimeSessions[0], launcher.DesktopSessions[0]);
+        Assert.Equal(launcher.RuntimeSessions[1], launcher.DesktopSessions[1]);
+        Assert.NotEqual(launcher.RuntimeSessions[0], launcher.RuntimeSessions[1]);
 
         JsonElement[] events = ParseEvents(output);
         JsonElement[] runtimeStarts = events
@@ -308,6 +313,16 @@ public sealed class BootstrapSupervisorTests
 
         internal bool SafeModeDesktopStarted { get; private set; }
 
+        internal List<(string SessionId, string SessionSecret)> RuntimeSessions
+        {
+            get;
+        } = [];
+
+        internal List<(string SessionId, string SessionSecret)> DesktopSessions
+        {
+            get;
+        } = [];
+
         public IBootstrapOwnedProcess Start(
             BootstrapProcessStartRequest request)
         {
@@ -315,6 +330,7 @@ public sealed class BootstrapSupervisorTests
 
             if (request.ProcessClass == BootstrapProcessClass.Runtime)
             {
+                RuntimeSessions.Add(ReadSession(request.Environment));
                 RuntimeStartCount++;
                 FakeOwnedProcess runtime = FakeOwnedProcess.CreateRuntime(
                     processId,
@@ -334,6 +350,7 @@ public sealed class BootstrapSupervisorTests
                 return runtime;
             }
 
+            DesktopSessions.Add(ReadSession(request.Environment));
             FakeOwnedProcess desktop = FakeOwnedProcess.CreateDesktop(
                 processId,
                 DateTimeOffset.UnixEpoch.AddSeconds(processId));
@@ -348,6 +365,14 @@ public sealed class BootstrapSupervisorTests
             }
 
             return desktop;
+        }
+
+        private static (string SessionId, string SessionSecret) ReadSession(
+            IReadOnlyDictionary<string, string> environment)
+        {
+            return (
+                environment["OPURE_BOOTSTRAP_SESSION_ID"],
+                environment["OPURE_BOOTSTRAP_SESSION_SECRET"]);
         }
     }
 

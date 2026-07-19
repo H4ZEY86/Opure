@@ -16,7 +16,9 @@ internal sealed record BootstrapPlan(
 
 internal sealed record RuntimeEndpointDescriptor(
     string BootId,
-    string PipeName);
+    string PipeName,
+    string SessionId = "",
+    string SessionSecret = "");
 
 internal sealed class BootstrapCoordinator
 {
@@ -475,7 +477,7 @@ internal sealed class BootstrapCoordinator
 
         try
         {
-            IReadOnlyDictionary<string, string> environment =
+            Dictionary<string, string> environment =
                 CreateAttemptEnvironment(
                     plan.ChildEnvironment,
                     mode,
@@ -505,6 +507,12 @@ internal sealed class BootstrapCoordinator
                 runtimeEndpoint = await WaitForRuntimeReadyAsync(
                     process,
                     cancellationToken).ConfigureAwait(false);
+
+                runtimeEndpoint = runtimeEndpoint with
+                {
+                    SessionId = environment["OPURE_BOOTSTRAP_SESSION_ID"],
+                    SessionSecret = environment["OPURE_BOOTSTRAP_SESSION_SECRET"]
+                };
             }
             catch (OperationCanceledException)
                 when (cancellationToken.IsCancellationRequested)
@@ -670,7 +678,9 @@ internal sealed class BootstrapCoordinator
                 CultureInfo.InvariantCulture)
         };
 
-        if (rotateSession)
+        if (rotateSession ||
+            !environment.ContainsKey("OPURE_BOOTSTRAP_SESSION_ID") ||
+            !environment.ContainsKey("OPURE_BOOTSTRAP_SESSION_SECRET"))
         {
             BootstrapSession session = BootstrapSession.Create();
             environment["OPURE_BOOTSTRAP_SESSION_ID"] = session.SessionId;
@@ -681,6 +691,9 @@ internal sealed class BootstrapCoordinator
         {
             environment["OPURE_RUNTIME_PIPE_NAME"] = runtimeEndpoint.PipeName;
             environment["OPURE_RUNTIME_BOOT_ID"] = runtimeEndpoint.BootId;
+            environment["OPURE_BOOTSTRAP_SESSION_ID"] = runtimeEndpoint.SessionId;
+            environment["OPURE_BOOTSTRAP_SESSION_SECRET"] =
+                runtimeEndpoint.SessionSecret;
         }
 
         return environment;

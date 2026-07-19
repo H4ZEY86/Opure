@@ -1,5 +1,9 @@
 using System.Diagnostics;
 using System.Text.Json;
+using System.Security.Principal;
+using System.Security.AccessControl;
+using System.IO.Pipes;
+using System.Runtime.Versioning;
 using Opure.Desktop.Contracts;
 using Opure.Desktop.GatewayClient;
 using Opure.Ipc.Abstractions;
@@ -38,14 +42,16 @@ public sealed class NamedPipeRuntimeHealthTransportTests
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         RuntimeHealthEndpoint endpoint = CreateEndpoint();
+        RuntimeHealthSessionMaterial material = RuntimeHealthSessionMaterial.Create();
         StaticHealthHandler requestHandler = new(endpoint.RuntimeBootId);
 
         await using NamedPipeRuntimeHealthServer server =
             await NamedPipeRuntimeHealthServer.StartAsync(
                 endpoint,
                 requestHandler,
+                CreatePolicy(material),
                 cancellationToken);
-        await using NamedPipeRuntimeHealthClient client = new(endpoint);
+        await using NamedPipeRuntimeHealthClient client = new(endpoint, material);
 
         GetRuntimeHealthResponse response = await client.GetRuntimeHealthAsync(
             CreateRequest(),
@@ -64,11 +70,13 @@ public sealed class NamedPipeRuntimeHealthTransportTests
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         RuntimeHealthEndpoint endpoint = CreateEndpoint();
+        RuntimeHealthSessionMaterial material = RuntimeHealthSessionMaterial.Create();
 
         await using NamedPipeRuntimeHealthServer server =
             await NamedPipeRuntimeHealthServer.StartAsync(
                 endpoint,
                 new StaticHealthHandler(endpoint.RuntimeBootId),
+                CreatePolicy(material),
                 cancellationToken);
 
         IDesktopShellStateSource source = await RuntimeHealthGatewayClient
@@ -76,6 +84,7 @@ public sealed class NamedPipeRuntimeHealthTransportTests
                 "1.0.0-test",
                 DesktopSupervisorProjection.Disconnected,
                 endpoint,
+                material,
                 cancellationToken);
         DesktopShellSnapshot snapshot = source.GetCurrent();
 
@@ -93,14 +102,16 @@ public sealed class NamedPipeRuntimeHealthTransportTests
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         RuntimeHealthEndpoint endpoint = CreateEndpoint();
+        RuntimeHealthSessionMaterial material = RuntimeHealthSessionMaterial.Create();
         DelayedHealthHandler requestHandler = new(TimeSpan.FromSeconds(5));
 
         await using NamedPipeRuntimeHealthServer server =
             await NamedPipeRuntimeHealthServer.StartAsync(
                 endpoint,
                 requestHandler,
+                CreatePolicy(material),
                 cancellationToken);
-        await using NamedPipeRuntimeHealthClient client = new(endpoint);
+        await using NamedPipeRuntimeHealthClient client = new(endpoint, material);
 
         RuntimeHealthTransportException exception = await Assert.ThrowsAsync<
             RuntimeHealthTransportException>(() => client.GetRuntimeHealthAsync(
@@ -119,14 +130,16 @@ public sealed class NamedPipeRuntimeHealthTransportTests
     {
         CancellationToken testCancellation = TestContext.Current.CancellationToken;
         RuntimeHealthEndpoint endpoint = CreateEndpoint();
+        RuntimeHealthSessionMaterial material = RuntimeHealthSessionMaterial.Create();
         DelayedHealthHandler requestHandler = new(TimeSpan.FromSeconds(5));
 
         await using NamedPipeRuntimeHealthServer server =
             await NamedPipeRuntimeHealthServer.StartAsync(
                 endpoint,
                 requestHandler,
+                CreatePolicy(material),
                 testCancellation);
-        await using NamedPipeRuntimeHealthClient client = new(endpoint);
+        await using NamedPipeRuntimeHealthClient client = new(endpoint, material);
         using CancellationTokenSource callCancellation =
             CancellationTokenSource.CreateLinkedTokenSource(testCancellation);
         callCancellation.CancelAfter(TimeSpan.FromMilliseconds(100));
@@ -146,12 +159,17 @@ public sealed class NamedPipeRuntimeHealthTransportTests
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         RuntimeHealthEndpoint firstEndpoint = CreateEndpoint();
-        NamedPipeRuntimeHealthClient staleClient = new(firstEndpoint);
+        RuntimeHealthSessionMaterial firstMaterial =
+            RuntimeHealthSessionMaterial.Create();
+        NamedPipeRuntimeHealthClient staleClient = new(
+            firstEndpoint,
+            firstMaterial);
 
         await using (NamedPipeRuntimeHealthServer firstServer =
             await NamedPipeRuntimeHealthServer.StartAsync(
                 firstEndpoint,
                 new StaticHealthHandler(firstEndpoint.RuntimeBootId),
+                CreatePolicy(firstMaterial),
                 cancellationToken))
         {
             GetRuntimeHealthResponse first = await staleClient.GetRuntimeHealthAsync(
@@ -162,13 +180,18 @@ public sealed class NamedPipeRuntimeHealthTransportTests
         }
 
         RuntimeHealthEndpoint secondEndpoint = CreateEndpoint();
+        RuntimeHealthSessionMaterial secondMaterial =
+            RuntimeHealthSessionMaterial.Create();
 
         await using NamedPipeRuntimeHealthServer secondServer =
             await NamedPipeRuntimeHealthServer.StartAsync(
                 secondEndpoint,
                 new StaticHealthHandler(secondEndpoint.RuntimeBootId),
+                CreatePolicy(secondMaterial),
                 cancellationToken);
-        await using NamedPipeRuntimeHealthClient currentClient = new(secondEndpoint);
+        await using NamedPipeRuntimeHealthClient currentClient = new(
+            secondEndpoint,
+            secondMaterial);
 
         RuntimeHealthTransportException unavailable = await Assert.ThrowsAsync<
             RuntimeHealthTransportException>(() => staleClient.GetRuntimeHealthAsync(
@@ -202,17 +225,354 @@ public sealed class NamedPipeRuntimeHealthTransportTests
     }
 
     [Fact]
-    public async Task Unary_latency_baseline_remains_bounded()
+    public void Server_proof_is_bound_to_the_authenticated_client_exchange()
+    {
+        RuntimeHealthEndpoint endpoint = CreateEndpoint();
+        RuntimeHealthSessionMaterial material = RuntimeHealthSessionMaterial.Create();
+        const string method =
+            "/opure.runtime.health.v1.RuntimeHealthService/GetRuntimeHealth";
+
+        _ = RuntimeHealthSessionAuthentication.CreateClientMetadata(
+            endpoint,
+            material,
+            method,
+            Environment.ProcessId,
+            DateTimeOffset.UtcNow,
+            out string nonce,
+            out string clientProof);
+        string serverProof = RuntimeHealthSessionAuthentication.ComputeServerProof(
+            endpoint,
+            material,
+            method,
+            nonce,
+            clientProof);
+        Grpc.Core.Metadata validHeaders =
+        [
+            new(
+                RuntimeHealthSessionAuthentication.ServerProofHeader,
+                serverProof)
+        ];
+        Grpc.Core.Metadata tamperedHeaders =
+        [
+            new(
+                RuntimeHealthSessionAuthentication.ServerProofHeader,
+                new string('A', 43))
+        ];
+
+        Assert.True(RuntimeHealthSessionAuthentication.VerifyServerProof(
+            endpoint,
+            material,
+            method,
+            nonce,
+            clientProof,
+            validHeaders));
+        Assert.False(RuntimeHealthSessionAuthentication.VerifyServerProof(
+            endpoint,
+            material,
+            method,
+            nonce,
+            clientProof,
+            tamperedHeaders));
+    }
+
+    [Fact]
+    public async Task Same_user_process_without_session_material_is_denied()
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         RuntimeHealthEndpoint endpoint = CreateEndpoint();
+        RuntimeHealthSessionMaterial material = RuntimeHealthSessionMaterial.Create();
 
         await using NamedPipeRuntimeHealthServer server =
             await NamedPipeRuntimeHealthServer.StartAsync(
                 endpoint,
                 new StaticHealthHandler(endpoint.RuntimeBootId),
+                CreatePolicy(material),
                 cancellationToken);
         await using NamedPipeRuntimeHealthClient client = new(endpoint);
+
+        RuntimeHealthTransportException exception = await Assert.ThrowsAsync<
+            RuntimeHealthTransportException>(() => client.GetRuntimeHealthAsync(
+                CreateRequest(),
+                RuntimeHealthContractPolicy.DefaultDeadline,
+                cancellationToken));
+
+        Assert.Equal(RuntimeHealthTransportErrorCodes.SessionDenied, exception.ErrorCode);
+    }
+
+    [Fact]
+    public async Task Claimed_client_process_must_match_pipe_client_process()
+    {
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        RuntimeHealthEndpoint endpoint = CreateEndpoint();
+        RuntimeHealthSessionMaterial material = RuntimeHealthSessionMaterial.Create();
+
+        await using NamedPipeRuntimeHealthServer server =
+            await NamedPipeRuntimeHealthServer.StartAsync(
+                endpoint,
+                new StaticHealthHandler(endpoint.RuntimeBootId),
+                CreatePolicy(material),
+                cancellationToken);
+        await using NamedPipeRuntimeHealthClient client = new(
+            endpoint,
+            material,
+            clientProcessId: Environment.ProcessId + 1);
+
+        RuntimeHealthTransportException exception = await Assert.ThrowsAsync<
+            RuntimeHealthTransportException>(() => client.GetRuntimeHealthAsync(
+                CreateRequest(),
+                RuntimeHealthContractPolicy.DefaultDeadline,
+                cancellationToken));
+
+        Assert.Equal(RuntimeHealthTransportErrorCodes.SessionDenied, exception.ErrorCode);
+    }
+
+    [Fact]
+    public async Task Captured_proof_nonce_cannot_be_replayed()
+    {
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        RuntimeHealthEndpoint endpoint = CreateEndpoint();
+        RuntimeHealthSessionMaterial material = RuntimeHealthSessionMaterial.Create();
+        const string fixedNonce = "AAAAAAAAAAAAAAAAAAAAAA";
+
+        await using NamedPipeRuntimeHealthServer server =
+            await NamedPipeRuntimeHealthServer.StartAsync(
+                endpoint,
+                new StaticHealthHandler(endpoint.RuntimeBootId),
+                CreatePolicy(material),
+                cancellationToken);
+        await using NamedPipeRuntimeHealthClient client = new(
+            endpoint,
+            material,
+            TimeProvider.System,
+            Environment.ProcessId,
+            () => fixedNonce);
+
+        _ = await client.GetRuntimeHealthAsync(
+            CreateRequest(),
+            RuntimeHealthContractPolicy.DefaultDeadline,
+            cancellationToken);
+        RuntimeHealthTransportException replay = await Assert.ThrowsAsync<
+            RuntimeHealthTransportException>(() => client.GetRuntimeHealthAsync(
+                CreateRequest(),
+                RuntimeHealthContractPolicy.DefaultDeadline,
+                cancellationToken));
+
+        Assert.Equal(RuntimeHealthTransportErrorCodes.SessionDenied, replay.ErrorCode);
+    }
+
+    [Fact]
+    public async Task Stale_or_expired_session_is_denied_without_leaking_material()
+    {
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        RuntimeHealthEndpoint endpoint = CreateEndpoint();
+        RuntimeHealthSessionMaterial currentMaterial =
+            RuntimeHealthSessionMaterial.Create();
+        RuntimeHealthSessionMaterial staleMaterial =
+            RuntimeHealthSessionMaterial.Create();
+        List<RuntimeHealthAuthenticationEvent> events = [];
+
+        await using NamedPipeRuntimeHealthServer server =
+            await NamedPipeRuntimeHealthServer.StartAsync(
+                endpoint,
+                new StaticHealthHandler(endpoint.RuntimeBootId),
+                new RuntimeHealthSessionPolicy(
+                    currentMaterial,
+                    DateTimeOffset.UtcNow.AddMinutes(-1)),
+                cancellationToken,
+                eventSink: authenticationEvent =>
+                {
+                    events.Add(authenticationEvent);
+                    return ValueTask.CompletedTask;
+                });
+        await using NamedPipeRuntimeHealthClient client = new(
+            endpoint,
+            staleMaterial);
+
+        RuntimeHealthTransportException exception = await Assert.ThrowsAsync<
+            RuntimeHealthTransportException>(() => client.GetRuntimeHealthAsync(
+                CreateRequest(),
+                RuntimeHealthContractPolicy.DefaultDeadline,
+                cancellationToken));
+
+        Assert.Equal(RuntimeHealthTransportErrorCodes.SessionDenied, exception.ErrorCode);
+        RuntimeHealthAuthenticationEvent denied = Assert.Single(events);
+        Assert.False(denied.Established);
+        Assert.Equal("IPC_AUTH_EXPIRED", denied.ReasonCode);
+        string evidence = denied.ToString();
+        Assert.DoesNotContain(currentMaterial.SessionSecret, evidence, StringComparison.Ordinal);
+        Assert.DoesNotContain(staleMaterial.SessionSecret, evidence, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Runtime_restart_rejects_prior_session_and_accepts_fresh_session()
+    {
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        RuntimeHealthEndpoint endpoint = CreateEndpoint();
+        RuntimeHealthSessionMaterial priorMaterial =
+            RuntimeHealthSessionMaterial.Create();
+        RuntimeHealthSessionMaterial currentMaterial =
+            RuntimeHealthSessionMaterial.Create();
+
+        await using NamedPipeRuntimeHealthServer server =
+            await NamedPipeRuntimeHealthServer.StartAsync(
+                endpoint,
+                new StaticHealthHandler(endpoint.RuntimeBootId),
+                CreatePolicy(currentMaterial),
+                cancellationToken);
+        await using NamedPipeRuntimeHealthClient staleClient = new(
+            endpoint,
+            priorMaterial);
+        await using NamedPipeRuntimeHealthClient currentClient = new(
+            endpoint,
+            currentMaterial);
+
+        RuntimeHealthTransportException stale = await Assert.ThrowsAsync<
+            RuntimeHealthTransportException>(() => staleClient.GetRuntimeHealthAsync(
+                CreateRequest(),
+                RuntimeHealthContractPolicy.DefaultDeadline,
+                cancellationToken));
+        GetRuntimeHealthResponse current = await currentClient.GetRuntimeHealthAsync(
+            CreateRequest(),
+            RuntimeHealthContractPolicy.DefaultDeadline,
+            cancellationToken);
+
+        Assert.Equal(RuntimeHealthTransportErrorCodes.SessionDenied, stale.ErrorCode);
+        Assert.Equal(endpoint.RuntimeBootId, current.Health.RuntimeBootId);
+    }
+
+    [Fact]
+    public async Task Session_evidence_is_bounded_and_emitted_once_per_client()
+    {
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        RuntimeHealthEndpoint endpoint = CreateEndpoint();
+        RuntimeHealthSessionMaterial material = RuntimeHealthSessionMaterial.Create();
+        List<RuntimeHealthAuthenticationEvent> events = [];
+
+        await using NamedPipeRuntimeHealthServer server =
+            await NamedPipeRuntimeHealthServer.StartAsync(
+                endpoint,
+                new StaticHealthHandler(endpoint.RuntimeBootId),
+                CreatePolicy(material),
+                cancellationToken,
+                eventSink: authenticationEvent =>
+                {
+                    events.Add(authenticationEvent);
+                    return ValueTask.CompletedTask;
+                });
+        await using NamedPipeRuntimeHealthClient client = new(endpoint, material);
+
+        _ = await client.GetRuntimeHealthAsync(
+            CreateRequest(),
+            RuntimeHealthContractPolicy.DefaultDeadline,
+            cancellationToken);
+        _ = await client.GetRuntimeHealthAsync(
+            CreateRequest(),
+            RuntimeHealthContractPolicy.DefaultDeadline,
+            cancellationToken);
+
+        RuntimeHealthAuthenticationEvent established = Assert.Single(events);
+        Assert.True(established.Established);
+        Assert.Equal("IPC_SESSION_ESTABLISHED", established.ReasonCode);
+        Assert.Equal(Environment.ProcessId, established.ClientProcessId);
+    }
+
+    [Fact]
+    public async Task Secret_canary_never_appears_in_denial_or_exception_evidence()
+    {
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        RuntimeHealthEndpoint endpoint = CreateEndpoint();
+        const string secretCanary =
+            "FND010_SECRET_CANARY_ABCDEFGHIJKLMNOPQRSTUV";
+        RuntimeHealthSessionMaterial currentMaterial = new(
+            Guid.NewGuid().ToString("N"),
+            secretCanary);
+        RuntimeHealthSessionMaterial unauthorisedMaterial =
+            RuntimeHealthSessionMaterial.Create();
+        List<RuntimeHealthAuthenticationEvent> events = [];
+
+        await using NamedPipeRuntimeHealthServer server =
+            await NamedPipeRuntimeHealthServer.StartAsync(
+                endpoint,
+                new StaticHealthHandler(endpoint.RuntimeBootId),
+                CreatePolicy(currentMaterial),
+                cancellationToken,
+                eventSink: authenticationEvent =>
+                {
+                    events.Add(authenticationEvent);
+                    return ValueTask.CompletedTask;
+                });
+        await using NamedPipeRuntimeHealthClient client = new(
+            endpoint,
+            unauthorisedMaterial);
+
+        RuntimeHealthTransportException exception = await Assert.ThrowsAsync<
+            RuntimeHealthTransportException>(() => client.GetRuntimeHealthAsync(
+                CreateRequest(),
+                RuntimeHealthContractPolicy.DefaultDeadline,
+                cancellationToken));
+        string renderedEvidence = string.Join(
+            Environment.NewLine,
+            events.Select(static item => item.ToString()));
+
+        Assert.DoesNotContain(secretCanary, exception.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain(secretCanary, renderedEvidence, StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            unauthorisedMaterial.SessionSecret,
+            exception.ToString(),
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            unauthorisedMaterial.SessionSecret,
+            renderedEvidence,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [SupportedOSPlatform("windows")]
+    public void Explicit_acl_excludes_another_windows_user()
+    {
+        PipeSecurity security = WindowsNamedPipeSecurity.CreateCurrentUserOnly();
+        AuthorizationRuleCollection rules = security.GetAccessRules(
+            includeExplicit: true,
+            includeInherited: false,
+            typeof(SecurityIdentifier));
+        SecurityIdentifier currentUser = WindowsIdentity.GetCurrent().User!;
+        SecurityIdentifier localSystem = new(
+            WellKnownSidType.LocalSystemSid,
+            domainSid: null);
+        SecurityIdentifier world = new(
+            WellKnownSidType.WorldSid,
+            domainSid: null);
+        PipeAccessRule[] accessRules = rules.Cast<PipeAccessRule>().ToArray();
+
+        Assert.Equal(2, accessRules.Length);
+        Assert.All(
+            accessRules,
+            rule => Assert.Equal(AccessControlType.Allow, rule.AccessControlType));
+        Assert.Contains(
+            accessRules,
+            rule => Equals(rule.IdentityReference, currentUser));
+        Assert.Contains(
+            accessRules,
+            rule => Equals(rule.IdentityReference, localSystem));
+        Assert.DoesNotContain(
+            accessRules,
+            rule => Equals(rule.IdentityReference, world));
+    }
+
+    [Fact]
+    public async Task Unary_latency_baseline_remains_bounded()
+    {
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        RuntimeHealthEndpoint endpoint = CreateEndpoint();
+        RuntimeHealthSessionMaterial material = RuntimeHealthSessionMaterial.Create();
+
+        await using NamedPipeRuntimeHealthServer server =
+            await NamedPipeRuntimeHealthServer.StartAsync(
+                endpoint,
+                new StaticHealthHandler(endpoint.RuntimeBootId),
+                CreatePolicy(material),
+                cancellationToken);
+        await using NamedPipeRuntimeHealthClient client = new(endpoint, material);
 
         _ = await client.GetRuntimeHealthAsync(
             CreateRequest(),
@@ -265,6 +625,14 @@ public sealed class NamedPipeRuntimeHealthTransportTests
         return NamedPipeRuntimeHealthEndpoint.Create(
             "Development",
             Guid.NewGuid().ToString("N"));
+    }
+
+    private static RuntimeHealthSessionPolicy CreatePolicy(
+        RuntimeHealthSessionMaterial material)
+    {
+        return new RuntimeHealthSessionPolicy(
+            material,
+            DateTimeOffset.UtcNow.AddMinutes(5));
     }
 
     private static GetRuntimeHealthRequest CreateRequest()

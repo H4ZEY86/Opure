@@ -58,11 +58,26 @@ public sealed class RuntimeApplication
             RuntimeHealthEndpoint endpoint = NamedPipeRuntimeHealthEndpoint.Create(
                 bootstrapEnvironment?.Channel ?? "Development",
                 bootSnapshot.BootId);
+            RuntimeHealthSessionMaterial sessionMaterial =
+                bootstrapEnvironment is null
+                    ? RuntimeHealthSessionMaterial.Create()
+                    : new RuntimeHealthSessionMaterial(
+                        bootstrapEnvironment.SessionId,
+                        bootstrapEnvironment.SessionSecret);
+            RuntimeHealthSessionPolicy sessionPolicy = new(
+                sessionMaterial,
+                DateTimeOffset.UtcNow.Add(
+                    RuntimeHealthTransportPolicy.SessionLifetime));
 
             healthTransport = await NamedPipeRuntimeHealthServer.StartAsync(
                 endpoint,
                 new RuntimeHealthRequestHandler(bootSnapshot),
-                shutdownSignal.Token).ConfigureAwait(false);
+                sessionPolicy,
+                shutdownSignal.Token,
+                eventSink: authenticationEvent =>
+                    RuntimeEventWriter.WriteIpcSessionAsync(
+                        output,
+                        authenticationEvent)).ConfigureAwait(false);
 
             lifecycle.TransitionTo(RuntimeLifecycleState.Ready);
 

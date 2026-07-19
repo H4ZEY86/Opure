@@ -1,0 +1,24 @@
+{
+  "result": "Passed",
+  "proofScheme": "HMAC-SHA256 mutual per-call proof",
+  "proofBoundTo": [
+    "rpc-method",
+    "session-id",
+    "runtime-boot-id",
+    "exact-pipe",
+    "client-class",
+    "actual-pipe-client-pid",
+    "issued-time",
+    "nonce"
+  ],
+  "acceptedReplayCount": 0,
+  "replayDenialCount": 1,
+  "staleProofDenialCount": 1,
+  "missingMaterialDenialCount": 1,
+  "clientPidMismatchDenialCount": 1,
+  "priorRuntimeSessionDenialCount": 1,
+  "freshSessionRecoveryCount": 1,
+  "maximumClockSkewSeconds": 30,
+  "replayCacheCapacity": 4096,
+  "sessionMaterialRecorded": false
+}

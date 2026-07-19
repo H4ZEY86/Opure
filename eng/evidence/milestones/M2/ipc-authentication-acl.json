@@ -1,0 +1,17 @@
+{
+  "result": "Passed",
+  "inspectionMethod": "Windows PipeSecurity access-rule inspection in the transport security test",
+  "daclProtected": true,
+  "inheritancePreserved": false,
+  "allowedPrincipals": [
+    "current-windows-user",
+    "local-system"
+  ],
+  "allowedRights": "FullControl",
+  "explicitAllowRuleCount": 2,
+  "inheritedRuleCount": 0,
+  "worldRuleCount": 0,
+  "anonymousRuleCount": 0,
+  "anotherWindowsUserAllowed": false,
+  "principalIdentifiersRecorded": false
+}

@@ -166,29 +166,28 @@ Completed and committed:
 * FND-006 — controlled Bootstrap executable;
 * FND-007 — Windows process supervision and Safe Mode.
 * FND-008 — versioned Runtime Health protobuf contract.
+* FND-009 — named-pipe transport prototype.
 
 Implemented and verified by the current change:
 
-* FND-009 — named-pipe transport prototype.
+* FND-010 — named-pipe session authentication.
 
-FND-009 includes:
+FND-010 includes:
 
-* gRPC over an exact Windows named pipe with no TCP listener;
-* a transport-neutral adapter boundary;
-* random channel-qualified, boot-scoped endpoint identities;
-* Bootstrap endpoint validation and Desktop handoff;
-* a framework-neutral Desktop Gateway health projection;
-* stable unavailable, deadline, cancellation and size-limit behaviour;
-* clean endpoint rotation and reconnect after Runtime restart;
-* integration, architecture, process-listener and latency evidence.
+* an explicit protected Windows named-pipe DACL for the current user and LocalSystem;
+* Bootstrap-issued ephemeral session material passed only through child environment variables;
+* per-call mutual HMAC proof bound to the Runtime boot, exact pipe, client class and actual pipe client PID;
+* bounded proof lifetime, replay denial and Runtime-restart invalidation;
+* stable, redacted `ipc.session-established` and `ipc.session-denied` evidence;
+* ACL, same-user denial, replay, restart and secret-canary verification.
 
-Named-pipe ACLs and session authentication are deliberately deferred. The next planned ticket is:
+The next planned ticket is:
 
 ```text
-FND-010 — Add Named-Pipe Session Authentication
+FND-011 — Add Service Registry Contract
 ```
 
-Do not assume FND-009 is complete until the Runtime Health transport verifier passes and the changes are reviewed, committed and pushed.
+Do not assume FND-010 is complete until the Runtime Health session verifier passes and the changes are reviewed, committed and pushed.
 
 ## Build policy
 

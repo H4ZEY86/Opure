@@ -10,14 +10,21 @@ internal sealed record BootstrapSession(
     {
         byte[] secretBytes = RandomNumberGenerator.GetBytes(32);
 
-        string secret = Convert
-            .ToBase64String(secretBytes)
-            .TrimEnd('=')
-            .Replace('+', '-')
-            .Replace('/', '_');
+        try
+        {
+            string secret = Convert
+                .ToBase64String(secretBytes)
+                .TrimEnd('=')
+                .Replace('+', '-')
+                .Replace('/', '_');
 
-        return new BootstrapSession(
-            Guid.NewGuid().ToString("N"),
-            secret);
+            return new BootstrapSession(
+                Guid.NewGuid().ToString("N"),
+                secret);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(secretBytes);
+        }
     }
 }

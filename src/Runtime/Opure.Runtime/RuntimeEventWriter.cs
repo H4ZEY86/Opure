@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Opure.Runtime.Contracts;
+using Opure.Ipc.Abstractions;
 
 namespace Opure.Runtime;
 
@@ -65,5 +66,27 @@ public static class RuntimeEventWriter
             SerializerOptions);
 
         return output.WriteLineAsync(json);
+    }
+
+    public static ValueTask WriteIpcSessionAsync(
+        TextWriter output,
+        RuntimeHealthAuthenticationEvent authenticationEvent)
+    {
+        ArgumentNullException.ThrowIfNull(output);
+        ArgumentNullException.ThrowIfNull(authenticationEvent);
+
+        string json = JsonSerializer.Serialize(
+            new
+            {
+                @event = authenticationEvent.Established
+                    ? "ipc.session-established"
+                    : "ipc.session-denied",
+                reasonCode = authenticationEvent.ReasonCode,
+                clientProcessId = authenticationEvent.ClientProcessId,
+                containsSessionMaterial = false
+            },
+            SerializerOptions);
+
+        return new ValueTask(output.WriteLineAsync(json));
     }
 }

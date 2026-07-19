@@ -1,7 +1,10 @@
 using Grpc.Core;
+using Grpc.Core.Interceptors;
+using System.IO.Pipes;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.AspNetCore.Server.Kestrel.Transport.NamedPipes;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -28,10 +31,20 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
     public static async Task<NamedPipeRuntimeHealthServer> StartAsync(
         RuntimeHealthEndpoint endpoint,
         IRuntimeHealthRequestHandler requestHandler,
-        CancellationToken cancellationToken)
+        RuntimeHealthSessionPolicy sessionPolicy,
+        CancellationToken cancellationToken,
+        TimeProvider? timeProvider = null,
+        Func<RuntimeHealthAuthenticationEvent, ValueTask>? eventSink = null)
     {
         ArgumentNullException.ThrowIfNull(endpoint);
         ArgumentNullException.ThrowIfNull(requestHandler);
+        ArgumentNullException.ThrowIfNull(sessionPolicy);
+
+        if (!OperatingSystem.IsWindows())
+        {
+            throw new PlatformNotSupportedException(
+                "The Windows named-pipe transport requires Windows.");
+        }
 
         if (!NamedPipeRuntimeHealthEndpoint.IsValid(endpoint))
         {
@@ -41,10 +54,20 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
                 retryable: false);
         }
 
+        PipeSecurity pipeSecurity =
+            WindowsNamedPipeSecurity.CreateCurrentUserOnly();
+
         WebApplicationBuilder builder = WebApplication.CreateBuilder(
             new WebApplicationOptions { Args = [] });
 
         builder.Logging.ClearProviders();
+        builder.Services.Configure<NamedPipeTransportOptions>(options =>
+        {
+            options.CurrentUserOnly = false;
+            options.PipeSecurity = pipeSecurity;
+            options.MaxReadBufferSize = RuntimeHealthContractPolicy.MaximumRequestBytes;
+            options.MaxWriteBufferSize = RuntimeHealthContractPolicy.MaximumResponseBytes;
+        });
         builder.WebHost.UseKestrel(options =>
         {
             options.ListenNamedPipe(
@@ -52,10 +75,17 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
                 listenOptions => listenOptions.Protocols = HttpProtocols.Http2);
         });
         builder.Services.AddSingleton(requestHandler);
+        builder.Services.AddSingleton(new RuntimeHealthSessionAuthenticator(
+            endpoint,
+            sessionPolicy,
+            timeProvider ?? TimeProvider.System,
+            eventSink));
+        builder.Services.AddSingleton<RuntimeHealthAuthenticationInterceptor>();
         builder.Services.AddGrpc(options =>
         {
             options.MaxReceiveMessageSize = RuntimeHealthContractPolicy.MaximumRequestBytes;
             options.MaxSendMessageSize = RuntimeHealthContractPolicy.MaximumResponseBytes;
+            options.Interceptors.Add<RuntimeHealthAuthenticationInterceptor>();
         });
 
         WebApplication application = builder.Build();
@@ -70,6 +100,36 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
         {
             await application.DisposeAsync().ConfigureAwait(false);
             throw;
+        }
+    }
+
+    private sealed class RuntimeHealthAuthenticationInterceptor(
+        RuntimeHealthSessionAuthenticator authenticator) : Interceptor
+    {
+        public override async Task<TResponse> UnaryServerHandler<TRequest, TResponse>(
+            TRequest request,
+            ServerCallContext context,
+            UnaryServerMethod<TRequest, TResponse> continuation)
+        {
+            RuntimeHealthAuthenticationResult authentication =
+                await authenticator.AuthenticateAsync(context).ConfigureAwait(false);
+
+            if (!authentication.IsAuthenticated)
+            {
+                throw new RpcException(new Status(
+                    StatusCode.Unauthenticated,
+                    "The local IPC session was denied."));
+            }
+
+            await context.WriteResponseHeadersAsync(
+                new Metadata
+                {
+                    new(
+                        RuntimeHealthSessionAuthentication.ServerProofHeader,
+                        authentication.ServerProof)
+                }).ConfigureAwait(false);
+
+            return await continuation(request, context).ConfigureAwait(false);
         }
     }
 

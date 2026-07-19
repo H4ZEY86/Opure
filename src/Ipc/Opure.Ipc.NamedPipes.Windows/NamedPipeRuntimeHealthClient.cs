@@ -10,11 +10,34 @@ namespace Opure.Ipc.NamedPipes.Windows;
 public sealed class NamedPipeRuntimeHealthClient : IRuntimeHealthTransportClient
 {
     private readonly RuntimeHealthEndpoint endpoint;
+    private readonly RuntimeHealthSessionMaterial? sessionMaterial;
+    private readonly TimeProvider timeProvider;
+    private readonly int clientProcessId;
+    private readonly Func<string>? nonceFactory;
     private readonly SocketsHttpHandler handler;
     private readonly GrpcChannel channel;
     private readonly RuntimeHealthService.RuntimeHealthServiceClient client;
 
-    public NamedPipeRuntimeHealthClient(RuntimeHealthEndpoint endpoint)
+    public NamedPipeRuntimeHealthClient(
+        RuntimeHealthEndpoint endpoint,
+        RuntimeHealthSessionMaterial? sessionMaterial = null,
+        TimeProvider? timeProvider = null,
+        int? clientProcessId = null)
+        : this(
+            endpoint,
+            sessionMaterial,
+            timeProvider,
+            clientProcessId,
+            nonceFactory: null)
+    {
+    }
+
+    internal NamedPipeRuntimeHealthClient(
+        RuntimeHealthEndpoint endpoint,
+        RuntimeHealthSessionMaterial? sessionMaterial,
+        TimeProvider? timeProvider,
+        int? clientProcessId,
+        Func<string>? nonceFactory)
     {
         ArgumentNullException.ThrowIfNull(endpoint);
 
@@ -27,6 +50,15 @@ public sealed class NamedPipeRuntimeHealthClient : IRuntimeHealthTransportClient
         }
 
         this.endpoint = endpoint;
+        this.sessionMaterial = sessionMaterial;
+        this.timeProvider = timeProvider ?? TimeProvider.System;
+        this.clientProcessId = clientProcessId ?? Environment.ProcessId;
+        this.nonceFactory = nonceFactory;
+
+        if (sessionMaterial is not null)
+        {
+            RuntimeHealthSessionAuthentication.ValidateMaterial(sessionMaterial);
+        }
         handler = new SocketsHttpHandler
         {
             ConnectCallback = ConnectAsync,
@@ -71,12 +103,48 @@ public sealed class NamedPipeRuntimeHealthClient : IRuntimeHealthTransportClient
 
         try
         {
-            GetRuntimeHealthResponse response = await client
-                .GetRuntimeHealthAsync(
+            const string method =
+                "/opure.runtime.health.v1.RuntimeHealthService/GetRuntimeHealth";
+            Metadata? headers = null;
+            string? nonce = null;
+            string? clientProof = null;
+
+            if (sessionMaterial is not null)
+            {
+                headers = RuntimeHealthSessionAuthentication.CreateClientMetadata(
+                    endpoint,
+                    sessionMaterial,
+                    method,
+                    clientProcessId,
+                    timeProvider.GetUtcNow(),
+                    out nonce,
+                    out clientProof,
+                    nonceFactory?.Invoke());
+            }
+
+            using AsyncUnaryCall<GetRuntimeHealthResponse> call =
+                client.GetRuntimeHealthAsync(
                     request,
-                    deadline: DateTime.UtcNow.Add(deadline),
-                    cancellationToken: cancellationToken)
-                .ResponseAsync.ConfigureAwait(false);
+                    headers,
+                    deadline: timeProvider.GetUtcNow().UtcDateTime.Add(deadline),
+                    cancellationToken: cancellationToken);
+            Metadata responseHeaders = await call.ResponseHeadersAsync.ConfigureAwait(false);
+            GetRuntimeHealthResponse response = await call.ResponseAsync.ConfigureAwait(false);
+
+            if (sessionMaterial is null || nonce is null || clientProof is null ||
+                !RuntimeHealthSessionAuthentication.VerifyServerProof(
+                    endpoint,
+                    sessionMaterial,
+                    method,
+                    nonce,
+                    clientProof,
+                    responseHeaders))
+            {
+                throw new RuntimeHealthTransportException(
+                    RuntimeHealthTransportErrorCodes.ServerIdentityInvalid,
+                    "The Runtime session proof is invalid.",
+                    retryable: false);
+            }
 
             RuntimeHealthValidationResult responseValidation =
                 RuntimeHealthContractPolicy.ValidateResponse(response);
@@ -118,6 +186,15 @@ public sealed class NamedPipeRuntimeHealthClient : IRuntimeHealthTransportClient
             throw new RuntimeHealthTransportException(
                 RuntimeHealthTransportErrorCodes.MessageTooLarge,
                 "The Runtime Health message exceeded its transport limit.",
+                retryable: false,
+                exception);
+        }
+        catch (RpcException exception) when (
+            exception.StatusCode == StatusCode.Unauthenticated)
+        {
+            throw new RuntimeHealthTransportException(
+                RuntimeHealthTransportErrorCodes.SessionDenied,
+                "The Runtime denied the local IPC session.",
                 retryable: false,
                 exception);
         }

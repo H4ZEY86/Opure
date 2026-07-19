@@ -17,11 +17,14 @@ public static class RuntimeHealthGatewayClient
         ArgumentNullException.ThrowIfNull(supervisorProjection);
 
         RuntimeHealthEndpoint? endpoint = RuntimeHealthEndpointEnvironment.ReadCurrent();
+        RuntimeHealthSessionMaterial? sessionMaterial =
+            RuntimeHealthSessionEnvironment.ReadCurrent();
 
         return await CreateStateSourceAsync(
                 productVersion,
                 supervisorProjection,
                 endpoint,
+                sessionMaterial,
                 cancellationToken)
             .ConfigureAwait(false);
     }
@@ -30,19 +33,22 @@ public static class RuntimeHealthGatewayClient
         string productVersion,
         DesktopSupervisorProjection supervisorProjection,
         RuntimeHealthEndpoint? endpoint,
+        RuntimeHealthSessionMaterial? sessionMaterial,
         CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(productVersion);
         ArgumentNullException.ThrowIfNull(supervisorProjection);
 
-        if (endpoint is null)
+        if (endpoint is null || sessionMaterial is null)
         {
             return new DisconnectedDesktopShellStateSource(
                 productVersion,
                 supervisorProjection);
         }
 
-        await using NamedPipeRuntimeHealthClient client = new(endpoint);
+        await using NamedPipeRuntimeHealthClient client = new(
+            endpoint,
+            sessionMaterial);
         GetRuntimeHealthRequest request = new()
         {
             MinimumContractRevision = RuntimeHealthContractPolicy.CurrentRevision,
