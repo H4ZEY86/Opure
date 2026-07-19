@@ -109,6 +109,20 @@ public static partial class RuntimeServiceRegistryContractPolicy
                 "A registered service descriptor contains invalid public metadata.");
         }
 
+        if ((descriptor.LifecycleSequence == 0 &&
+             descriptor.LifecycleState is not
+                 RuntimeServiceLifecycleState.Registered and not
+                 RuntimeServiceLifecycleState.Disabled) ||
+            !RuntimeServiceLifecycleContractPolicy.IsValidFailureProjection(
+                descriptor.LifecycleState,
+                descriptor.FailureCategory,
+                descriptor.FailureCode))
+        {
+            return Failure(
+                RuntimeServiceRegistryErrorCodes.InvalidLifecycleProjection,
+                "A registered service lifecycle projection is invalid.");
+        }
+
         if (descriptor.Dependencies.Count > MaximumDependencies ||
             descriptor.Capabilities.Count > MaximumCapabilities ||
             descriptor.HealthReference is null)
@@ -361,7 +375,9 @@ public static class RuntimeServiceRegistryErrorCodes
     public const string UnknownDependency = "REGISTRY_DEPENDENCY_UNKNOWN";
     public const string InvalidCapability = "REGISTRY_CAPABILITY_INVALID";
     public const string InvalidHealthReference = "REGISTRY_HEALTH_REFERENCE_INVALID";
+    public const string InvalidLifecycleProjection = "REGISTRY_LIFECYCLE_INVALID";
     public const string DuplicateServiceId = "REGISTRY_SERVICE_ID_DUPLICATE";
+    public const string UnknownServiceId = "REGISTRY_SERVICE_ID_UNKNOWN";
     public const string RegistrationLimitExceeded = "REGISTRY_REGISTRATION_LIMIT_EXCEEDED";
     public const string ResultLimitExceeded = "REGISTRY_RESULT_LIMIT_EXCEEDED";
     public const string NonDeterministicOrder = "REGISTRY_ORDER_INVALID";

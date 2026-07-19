@@ -31,4 +31,15 @@ internal static class RuntimeServiceCatalogue
 
         return [health];
     }
+
+    internal static IReadOnlyList<RuntimeManagedServiceDefinition>
+        CreateInitialManagedServices()
+    {
+        return CreateInitial()
+            .Select(static descriptor => new RuntimeManagedServiceDefinition(
+                descriptor,
+                static _ => Task.FromResult(RuntimeServiceStartResult.Ready),
+                static _ => Task.CompletedTask))
+            .ToArray();
+    }
 }

@@ -168,28 +168,31 @@ Completed and committed:
 * FND-008 — versioned Runtime Health protobuf contract.
 * FND-009 — named-pipe transport prototype.
 * FND-010 — named-pipe session authentication.
+* FND-011 — Runtime Service Registry contract.
 
 Implemented and verified by the current change:
 
-* FND-011 — Runtime Service Registry contract.
+* FND-012 — Service Lifecycle State Machine.
 
-FND-011 includes:
+FND-012 includes:
 
-* a versioned protobuf query contract with bounded stable cursor paging;
-* explicit service identity, revision, owner, classification and process placement;
-* typed service and capability dependencies, capability summaries and health references;
-* transactional in-memory registration with duplicate identity and unknown dependency rejection;
-* deterministic query ordering and immutable protobuf projections;
-* an authenticated logical gRPC service on the existing Runtime named pipe;
-* a safe initial catalogue that exposes no implementation type or persistence path.
+* one exhaustive validated transition policy for every logical service state;
+* deterministic dependency and capability-provider ordering;
+* dependency-first startup and reverse-order shutdown;
+* bounded startup and shutdown hooks with stable failure categories;
+* required-dependency failure blocking and optional-dependency degradation;
+* explicit restart, quarantine and disable transition paths;
+* a deterministic per-boot transition sequence;
+* registry-backed lifecycle, failure-category and failure-code projections;
+* reconstruction from trusted service definitions without persisted stale readiness.
 
 The next planned ticket is:
 
 ```text
-FND-012 — Add Service Lifecycle State Machine
+FND-013 — Add Runtime Health UI
 ```
 
-Do not assume FND-011 is complete until the Service Registry verifier passes and the changes are reviewed, committed and pushed.
+Do not assume FND-012 is complete until the Service Lifecycle verifier passes and the changes are reviewed, committed and pushed.
 
 ## Build policy
 

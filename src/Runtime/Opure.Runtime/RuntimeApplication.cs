@@ -31,6 +31,7 @@ public sealed class RuntimeApplication
         RuntimeDataRoot dataRoot;
         RuntimeBootSnapshot bootSnapshot;
         NamedPipeRuntimeHealthServer? healthTransport = null;
+        RuntimeServiceLifecycleCoordinator? serviceLifecycle = null;
         int sequence = 0;
 
         try
@@ -69,7 +70,17 @@ public sealed class RuntimeApplication
                 DateTimeOffset.UtcNow.Add(
                     RuntimeHealthTransportPolicy.SessionLifetime));
             RuntimeServiceRegistry serviceRegistry = new();
-            serviceRegistry.Register(RuntimeServiceCatalogue.CreateInitial());
+            serviceLifecycle = new RuntimeServiceLifecycleCoordinator(
+                serviceRegistry,
+                RuntimeServiceCatalogue.CreateInitialManagedServices());
+            await serviceLifecycle.StartAsync(shutdownSignal.Token)
+                .ConfigureAwait(false);
+
+            if (!serviceLifecycle.IsMinimumReady)
+            {
+                throw new InvalidOperationException(
+                    "A required Runtime service did not become ready.");
+            }
 
             healthTransport = await NamedPipeRuntimeHealthServer.StartAsync(
                 endpoint,
@@ -114,10 +125,13 @@ public sealed class RuntimeApplication
                 shutdownReason,
                 healthTransport.Endpoint.PipeName).ConfigureAwait(false);
 
+            using CancellationTokenSource shutdownTimeout = new(ShutdownTimeout);
+            await serviceLifecycle.StopAsync(shutdownTimeout.Token)
+                .ConfigureAwait(false);
+
             await healthTransport.DisposeAsync().ConfigureAwait(false);
             healthTransport = null;
 
-            using CancellationTokenSource shutdownTimeout = new(ShutdownTimeout);
             await CompleteShutdownAsync(shutdownTimeout.Token).ConfigureAwait(false);
 
             lifecycle.TransitionTo(RuntimeLifecycleState.Stopped);
@@ -168,10 +182,27 @@ public sealed class RuntimeApplication
         }
         finally
         {
+            if (serviceLifecycle is not null)
+            {
+                try
+                {
+                    using CancellationTokenSource cleanupTimeout =
+                        new(ShutdownTimeout);
+                    await serviceLifecycle.StopAsync(cleanupTimeout.Token)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                    // The primary lifecycle failure has already been reported.
+                }
+            }
+
             if (healthTransport is not null)
             {
                 await healthTransport.DisposeAsync().ConfigureAwait(false);
             }
+
+            serviceLifecycle?.Dispose();
         }
     }
 

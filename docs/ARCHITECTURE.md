@@ -361,6 +361,26 @@ The desktop may become available before all optional services finish starting.
 
 Critical services must be ready before protected work is permitted.
 
+### 9.1 Implemented M1 Service Lifecycle
+
+The Runtime Kernel owns the authoritative lifecycle of registered logical
+services. It validates a single transition policy, starts dependencies before
+dependants, stops dependants before dependencies, and applies bounded startup
+and shutdown deadlines. Required dependency failure prevents readiness;
+optional dependency failure produces a visible degraded state.
+
+The Service Registry exposes a bounded projection of current lifecycle state,
+the deterministic per-boot transition sequence, and stable failure category and
+code. It does not expose implementation types, exception text, persistence paths
+or session material.
+
+M1 lifecycle state is in memory. After Runtime restart, state is reconstructed
+from trusted service definitions and current startup checks; a stale Ready state
+is never persisted or trusted. Trust Evidence publication of
+`service.state-changed` remains deferred until that service exists, while
+process restart budgets and crash-loop quarantine remain owned by the Process
+Supervisor.
+
 ---
 
 ## 10. Service Ownership

@@ -101,6 +101,44 @@ internal sealed class RuntimeServiceRegistry :
         }
     }
 
+    internal void UpdateLifecycle(
+        string serviceId,
+        RuntimeServiceLifecycleState state,
+        ulong sequence,
+        RuntimeServiceFailure? failure)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(serviceId);
+
+        lock (stateLock)
+        {
+            if (!services.TryGetValue(serviceId, out RuntimeServiceDescriptor? current))
+            {
+                throw new RuntimeServiceRegistryException(
+                    RuntimeServiceRegistryErrorCodes.UnknownServiceId,
+                    "The service lifecycle target is not registered.");
+            }
+
+            RuntimeServiceDescriptor updated = current.Clone();
+            updated.LifecycleState = state;
+            updated.LifecycleSequence = sequence;
+            updated.FailureCategory = failure?.Category ??
+                RuntimeServiceFailureCategory.Unspecified;
+            updated.FailureCode = failure?.Code ?? string.Empty;
+
+            RuntimeServiceRegistryValidationResult validation =
+                RuntimeServiceRegistryContractPolicy.ValidateDescriptor(updated);
+
+            if (!validation.IsValid)
+            {
+                throw new RuntimeServiceRegistryException(
+                    validation.ErrorCode,
+                    validation.SafeMessage);
+            }
+
+            services[serviceId] = updated;
+        }
+    }
+
     public Task<QueryServiceRegistryResponse> HandleAsync(
         QueryServiceRegistryRequest request,
         CancellationToken cancellationToken)

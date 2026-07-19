@@ -1,0 +1,71 @@
+{
+  "schema": "opure.service-lifecycle-transition-report/1",
+  "result": "Passed",
+  "transitionCount": 8,
+  "transitions": [
+    {
+      "sequence": 1,
+      "serviceId": "runtime.alpha",
+      "previousState": "Registered",
+      "state": "Starting",
+      "failureCategory": "Unspecified",
+      "failureCode": ""
+    },
+    {
+      "sequence": 2,
+      "serviceId": "runtime.alpha",
+      "previousState": "Starting",
+      "state": "Ready",
+      "failureCategory": "Unspecified",
+      "failureCode": ""
+    },
+    {
+      "sequence": 3,
+      "serviceId": "runtime.beta",
+      "previousState": "Registered",
+      "state": "Starting",
+      "failureCategory": "Unspecified",
+      "failureCode": ""
+    },
+    {
+      "sequence": 4,
+      "serviceId": "runtime.beta",
+      "previousState": "Starting",
+      "state": "Ready",
+      "failureCategory": "Unspecified",
+      "failureCode": ""
+    },
+    {
+      "sequence": 5,
+      "serviceId": "runtime.beta",
+      "previousState": "Ready",
+      "state": "Stopping",
+      "failureCategory": "Unspecified",
+      "failureCode": ""
+    },
+    {
+      "sequence": 6,
+      "serviceId": "runtime.beta",
+      "previousState": "Stopping",
+      "state": "Stopped",
+      "failureCategory": "Unspecified",
+      "failureCode": ""
+    },
+    {
+      "sequence": 7,
+      "serviceId": "runtime.alpha",
+      "previousState": "Ready",
+      "state": "Stopping",
+      "failureCategory": "Unspecified",
+      "failureCode": ""
+    },
+    {
+      "sequence": 8,
+      "serviceId": "runtime.alpha",
+      "previousState": "Stopping",
+      "state": "Stopped",
+      "failureCategory": "Unspecified",
+      "failureCode": ""
+    }
+  ]
+}

@@ -89,7 +89,10 @@ public sealed class RuntimeHealthContractBoundaryTests
             "RuntimeServiceProcessPlacement process_placement",
             "repeated RuntimeServiceDependency dependencies",
             "repeated RuntimeCapabilitySummary capabilities",
-            "RuntimeServiceHealthReference health_reference"
+            "RuntimeServiceHealthReference health_reference",
+            "uint64 lifecycle_sequence",
+            "RuntimeServiceFailureCategory failure_category",
+            "string failure_code"
         ];
         string[] prohibitedTokens =
         [
