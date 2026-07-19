@@ -12,10 +12,12 @@ param(
 )
 
 $restoreScript = Join-Path $PSScriptRoot 'restore.ps1'
+$versionScript = Join-Path $PSScriptRoot 'version.ps1'
 $buildScript = Join-Path $PSScriptRoot 'build.ps1'
 $testScript = Join-Path $PSScriptRoot 'test.ps1'
 
 & $restoreScript -Locked
+& $versionScript
 & $buildScript `
     -Configuration $Configuration `
     -BuildChannel $BuildChannel

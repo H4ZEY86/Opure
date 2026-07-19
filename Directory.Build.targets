@@ -14,4 +14,53 @@
       Text="OpureBuildChannel must be Development, Preview or Stable. Received '$(OpureBuildChannel)'." />
   </Target>
 
+<Target
+  Name="AddOpureBuildIdentityMetadata"
+  DependsOnTargets="GetBuildVersion"
+  BeforeTargets="GenerateAssemblyInfo">
+  <ItemGroup>
+    <AssemblyMetadata Include="Opure.ProductVersion" Value="$(BuildVersionSimple)" />
+    <AssemblyMetadata Include="Opure.PackageVersion" Value="$(NuGetPackageVersion)" />
+    <AssemblyMetadata Include="Opure.CommitId" Value="$(GitCommitId)" />
+    <AssemblyMetadata Include="Opure.PublicRelease" Value="$(PublicRelease)" />
+    <AssemblyMetadata Include="Opure.SourceDirty" Value="$(OpureSourceDirty)" />
+    <AssemblyMetadata Include="Opure.BuildSource" Value="$(OpureBuildSource)" />
+    <AssemblyMetadata Include="Opure.BuildChannel" Value="$(OpureBuildChannel)" />
+  </ItemGroup>
+</Target>
+
+<Target
+  Name="WriteOpureVersionEvidence"
+  DependsOnTargets="GetBuildVersion">
+  <Error
+    Condition="'$(OpureVersionEvidenceFile)' == ''"
+    Text="OpureVersionEvidenceFile must be supplied when invoking WriteOpureVersionEvidence." />
+
+  <MakeDir
+    Directories="$([System.IO.Path]::GetDirectoryName('$(OpureVersionEvidenceFile)'))" />
+
+  <ItemGroup>
+    <_OpureVersionEvidenceLine Include="Project=$(MSBuildProjectName)" />
+    <_OpureVersionEvidenceLine Include="BuildVersion=$(BuildVersion)" />
+    <_OpureVersionEvidenceLine Include="BuildVersionSimple=$(BuildVersionSimple)" />
+    <_OpureVersionEvidenceLine Include="AssemblyVersion=$(AssemblyVersion)" />
+    <_OpureVersionEvidenceLine Include="AssemblyFileVersion=$(AssemblyFileVersion)" />
+    <_OpureVersionEvidenceLine Include="AssemblyInformationalVersion=$(AssemblyInformationalVersion)" />
+    <_OpureVersionEvidenceLine Include="NuGetPackageVersion=$(NuGetPackageVersion)" />
+    <_OpureVersionEvidenceLine Include="GitCommitId=$(GitCommitId)" />
+    <_OpureVersionEvidenceLine Include="GitCommitIdShort=$(GitCommitIdShort)" />
+    <_OpureVersionEvidenceLine Include="PublicRelease=$(PublicRelease)" />
+    <_OpureVersionEvidenceLine Include="PrereleaseVersion=$(PrereleaseVersion)" />
+    <_OpureVersionEvidenceLine Include="OpureSourceDirty=$(OpureSourceDirty)" />
+    <_OpureVersionEvidenceLine Include="OpureBuildSource=$(OpureBuildSource)" />
+    <_OpureVersionEvidenceLine Include="OpureBuildChannel=$(OpureBuildChannel)" />
+  </ItemGroup>
+
+  <WriteLinesToFile
+    File="$(OpureVersionEvidenceFile)"
+    Lines="@(_OpureVersionEvidenceLine)"
+    Overwrite="true"
+    Encoding="UTF-8" />
+</Target>
+
 </Project>

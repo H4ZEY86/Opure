@@ -1,0 +1,18 @@
+Opure Sample Public Preview Version
+===================================
+Tag: v0.1.0-preview.1
+TagType: tag
+Commit: 74c3c1341e51e2ea4d05a7bdca02688024604a95
+NuGetPackageVersion: 0.1.0-preview.1
+AssemblyVersion: 0.1.0.0
+AssemblyFileVersion: 0.1.0.2
+AssemblyInformationalVersion: 0.1.0.2-preview.1+74c3c1341e51
+BuildWithoutRestore: passed
+
+nbgv get-version
+----------------
+Version:                      0.1.0.2
+AssemblyVersion:              0.1.0.0
+AssemblyInformationalVersion: 0.1.0.2-preview.1+74c3c1341e51
+NuGetPackageVersion:          0.1.0-preview.1
+NpmPackageVersion:            0.1.0-preview.1

@@ -3,7 +3,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('restore', 'build', 'test', 'verify', 'policy')]
+    [ValidateSet('restore', 'build', 'test', 'verify', 'policy', 'version', 'version-policy')]
     [string] $Target = 'verify',
 
     [Parameter()]
@@ -44,5 +44,13 @@ switch ($Target) {
 
     'policy' {
         & (Join-Path $PSScriptRoot 'eng\verify-build-policy.ps1')
+    }
+
+    'version' {
+        & (Join-Path $PSScriptRoot 'eng\version.ps1')
+    }
+
+    'version-policy' {
+        & (Join-Path $PSScriptRoot 'eng\verify-versioning.ps1')
     }
 }

@@ -35,6 +35,11 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/H4ZEY86/Opure.git</RepositoryUrl>
 
+
+    <NBGV_ThisAssemblyIncludesPackageVersion>true</NBGV_ThisAssemblyIncludesPackageVersion>
+    <OpureSourceDirty Condition="'$(OpureSourceDirty)' == ''">unknown</OpureSourceDirty>
+    <OpureBuildSource Condition="'$(OpureBuildSource)' == ''">Direct</OpureBuildSource>
+
     <OpureBuildChannel Condition="'$(OpureBuildChannel)' == ''">Development</OpureBuildChannel>
     <DefineConstants
       Condition="'$(OpureBuildChannel)' == 'Development'">$(DefineConstants);OPURE_DEVELOPMENT</DefineConstants>
@@ -43,5 +48,13 @@
     <DefineConstants
       Condition="'$(OpureBuildChannel)' == 'Stable'">$(DefineConstants);OPURE_STABLE</DefineConstants>
   </PropertyGroup>
+
+
+  <ItemGroup Label="Versioning">
+    <PackageReference Include="Nerdbank.GitVersioning">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
 
 </Project>

@@ -1,0 +1,17 @@
+Opure Version Identity
+======================
+DeclaredVersion: 0.1.0-preview.0
+ReleaseChannel: Development
+BuildClass: Local Dirty
+Commit: 8090fc93125ecc1936b66435b740036afb8c9a1b
+Branch: main
+SourceDirty: true
+MatchingReleaseTag: <none>
+
+Nerdbank.GitVersioning
+----------------------
+Version:                      0.1.0.0
+AssemblyVersion:              0.1.0.0
+AssemblyInformationalVersion: 0.1.0.0-preview.0+8090fc93125e
+NuGetPackageVersion:          0.1.0-preview.0.g8090fc93125e
+NpmPackageVersion:            0.1.0-preview.0.g8090fc93125e

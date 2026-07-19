@@ -97,6 +97,48 @@ function Compare-HashMaps {
     }
 }
 
+
+function Initialize-ProbeGitRepository {
+    param(
+        [Parameter(Mandatory)]
+        [string] $Directory,
+
+        [Parameter(Mandatory)]
+        [string] $CommitMessage
+    )
+
+    Push-Location $Directory
+    try {
+        & git init --initial-branch=main | Out-Host
+        if ($LASTEXITCODE -ne 0) {
+            throw "Unable to initialise temporary Git repository: $Directory"
+        }
+
+        & git config user.name 'Opure Build Policy Probe'
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Unable to configure temporary Git user name.'
+        }
+
+        & git config user.email 'build-policy-probe@opure.invalid'
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Unable to configure temporary Git user email.'
+        }
+
+        & git add .
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Unable to stage temporary build-policy probe.'
+        }
+
+        & git commit -m $CommitMessage | Out-Host
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Unable to commit temporary build-policy probe.'
+        }
+    }
+    finally {
+        Pop-Location
+    }
+}
+
 $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) "Opure-FND-002-$([guid]::NewGuid().ToString('N'))"
 $warningProbeRoot = Join-Path $tempRoot 'warning-probe'
 $lockProbeRoot = Join-Path $tempRoot 'lock-probe'
@@ -110,7 +152,8 @@ try {
         'Directory.Build.props',
         'Directory.Build.targets',
         'Directory.Packages.props',
-        'NuGet.config'
+        'NuGet.config',
+        'version.json'
     )) {
         Copy-Item -LiteralPath (Join-Path $repositoryRoot $file) -Destination (Join-Path $warningProbeRoot $file)
         Copy-Item -LiteralPath (Join-Path $repositoryRoot $file) -Destination (Join-Path $lockProbeRoot $file)
@@ -149,6 +192,10 @@ public static class WarningProbe
         [System.Text.UTF8Encoding]::new($false)
     )
 
+    Initialize-ProbeGitRepository `
+        -Directory $warningProbeRoot `
+        -CommitMessage 'Create warning-as-error probe'
+
     Invoke-ExpectedFailure `
         -Description 'Warning-as-error probe' `
         -WorkingDirectory $warningProbeRoot `
@@ -170,6 +217,10 @@ public static class WarningProbe
     )) {
         Copy-Item -LiteralPath (Join-Path $sourceProjectRoot $file) -Destination (Join-Path $lockProjectRoot $file)
     }
+
+    Initialize-ProbeGitRepository `
+        -Directory $lockProbeRoot `
+        -CommitMessage 'Create locked-restore probe'
 
     $lockProjectPath = Join-Path $lockProjectRoot 'Opure.Runtime.Contracts.csproj'
     $lockProjectText = Get-Content -LiteralPath $lockProjectPath -Raw

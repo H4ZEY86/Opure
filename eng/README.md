@@ -69,3 +69,51 @@ dotnet tool restore
 ```
 
 The manifest is security-sensitive because local tools execute with developer privileges.
+
+## Version identity
+
+The authoritative product version is:
+
+```text
+version.json
+```
+
+The repository pins matching releases of:
+
+```text
+Nerdbank.GitVersioning 3.10.70
+nbgv 3.10.70
+```
+
+Show the current resolved identity with:
+
+```powershell
+pwsh ./build.ps1 version
+```
+
+Run the FND-003 evidence probes with:
+
+```powershell
+pwsh ./build.ps1 version-policy
+```
+
+Every first-party project receives the generated internal `ThisAssembly` class. Hosts should use it for diagnostic identity rather than declaring version literals.
+
+Useful generated members include:
+
+```text
+ThisAssembly.AssemblyVersion
+ThisAssembly.AssemblyFileVersion
+ThisAssembly.AssemblyInformationalVersion
+ThisAssembly.GitCommitId
+ThisAssembly.IsPublicRelease
+ThisAssembly.NuGetPackageVersion
+```
+
+A development build may be clean or dirty. `eng/version.ps1` reports that state explicitly.
+
+Preview and Stable build-channel commands require a clean working tree.
+
+Public release classification is tag-only. The normal `main` branch is not a public release ref.
+
+The trusted `PublicRelease=true` override is reserved for an exact validated release candidate or tagged commit. It must never be used merely to remove commit identity from ordinary builds.
