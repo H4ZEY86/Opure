@@ -84,7 +84,7 @@ public sealed class RuntimeApplication
 
             healthTransport = await NamedPipeRuntimeHealthServer.StartAsync(
                 endpoint,
-                new RuntimeHealthRequestHandler(bootSnapshot),
+                new RuntimeHealthRequestHandler(bootSnapshot, serviceRegistry),
                 sessionPolicy,
                 shutdownSignal.Token,
                 eventSink: authenticationEvent =>

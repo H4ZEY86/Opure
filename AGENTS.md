@@ -169,30 +169,30 @@ Completed and committed:
 * FND-009 — named-pipe transport prototype.
 * FND-010 — named-pipe session authentication.
 * FND-011 — Runtime Service Registry contract.
+* FND-012 — Service Lifecycle State Machine.
 
 Implemented and verified by the current change:
 
-* FND-012 — Service Lifecycle State Machine.
+* FND-013 — Runtime Health UI.
 
-FND-012 includes:
+FND-013 includes:
 
-* one exhaustive validated transition policy for every logical service state;
-* deterministic dependency and capability-provider ordering;
-* dependency-first startup and reverse-order shutdown;
-* bounded startup and shutdown hooks with stable failure categories;
-* required-dependency failure blocking and optional-dependency degradation;
-* explicit restart, quarantine and disable transition paths;
-* a deterministic per-boot transition sequence;
-* registry-backed lifecycle, failure-category and failure-code projections;
-* reconstruction from trusted service definitions without persisted stale readiness.
+* a live, registry-backed Runtime and service-health projection;
+* explicit Connected, Disconnected, Starting, Ready, Degraded and Safe Mode states;
+* authenticated asynchronous refresh with serialised bounded reconnect;
+* stale last-snapshot retention without treating it as current authority;
+* safe boot-identity display and exact clipboard copy;
+* stable service failure codes without exceptions, secrets or implementation detail;
+* keyboard, UI Automation, progressive-disclosure and high-contrast semantics;
+* native-window, reconnect and 64-row performance evidence.
 
 The next planned ticket is:
 
 ```text
-FND-013 — Add Runtime Health UI
+FND-014 — Add SQLite Persistence Library
 ```
 
-Do not assume FND-012 is complete until the Service Lifecycle verifier passes and the changes are reviewed, committed and pushed.
+Do not assume FND-013 is complete until the Runtime Health UI verifier passes and the changes are reviewed, committed and pushed.
 
 ## Build policy
 

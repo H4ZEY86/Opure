@@ -1,0 +1,20 @@
+{
+  "schema": "opure.runtime-health-ui-test-artifact/1",
+  "result": "Passed",
+  "nativeWindowHandleObserved": true,
+  "desktopViewModelTests": 11,
+  "desktopWindowTests": 9,
+  "runtimeProjectionTests": 3,
+  "authenticatedReconnectTests": 1,
+  "displayedStates": [
+    "Connected",
+    "Disconnected",
+    "Starting",
+    "Ready",
+    "Degraded",
+    "SafeMode"
+  ],
+  "maximumTestedServiceRows": 64,
+  "exceptionTextDisplayed": false,
+  "secretMaterialDisplayed": false
+}

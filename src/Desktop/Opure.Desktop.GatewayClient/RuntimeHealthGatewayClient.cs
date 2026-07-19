@@ -1,13 +1,34 @@
 using Opure.Desktop.Contracts;
 using Opure.Ipc.Abstractions;
-using Opure.Ipc.NamedPipes.Windows;
-using Opure.Runtime.Contracts;
-using Opure.Runtime.Contracts.Health.V1;
 
 namespace Opure.Desktop.GatewayClient;
 
 public static class RuntimeHealthGatewayClient
 {
+    public static IDesktopRuntimeHealthSource CreateProjectionSource(
+        string productVersion,
+        DesktopSupervisorProjection supervisorProjection)
+    {
+        return new RuntimeHealthProjectionSource(
+            productVersion,
+            supervisorProjection,
+            RuntimeHealthEndpointEnvironment.ReadCurrent,
+            RuntimeHealthSessionEnvironment.ReadCurrent);
+    }
+
+    public static IDesktopRuntimeHealthSource CreateProjectionSource(
+        string productVersion,
+        DesktopSupervisorProjection supervisorProjection,
+        RuntimeHealthEndpoint? endpoint,
+        RuntimeHealthSessionMaterial? sessionMaterial)
+    {
+        return new RuntimeHealthProjectionSource(
+            productVersion,
+            supervisorProjection,
+            () => endpoint,
+            () => sessionMaterial);
+    }
+
     public static async Task<IDesktopShellStateSource> CreateStateSourceAsync(
         string productVersion,
         DesktopSupervisorProjection supervisorProjection,
@@ -39,49 +60,22 @@ public static class RuntimeHealthGatewayClient
         ArgumentException.ThrowIfNullOrWhiteSpace(productVersion);
         ArgumentNullException.ThrowIfNull(supervisorProjection);
 
-        if (endpoint is null || sessionMaterial is null)
-        {
-            return new DisconnectedDesktopShellStateSource(
-                productVersion,
-                supervisorProjection);
-        }
-
-        await using NamedPipeRuntimeHealthClient client = new(
+        IDesktopRuntimeHealthSource source = CreateProjectionSource(
+            productVersion,
+            supervisorProjection,
             endpoint,
             sessionMaterial);
-        GetRuntimeHealthRequest request = new()
-        {
-            MinimumContractRevision = RuntimeHealthContractPolicy.CurrentRevision,
-            MaximumContractRevision = RuntimeHealthContractPolicy.CurrentRevision,
-            QueryId = Guid.NewGuid().ToString("N")
-        };
+        DesktopRuntimeHealthSnapshot snapshot = await source.RefreshAsync(
+                cancellationToken)
+            .ConfigureAwait(false);
 
-        try
-        {
-            GetRuntimeHealthResponse response = await client
-                .GetRuntimeHealthAsync(
-                    request,
-                    RuntimeHealthContractPolicy.DefaultDeadline,
-                    cancellationToken)
-                .ConfigureAwait(false);
-
-            if (response.OutcomeCase ==
-                GetRuntimeHealthResponse.OutcomeOneofCase.Health)
-            {
-                return new ConnectedDesktopShellStateSource(
-                    productVersion,
-                    response.Health.RuntimeBootId,
-                    response.Health.OverallHealth.ToString());
-            }
-        }
-        catch (RuntimeHealthTransportException)
-        {
-            // The shell honestly returns to disconnected state. The transport
-            // exception remains available to direct callers for diagnostics.
-        }
-
-        return new DisconnectedDesktopShellStateSource(
-            productVersion,
-            supervisorProjection);
+        return snapshot.ConnectionState == DesktopRuntimeConnectionState.Connected
+            ? new ConnectedDesktopShellStateSource(
+                productVersion,
+                snapshot.RuntimeBootId,
+                snapshot.DisplayState.ToString())
+            : new DisconnectedDesktopShellStateSource(
+                productVersion,
+                supervisorProjection);
     }
 }

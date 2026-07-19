@@ -13,10 +13,19 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
     private string pageDetail;
 
     public DesktopShellViewModel(DesktopShellSnapshot snapshot)
+        : this(snapshot, CreateDisconnectedRuntimeStatus(snapshot))
+    {
+    }
+
+    public DesktopShellViewModel(
+        DesktopShellSnapshot snapshot,
+        DesktopRuntimeStatusViewModel runtimeHealth)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
+        ArgumentNullException.ThrowIfNull(runtimeHealth);
 
         Snapshot = snapshot;
+        RuntimeHealth = runtimeHealth;
         selectedSection = DesktopNavigationSection.Home;
         pageTitle = "Home";
         pageDetail =
@@ -26,6 +35,8 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public DesktopShellSnapshot Snapshot { get; }
+
+    public DesktopRuntimeStatusViewModel RuntimeHealth { get; }
 
     public string WindowTitle => Snapshot.WindowTitle;
 
@@ -88,5 +99,17 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    private static DesktopRuntimeStatusViewModel CreateDisconnectedRuntimeStatus(
+        DesktopShellSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        DesktopRuntimeHealthSnapshot health =
+            DesktopRuntimeHealthSnapshot.CreateDisconnected(
+                snapshot.ProductVersion);
+        return new DesktopRuntimeStatusViewModel(
+            health,
+            new FixedDesktopRuntimeHealthSource(health));
     }
 }

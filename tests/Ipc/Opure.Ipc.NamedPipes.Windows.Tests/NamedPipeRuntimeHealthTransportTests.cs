@@ -99,6 +99,57 @@ public sealed class NamedPipeRuntimeHealthTransportTests
     }
 
     [Fact]
+    public async Task Desktop_projection_source_retains_no_client_and_reconnects_to_latest_endpoint()
+    {
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        RuntimeHealthEndpoint currentEndpoint = CreateEndpoint();
+        RuntimeHealthSessionMaterial currentMaterial =
+            RuntimeHealthSessionMaterial.Create();
+        RuntimeHealthProjectionSource source = new(
+            "1.0.0-test",
+            DesktopSupervisorProjection.Disconnected,
+            () => currentEndpoint,
+            () => currentMaterial);
+        NamedPipeRuntimeHealthServer firstServer =
+            await NamedPipeRuntimeHealthServer.StartAsync(
+                currentEndpoint,
+                new StaticHealthHandler(currentEndpoint.RuntimeBootId),
+                CreatePolicy(currentMaterial),
+                cancellationToken);
+
+        DesktopRuntimeHealthSnapshot first = await source.RefreshAsync(
+            cancellationToken);
+        await firstServer.DisposeAsync();
+        DesktopRuntimeHealthSnapshot disconnected = await source.RefreshAsync(
+            cancellationToken);
+
+        currentEndpoint = CreateEndpoint();
+        currentMaterial = RuntimeHealthSessionMaterial.Create();
+
+        await using NamedPipeRuntimeHealthServer secondServer =
+            await NamedPipeRuntimeHealthServer.StartAsync(
+                currentEndpoint,
+                new StaticHealthHandler(currentEndpoint.RuntimeBootId),
+                CreatePolicy(currentMaterial),
+                cancellationToken);
+        DesktopRuntimeHealthSnapshot reconnected = await source.RefreshAsync(
+            cancellationToken);
+
+        Assert.Equal(
+            DesktopRuntimeDisplayState.Ready,
+            first.DisplayState);
+        Assert.Equal(
+            DesktopRuntimeConnectionState.Unavailable,
+            disconnected.ConnectionState);
+        Assert.NotEmpty(disconnected.StableErrorCode);
+        Assert.Equal(
+            DesktopRuntimeDisplayState.Ready,
+            reconnected.DisplayState);
+        Assert.Equal(currentEndpoint.RuntimeBootId, reconnected.RuntimeBootId);
+        Assert.Single(reconnected.Services);
+    }
+
+    [Fact]
     public async Task Service_registry_query_uses_authenticated_named_pipe()
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
@@ -805,7 +856,7 @@ public sealed class NamedPipeRuntimeHealthTransportTests
 
     private static GetRuntimeHealthResponse CreateResponse(string bootId)
     {
-        return new GetRuntimeHealthResponse
+        GetRuntimeHealthResponse response = new()
         {
             ContractRevision = RuntimeHealthContractPolicy.CurrentRevision,
             Health = new RuntimeHealthProjection
@@ -819,5 +870,13 @@ public sealed class NamedPipeRuntimeHealthTransportTests
                     DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
             }
         };
+        response.Health.Services.Add(new ServiceHealthSummary
+        {
+            ServiceId = "runtime.health",
+            State = ServiceHealthState.Ready,
+            RequiredForReadiness = true,
+            SafeDetail = "Service is ready."
+        });
+        return response;
     }
 }

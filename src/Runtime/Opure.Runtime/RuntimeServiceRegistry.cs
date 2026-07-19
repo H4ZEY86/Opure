@@ -139,6 +139,19 @@ internal sealed class RuntimeServiceRegistry :
         }
     }
 
+    internal IReadOnlyList<RuntimeServiceDescriptor> Snapshot()
+    {
+        lock (stateLock)
+        {
+            return services.Values
+                .OrderBy(static descriptor =>
+                    descriptor.ServiceId,
+                    StringComparer.Ordinal)
+                .Select(static descriptor => descriptor.Clone())
+                .ToArray();
+        }
+    }
+
     public Task<QueryServiceRegistryResponse> HandleAsync(
         QueryServiceRegistryRequest request,
         CancellationToken cancellationToken)

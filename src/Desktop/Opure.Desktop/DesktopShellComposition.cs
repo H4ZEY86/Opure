@@ -9,8 +9,12 @@ public static class DesktopShellComposition
 {
     public static DesktopShellViewModel CreateViewModel()
     {
+        DesktopRuntimeStatusViewModel runtimeHealth = new(
+            DesktopLaunchContext.InitialRuntimeHealth,
+            DesktopLaunchContext.RuntimeHealthSource);
         return new DesktopShellViewModel(
-            DesktopLaunchContext.ShellStateSource.GetCurrent());
+            DesktopLaunchContext.ShellStateSource.GetCurrent(),
+            runtimeHealth);
     }
 
     public static MainWindow CreateMainWindow()

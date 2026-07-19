@@ -381,6 +381,27 @@ is never persisted or trusted. Trust Evidence publication of
 process restart budgets and crash-loop quarantine remain owned by the Process
 Supervisor.
 
+### 9.2 Implemented M1 Runtime Health UI
+
+The Runtime Kernel remains authoritative for boot identity, readiness, overall
+health and registered service lifecycle. Its authenticated Runtime Health
+handler builds a bounded projection from the live Service Registry. The Desktop
+Gateway validates that projection and translates it into view-oriented state;
+the Desktop does not infer authority from displayed rows or stable error codes.
+
+The Desktop distinguishes Connected, Disconnected, Starting, Ready, Degraded
+and Safe Mode in text. Degraded is explicitly not healthy, Safe Mode has a
+prominent restricted-operation banner, and diagnostic detail is progressively
+disclosed. Service rows expose stable UI Automation labels, and the full opaque
+boot identity can be copied without displaying it in the summary.
+
+Refresh is asynchronous, serialised and bounded. When a validated connection is
+lost, the last service and boot snapshot remains visible but is marked stale and
+cannot be mistaken for current authority. Closing the view cancels its refresh
+loop; reopening starts a new refresh and the Gateway resolves endpoint and
+session material for each query. Subscription-based updates remain deferred
+until the Desktop Gateway subscription contract exists.
+
 ---
 
 ## 10. Service Ownership

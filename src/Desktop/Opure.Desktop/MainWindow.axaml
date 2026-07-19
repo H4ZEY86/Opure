@@ -114,28 +114,213 @@
             Text="{Binding PageDetail}"
             TextWrapping="Wrap" />
 
+        <Border
+            x:Name="SafeModeBanner"
+            IsVisible="{Binding RuntimeHealth.IsSafeMode}"
+            BorderThickness="3"
+            CornerRadius="4"
+            Padding="16"
+            AutomationProperties.Name="Safe Mode. Optional components are restricted."
+            AutomationProperties.AutomationId="RuntimeSafeModeBanner">
+          <StackPanel Spacing="4">
+            <TextBlock
+                Text="SAFE MODE"
+                FontSize="22"
+                FontWeight="Bold"
+                AutomationProperties.HeadingLevel="1" />
+            <TextBlock
+                Text="Optional components are restricted. Review Runtime recovery before resuming normal operation."
+                TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+
         <GroupBox
-            Header="Runtime connection"
-            AutomationProperties.Name="Runtime connection status"
-            AutomationProperties.AutomationId="RuntimeConnectionStatus">
+            Header="Runtime Health"
+            AutomationProperties.Name="{Binding RuntimeHealth.AccessibilitySummary}"
+            AutomationProperties.AutomationId="RuntimeHealthStatus">
           <StackPanel
               Margin="8"
-              Spacing="8">
-            <TextBlock
-                x:Name="RuntimeStatusText"
-                Text="{Binding RuntimeStatusTitle}"
-                FontSize="18"
-                FontWeight="SemiBold"
-                AutomationProperties.Name="{Binding RuntimeStatusTitle}"
-                AutomationProperties.AutomationId="RuntimeStatusTitle" />
-            <TextBlock
-                x:Name="RuntimeStatusDetailText"
-                Text="{Binding RuntimeStatusDetail}"
-                TextWrapping="Wrap"
-                AutomationProperties.Name="The Desktop is ready but the Runtime is unavailable" />
-            <TextBlock
-                Text="No connection attempt is hidden. IPC is introduced in a later ticket."
-                TextWrapping="Wrap" />
+              Spacing="12">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="4">
+                <TextBlock
+                    x:Name="RuntimeStatusText"
+                    Text="{Binding RuntimeHealth.StatusTitle}"
+                    FontSize="20"
+                    FontWeight="SemiBold"
+                    AutomationProperties.Name="{Binding RuntimeHealth.StatusTitle}"
+                    AutomationProperties.AutomationId="RuntimeStatusTitle"
+                    AutomationProperties.HeadingLevel="2" />
+                <TextBlock
+                    x:Name="RuntimeStatusDetailText"
+                    Text="{Binding RuntimeHealth.StatusDetail}"
+                    TextWrapping="Wrap"
+                    AutomationProperties.Name="{Binding RuntimeHealth.StatusDetail}"
+                    AutomationProperties.AutomationId="RuntimeStatusDetail" />
+                <TextBlock
+                    x:Name="ProjectionFreshnessText"
+                    Text="{Binding RuntimeHealth.ProjectionFreshnessLabel}"
+                    FontWeight="SemiBold"
+                    AutomationProperties.Name="{Binding RuntimeHealth.ProjectionFreshnessLabel}"
+                    AutomationProperties.AutomationId="RuntimeProjectionFreshness" />
+              </StackPanel>
+
+              <Button
+                  x:Name="RefreshRuntimeButton"
+                  Grid.Column="1"
+                  Margin="16,0,0,0"
+                  Content="_Refresh Runtime"
+                  Click="OnRefreshRuntimeClick"
+                  IsEnabled="{Binding RuntimeHealth.CanRefresh}"
+                  IsTabStop="True"
+                  TabIndex="5"
+                  AutomationProperties.Name="Refresh Runtime Health"
+                  AutomationProperties.AutomationId="RefreshRuntimeHealth"
+                  AutomationProperties.AccessKey="Alt+R" />
+            </Grid>
+
+            <ProgressBar
+                x:Name="RuntimeRefreshProgress"
+                IsIndeterminate="True"
+                IsVisible="{Binding RuntimeHealth.IsRefreshing}"
+                AutomationProperties.Name="Refreshing Runtime Health"
+                AutomationProperties.AutomationId="RuntimeRefreshProgress" />
+
+            <Border
+                x:Name="DegradedRuntimeBanner"
+                IsVisible="{Binding RuntimeHealth.IsDegraded}"
+                BorderThickness="2"
+                CornerRadius="4"
+                Padding="12"
+                AutomationProperties.Name="Runtime degraded. Reduced capability is visible in the service list."
+                AutomationProperties.AutomationId="RuntimeDegradedBanner">
+              <TextBlock
+                  Text="Degraded — the Runtime is available with reduced capability. This state is not healthy."
+                  FontWeight="SemiBold"
+                  TextWrapping="Wrap" />
+            </Border>
+
+            <Grid
+                IsVisible="{Binding RuntimeHealth.HasBootIdentity}"
+                ColumnDefinitions="Auto,*,Auto">
+              <TextBlock
+                  Text="Boot identity"
+                  VerticalAlignment="Center"
+                  FontWeight="SemiBold" />
+              <TextBlock
+                  x:Name="RuntimeBootIdentityShortText"
+                  Grid.Column="1"
+                  Margin="12,0"
+                  Text="{Binding RuntimeHealth.RuntimeBootIdShort}"
+                  VerticalAlignment="Center"
+                  AutomationProperties.Name="{Binding RuntimeHealth.RuntimeBootId}"
+                  AutomationProperties.AutomationId="RuntimeBootIdentity" />
+              <Button
+                  x:Name="CopyRuntimeBootIdentityButton"
+                  Grid.Column="2"
+                  Content="_Copy boot identity"
+                  Click="OnCopyRuntimeBootIdentityClick"
+                  IsEnabled="{Binding RuntimeHealth.CanCopyBootIdentity}"
+                  IsTabStop="True"
+                  TabIndex="6"
+                  AutomationProperties.Name="Copy Runtime boot identity"
+                  AutomationProperties.AutomationId="CopyRuntimeBootIdentity"
+                  AutomationProperties.AccessKey="Alt+C" />
+            </Grid>
+
+            <GroupBox
+                Header="Services"
+                AutomationProperties.Name="Runtime service health list"
+                AutomationProperties.AutomationId="RuntimeServiceHealthGroup">
+              <Grid RowDefinitions="Auto,*">
+                <TextBlock
+                    IsVisible="{Binding !RuntimeHealth.HasServices}"
+                    Margin="8"
+                    Text="No service projection is available."
+                    TextWrapping="Wrap" />
+                <ListBox
+                    x:Name="ServiceHealthList"
+                    Grid.Row="1"
+                    MaxHeight="260"
+                    ItemsSource="{Binding RuntimeHealth.Services}"
+                    SelectionMode="Single"
+                    TabIndex="7"
+                    AutomationProperties.Name="Runtime services. Use arrow keys to inspect each row."
+                    AutomationProperties.AutomationId="RuntimeServiceHealthList">
+                  <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="contracts:DesktopServiceHealthRow">
+                      <Grid
+                          Margin="8,6"
+                          ColumnDefinitions="2*,Auto"
+                          RowDefinitions="Auto,Auto,Auto">
+                        <TextBlock
+                            Text="{Binding ServiceId}"
+                            FontWeight="SemiBold"
+                            AutomationProperties.Name="{Binding AccessibilityLabel}"
+                            AutomationProperties.AutomationId="{Binding AutomationId}" />
+                        <TextBlock
+                            Grid.Column="1"
+                            Margin="16,0,0,0"
+                            Text="{Binding StateLabel}"
+                            FontWeight="SemiBold" />
+                        <TextBlock
+                            Grid.Row="1"
+                            Grid.ColumnSpan="2"
+                            Text="{Binding SafeDetail}"
+                            TextWrapping="Wrap" />
+                        <TextBlock
+                            Grid.Row="2"
+                            Grid.ColumnSpan="2"
+                            IsVisible="{Binding HasStableFailureCode}"
+                            Text="{Binding StableFailureCode, StringFormat='Stable error code: {0}'}"
+                            TextWrapping="Wrap" />
+                      </Grid>
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+              </Grid>
+            </GroupBox>
+
+            <Expander
+                x:Name="RuntimeDetailsExpander"
+                Header="Runtime details"
+                IsExpanded="False"
+                TabIndex="8"
+                AutomationProperties.Name="Runtime diagnostic details"
+                AutomationProperties.AutomationId="RuntimeDetailsDisclosure">
+              <Grid
+                  Margin="8"
+                  ColumnDefinitions="Auto,*"
+                  RowDefinitions="Auto,Auto,Auto,Auto">
+                <TextBlock Text="Full boot identity" FontWeight="SemiBold" />
+                <TextBlock
+                    Grid.Column="1"
+                    Margin="12,0,0,0"
+                    Text="{Binding RuntimeHealth.RuntimeBootId}"
+                    TextWrapping="Wrap" />
+                <TextBlock Grid.Row="1" Text="Runtime version" FontWeight="SemiBold" />
+                <TextBlock
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    Margin="12,0,0,0"
+                    Text="{Binding RuntimeHealth.RuntimeProductVersion}"
+                    TextWrapping="Wrap" />
+                <TextBlock Grid.Row="2" Text="Stable error code" FontWeight="SemiBold" />
+                <TextBlock
+                    Grid.Row="2"
+                    Grid.Column="1"
+                    Margin="12,0,0,0"
+                    Text="{Binding RuntimeHealth.StableErrorCodeDisplay}"
+                    TextWrapping="Wrap" />
+                <TextBlock Grid.Row="3" Text="Projection timestamp" FontWeight="SemiBold" />
+                <TextBlock
+                    Grid.Row="3"
+                    Grid.Column="1"
+                    Margin="12,0,0,0"
+                    Text="{Binding RuntimeHealth.GeneratedUnixTimeMilliseconds}"
+                    TextWrapping="Wrap" />
+              </Grid>
+            </Expander>
           </StackPanel>
         </GroupBox>
       </StackPanel>
@@ -148,9 +333,9 @@
       <Grid ColumnDefinitions="*,Auto">
         <TextBlock
             x:Name="StatusBarText"
-            Text="{Binding StatusBarText}"
+            Text="{Binding RuntimeHealth.StatusBarText}"
             TextWrapping="Wrap"
-            AutomationProperties.Name="Offline. Runtime unavailable. No project open."
+            AutomationProperties.Name="{Binding RuntimeHealth.StatusBarText}"
             AutomationProperties.AutomationId="DesktopStatusBar" />
         <TextBlock
             Grid.Column="1"
