@@ -1,0 +1,10 @@
+{
+  "result": "Passed",
+  "transport": "grpc-over-windows-named-pipe",
+  "warmupCalls": 1,
+  "measuredCalls": 25,
+  "medianMilliseconds": 0.311,
+  "p95Milliseconds": 0.973,
+  "requiredP95Milliseconds": 250,
+  "payloadLogging": false
+}

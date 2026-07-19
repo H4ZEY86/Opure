@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Opure.Desktop.Contracts\Opure.Desktop.Contracts.csproj" />
+    <ProjectReference Include="..\Opure.Desktop.GatewayClient\Opure.Desktop.GatewayClient.csproj" />
   </ItemGroup>
 
 </Project>

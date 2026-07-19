@@ -8,7 +8,7 @@ public sealed class RuntimeExecutableBoundaryTests
     private static readonly string RepositoryRoot = FindRepositoryRoot();
 
     [Fact]
-    public void Runtime_references_only_runtime_contracts()
+    public void Runtime_references_only_contracts_and_local_ipc_adapters()
     {
         string projectPath = Path.Combine(
             RepositoryRoot,
@@ -25,13 +25,28 @@ public sealed class RuntimeExecutableBoundaryTests
             .OfType<string>()
             .ToArray();
 
-        Assert.Single(projectReferences);
-        Assert.EndsWith(
-            Path.Combine(
-                "Opure.Runtime.Contracts",
-                "Opure.Runtime.Contracts.csproj"),
-            projectReferences[0],
-            StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(3, projectReferences.Length);
+        Assert.Contains(
+            projectReferences,
+            reference => reference.EndsWith(
+                Path.Combine(
+                    "Opure.Runtime.Contracts",
+                    "Opure.Runtime.Contracts.csproj"),
+                StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(
+            projectReferences,
+            reference => reference.EndsWith(
+                Path.Combine(
+                    "Opure.Ipc.Abstractions",
+                    "Opure.Ipc.Abstractions.csproj"),
+                StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(
+            projectReferences,
+            reference => reference.EndsWith(
+                Path.Combine(
+                    "Opure.Ipc.NamedPipes.Windows",
+                    "Opure.Ipc.NamedPipes.Windows.csproj"),
+                StringComparison.OrdinalIgnoreCase));
 
         Assert.False(
             project.Descendants()
@@ -50,6 +65,26 @@ public sealed class RuntimeExecutableBoundaryTests
             "TcpListener",
             "Socket(",
             "WebRequest");
+    }
+
+    [Fact]
+    public void Named_pipe_adapter_contains_no_tcp_listener_configuration()
+    {
+        string adapterRoot = Path.Combine(
+            RepositoryRoot,
+            "src",
+            "Ipc",
+            "Opure.Ipc.NamedPipes.Windows");
+
+        string combinedSource = string.Join(
+            Environment.NewLine,
+            Directory.EnumerateFiles(adapterRoot, "*.cs")
+                .Select(File.ReadAllText));
+
+        Assert.Contains("ListenNamedPipe", combinedSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("ListenLocalhost", combinedSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("ListenAnyIP", combinedSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("TcpListener", combinedSource, StringComparison.Ordinal);
     }
 
     [Fact]

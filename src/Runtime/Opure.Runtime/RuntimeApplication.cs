@@ -1,4 +1,6 @@
 using Opure.Runtime.Contracts;
+using Opure.Ipc.Abstractions;
+using Opure.Ipc.NamedPipes.Windows;
 
 namespace Opure.Runtime;
 
@@ -28,6 +30,7 @@ public sealed class RuntimeApplication
         RuntimeLifecycle lifecycle = new();
         RuntimeDataRoot dataRoot;
         RuntimeBootSnapshot bootSnapshot;
+        NamedPipeRuntimeHealthServer? healthTransport = null;
         int sequence = 0;
 
         try
@@ -52,6 +55,15 @@ public sealed class RuntimeApplication
                 await startupHook(shutdownSignal.Token).ConfigureAwait(false);
             }
 
+            RuntimeHealthEndpoint endpoint = NamedPipeRuntimeHealthEndpoint.Create(
+                bootstrapEnvironment?.Channel ?? "Development",
+                bootSnapshot.BootId);
+
+            healthTransport = await NamedPipeRuntimeHealthServer.StartAsync(
+                endpoint,
+                new RuntimeHealthRequestHandler(bootSnapshot),
+                shutdownSignal.Token).ConfigureAwait(false);
+
             lifecycle.TransitionTo(RuntimeLifecycleState.Ready);
 
             await RuntimeEventWriter.WriteLifecycleAsync(
@@ -60,7 +72,8 @@ public sealed class RuntimeApplication
                 lifecycle.State,
                 bootSnapshot,
                 dataRoot.Scope,
-                shutdownReason: null).ConfigureAwait(false);
+                shutdownReason: null,
+                healthTransport.Endpoint.PipeName).ConfigureAwait(false);
 
             using CancellationTokenSource timerCancellation = new();
             Task timerTask = ScheduleAutomaticShutdownAsync(
@@ -80,7 +93,11 @@ public sealed class RuntimeApplication
                 lifecycle.State,
                 bootSnapshot,
                 dataRoot.Scope,
-                shutdownReason).ConfigureAwait(false);
+                shutdownReason,
+                healthTransport.Endpoint.PipeName).ConfigureAwait(false);
+
+            await healthTransport.DisposeAsync().ConfigureAwait(false);
+            healthTransport = null;
 
             using CancellationTokenSource shutdownTimeout = new(ShutdownTimeout);
             await CompleteShutdownAsync(shutdownTimeout.Token).ConfigureAwait(false);
@@ -130,6 +147,13 @@ public sealed class RuntimeApplication
                 exception.GetType().FullName).ConfigureAwait(false);
 
             return exitCode;
+        }
+        finally
+        {
+            if (healthTransport is not null)
+            {
+                await healthTransport.DisposeAsync().ConfigureAwait(false);
+            }
         }
     }
 

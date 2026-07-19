@@ -92,13 +92,21 @@ public sealed class DesktopExecutableBoundaryTests
             .OfType<string>()
             .ToArray();
 
-        Assert.Single(projectReferences);
-        Assert.EndsWith(
-            Path.Combine(
-                "Opure.Desktop.Contracts",
-                "Opure.Desktop.Contracts.csproj"),
-            projectReferences[0],
-            StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(2, projectReferences.Length);
+        Assert.Contains(
+            projectReferences,
+            reference => reference.EndsWith(
+                Path.Combine(
+                    "Opure.Desktop.Contracts",
+                    "Opure.Desktop.Contracts.csproj"),
+                StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(
+            projectReferences,
+            reference => reference.EndsWith(
+                Path.Combine(
+                    "Opure.Desktop.GatewayClient",
+                    "Opure.Desktop.GatewayClient.csproj"),
+                StringComparison.OrdinalIgnoreCase));
 
         Assert.DoesNotContain(
             projectReferences,

@@ -238,7 +238,8 @@ public sealed class BootstrapCoordinatorTests
                 {
                     @event = "runtime.lifecycle",
                     state = "ready",
-                    bootId = new string('b', 32)
+                    bootId = new string('b', 32),
+                    runtimeHealthPipe = $"opure-development-{new string('c', 32)}"
                 });
 
             return new FakeOwnedProcess(101, [ready]);

@@ -2,6 +2,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Opure.Runtime.Contracts\Opure.Runtime.Contracts.csproj" />
+    <ProjectReference Include="..\..\Ipc\Opure.Ipc.Abstractions\Opure.Ipc.Abstractions.csproj" />
+    <ProjectReference Include="..\..\Ipc\Opure.Ipc.NamedPipes.Windows\Opure.Ipc.NamedPipes.Windows.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

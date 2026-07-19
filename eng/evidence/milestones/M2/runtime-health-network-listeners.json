@@ -1,0 +1,12 @@
+{
+  "result": "Passed",
+  "captureMethod": "Get-NetTCPConnection and Get-NetUDPEndpoint by owning process",
+  "runtimeProcessId": 39568,
+  "tcpListenerCount": 0,
+  "udpEndpointCount": 0,
+  "namedPipePublished": true,
+  "channel": "development",
+  "endpointIdentityFormat": "opure-development-<32 lowercase hexadecimal random characters>",
+  "endpointContainsCredential": false,
+  "payloadLogging": false
+}

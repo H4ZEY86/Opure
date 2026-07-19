@@ -208,10 +208,18 @@ Run the complete FND-008 Runtime Health contract evidence gate:
 pwsh ./build.ps1 health-contract-policy
 ```
 
+Run the complete FND-009 named-pipe transport evidence gate:
+
+```powershell
+pwsh ./build.ps1 health-transport-policy
+```
+
 Bootstrap verifies absolute Runtime and Desktop executable paths and companion assembly identities before launch. It starts Runtime first, waits for explicit Runtime readiness, starts Desktop second, and shuts down Desktop before Runtime.
 
 Supervisor verification injects a bounded Runtime crash, a rapid crash loop and an abrupt Bootstrap termination. It verifies restart identity, exponential backoff, visible Safe Mode and Windows Job Object orphan cleanup without recording child environment values.
 
 Runtime Health contract verification compiles the protobuf client and server surfaces, exercises compatibility and semantic validation, enforces message and service-summary bounds, and emits the authoritative schema, compatibility matrix and golden messages under `eng/evidence/milestones/M2`.
+
+Named-pipe transport verification exercises the Desktop gateway round trip, deadline, cancellation, message-size and restart/reconnect paths. It records a bounded unary latency baseline and inspects the live Runtime process for TCP and UDP listeners without logging RPC payloads.
 
 Channel-specific data-root and one-time session material are passed through bounded environment variables. The session secret is not placed on command lines, written to disk or included in diagnostics.

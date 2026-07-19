@@ -18,7 +18,8 @@ public static class RuntimeEventWriter
         RuntimeLifecycleState state,
         RuntimeBootSnapshot bootSnapshot,
         string dataRootScope,
-        string? shutdownReason)
+        string? shutdownReason,
+        string? runtimeHealthPipe = null)
     {
         ArgumentNullException.ThrowIfNull(output);
         ArgumentNullException.ThrowIfNull(bootSnapshot);
@@ -35,6 +36,7 @@ public static class RuntimeEventWriter
                 contractVersion = bootSnapshot.ContractVersion,
                 dataRootScope,
                 shutdownReason,
+                runtimeHealthPipe,
                 networkAccess = "disabled"
             },
             SerializerOptions);

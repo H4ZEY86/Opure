@@ -165,31 +165,30 @@ Completed and committed:
 * FND-005 — disconnected Avalonia Desktop shell;
 * FND-006 — controlled Bootstrap executable;
 * FND-007 — Windows process supervision and Safe Mode.
+* FND-008 — versioned Runtime Health protobuf contract.
 
 Implemented and verified by the current change:
 
-* FND-008 — versioned Runtime Health protobuf contract.
+* FND-009 — named-pipe transport prototype.
 
-FND-008 includes:
+FND-009 includes:
 
-* an authoritative transport-independent protobuf schema;
-* generated client and server contract surfaces;
-* explicit revision negotiation;
-* typed Runtime mode, readiness, health and service states;
-* bounded request, response and service-summary policy;
-* stable safe error categories;
-* semantic validation for required boot and query identities;
-* unknown-field and unknown-enum compatibility tests;
-* golden request and response fixtures;
-* M2 schema, compatibility and golden-message evidence.
+* gRPC over an exact Windows named pipe with no TCP listener;
+* a transport-neutral adapter boundary;
+* random channel-qualified, boot-scoped endpoint identities;
+* Bootstrap endpoint validation and Desktop handoff;
+* a framework-neutral Desktop Gateway health projection;
+* stable unavailable, deadline, cancellation and size-limit behaviour;
+* clean endpoint rotation and reconnect after Runtime restart;
+* integration, architecture, process-listener and latency evidence.
 
-Named-pipe transport, authentication and live Desktop calls are deliberately deferred. The next planned ticket is:
+Named-pipe ACLs and session authentication are deliberately deferred. The next planned ticket is:
 
 ```text
-FND-009 — Implement Named-Pipe Transport Prototype
+FND-010 — Add Named-Pipe Session Authentication
 ```
 
-Do not assume FND-008 is complete until the Runtime Health contract verifier passes and the changes are reviewed, committed and pushed.
+Do not assume FND-009 is complete until the Runtime Health transport verifier passes and the changes are reviewed, committed and pushed.
 
 ## Build policy
 

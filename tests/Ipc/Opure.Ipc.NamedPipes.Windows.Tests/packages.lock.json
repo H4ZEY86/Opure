@@ -184,6 +184,18 @@
           "xunit.v3.runner.common": "[3.2.2]"
         }
       },
+      "opure.desktop.contracts": {
+        "type": "Project"
+      },
+      "opure.desktop.gatewayclient": {
+        "type": "Project",
+        "dependencies": {
+          "Opure.Desktop.Contracts": "[1.0.0, )",
+          "Opure.Ipc.Abstractions": "[1.0.0, )",
+          "Opure.Ipc.NamedPipes.Windows": "[1.0.0, )",
+          "Opure.Runtime.Contracts": "[1.0.0, )"
+        }
+      },
       "opure.ipc.abstractions": {
         "type": "Project",
         "dependencies": {
@@ -196,14 +208,6 @@
           "Grpc.AspNetCore.Server": "[2.80.0, )",
           "Grpc.Net.Client": "[2.80.0, )",
           "Opure.Ipc.Abstractions": "[1.0.0, )",
-          "Opure.Runtime.Contracts": "[1.0.0, )"
-        }
-      },
-      "opure.runtime": {
-        "type": "Project",
-        "dependencies": {
-          "Opure.Ipc.Abstractions": "[1.0.0, )",
-          "Opure.Ipc.NamedPipes.Windows": "[1.0.0, )",
           "Opure.Runtime.Contracts": "[1.0.0, )"
         }
       },

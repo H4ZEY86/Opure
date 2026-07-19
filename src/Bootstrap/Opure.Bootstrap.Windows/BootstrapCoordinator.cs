@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 
 namespace Opure.Bootstrap.Windows;
@@ -12,6 +13,10 @@ internal sealed record BootstrapPlan(
     BootstrapRestartPolicy? RuntimeRestartPolicy = null,
     TimeSpan? RuntimeTestCrashAfterReadyDelay = null,
     int RuntimeTestCrashCount = 0);
+
+internal sealed record RuntimeEndpointDescriptor(
+    string BootId,
+    string PipeName);
 
 internal sealed class BootstrapCoordinator
 {
@@ -102,7 +107,8 @@ internal sealed class BootstrapCoordinator
                     plan,
                     BootstrapSupervisorMode.Normal,
                     restartCount: 0,
-                    runtimeAvailable: true).ConfigureAwait(false);
+                    runtimeAvailable: true,
+                    runtime.RuntimeEndpoint).ConfigureAwait(false);
             }
             catch (Exception exception)
             {
@@ -251,7 +257,8 @@ internal sealed class BootstrapCoordinator
                         plan,
                         BootstrapSupervisorMode.Normal,
                         restartBudget.TotalAttempts,
-                        runtimeAvailable: true).ConfigureAwait(false);
+                        runtimeAvailable: true,
+                        runtime.RuntimeEndpoint).ConfigureAwait(false);
                 }
                 catch (Exception exception)
                 {
@@ -403,7 +410,8 @@ internal sealed class BootstrapCoordinator
                 plan,
                 BootstrapSupervisorMode.SafeMode,
                 restartCount,
-                runtimeAvailable: false).ConfigureAwait(false);
+                runtimeAvailable: false,
+                runtimeEndpoint: null).ConfigureAwait(false);
 
             BootstrapObservedEvent observed = await WaitForDesktopOrCancellationAsync(
                 safeModeDesktop.Process,
@@ -490,11 +498,11 @@ internal sealed class BootstrapCoordinator
                 identity,
                 plan.RuntimeIdentity).ConfigureAwait(false);
 
-            string runtimeBootId;
+            RuntimeEndpointDescriptor runtimeEndpoint;
 
             try
             {
-                runtimeBootId = await WaitForRuntimeReadyAsync(
+                runtimeEndpoint = await WaitForRuntimeReadyAsync(
                     process,
                     cancellationToken).ConfigureAwait(false);
             }
@@ -508,7 +516,7 @@ internal sealed class BootstrapCoordinator
                 throw new BootstrapRuntimeReadinessException(exception);
             }
 
-            identity = identity.WithBootId(runtimeBootId);
+            identity = identity.WithBootId(runtimeEndpoint.BootId);
 
             await BootstrapEventWriter.WriteRuntimeReadyAsync(
                 output,
@@ -518,7 +526,8 @@ internal sealed class BootstrapCoordinator
                 process,
                 identity,
                 errorTask,
-                DrainOutputAsync(process));
+                DrainOutputAsync(process),
+                runtimeEndpoint);
         }
         catch
         {
@@ -544,7 +553,8 @@ internal sealed class BootstrapCoordinator
         BootstrapPlan plan,
         BootstrapSupervisorMode mode,
         int restartCount,
-        bool runtimeAvailable)
+        bool runtimeAvailable,
+        RuntimeEndpointDescriptor? runtimeEndpoint)
     {
         IReadOnlyDictionary<string, string> environment =
             CreateAttemptEnvironment(
@@ -552,7 +562,8 @@ internal sealed class BootstrapCoordinator
                 mode,
                 restartCount,
                 runtimeAvailable,
-                rotateSession: false);
+                rotateSession: false,
+                runtimeEndpoint);
 
         IBootstrapOwnedProcess process = launcher.Start(
             CreateDesktopRequest(plan, environment));
@@ -644,7 +655,8 @@ internal sealed class BootstrapCoordinator
         BootstrapSupervisorMode mode,
         int restartCount,
         bool runtimeAvailable,
-        bool rotateSession)
+        bool rotateSession,
+        RuntimeEndpointDescriptor? runtimeEndpoint = null)
     {
         Dictionary<string, string> environment = new(
             source,
@@ -663,6 +675,12 @@ internal sealed class BootstrapCoordinator
             BootstrapSession session = BootstrapSession.Create();
             environment["OPURE_BOOTSTRAP_SESSION_ID"] = session.SessionId;
             environment["OPURE_BOOTSTRAP_SESSION_SECRET"] = session.SessionSecret;
+        }
+
+        if (runtimeEndpoint is not null)
+        {
+            environment["OPURE_RUNTIME_PIPE_NAME"] = runtimeEndpoint.PipeName;
+            environment["OPURE_RUNTIME_BOOT_ID"] = runtimeEndpoint.BootId;
         }
 
         return environment;
@@ -712,7 +730,7 @@ internal sealed class BootstrapCoordinator
             arguments);
     }
 
-    private static async Task<string> WaitForRuntimeReadyAsync(
+    private static async Task<RuntimeEndpointDescriptor> WaitForRuntimeReadyAsync(
         IBootstrapOwnedProcess runtime,
         CancellationToken cancellationToken)
     {
@@ -775,22 +793,44 @@ internal sealed class BootstrapCoordinator
                 continue;
             }
 
-            if (!root.TryGetProperty("bootId", out JsonElement bootIdElement))
+            if (!root.TryGetProperty("bootId", out JsonElement bootIdElement) ||
+                !root.TryGetProperty(
+                    "runtimeHealthPipe",
+                    out JsonElement pipeNameElement))
             {
                 throw new InvalidDataException(
-                    "Runtime readiness event omitted its boot identity.");
+                    "Runtime readiness event omitted its endpoint identity.");
             }
 
             string? bootId = bootIdElement.GetString();
+            string? pipeName = pipeNameElement.GetString();
 
-            if (string.IsNullOrWhiteSpace(bootId))
+            if (!IsOpaqueIdentifier(bootId) || !IsBoundedPipeName(pipeName))
             {
                 throw new InvalidDataException(
-                    "Runtime readiness event contained an invalid boot identity.");
+                    "Runtime readiness event contained an invalid endpoint identity.");
             }
 
-            return bootId;
+            return new RuntimeEndpointDescriptor(bootId, pipeName);
         }
+    }
+
+    private static bool IsOpaqueIdentifier(
+        [NotNullWhen(true)] string? value)
+    {
+        return value is { Length: 32 } &&
+            value.All(character =>
+                character is >= '0' and <= '9' or >= 'a' and <= 'f');
+    }
+
+    private static bool IsBoundedPipeName(
+        [NotNullWhen(true)] string? value)
+    {
+        return value is { Length: >= 48 and <= 72 } &&
+            value.StartsWith("opure-", StringComparison.Ordinal) &&
+            value.All(character =>
+                character is >= '0' and <= '9' or
+                    >= 'a' and <= 'z' or '-');
     }
 
     private static async Task<BootstrapObservedEvent> WaitForObservedEventAsync(
@@ -936,7 +976,8 @@ internal sealed class BootstrapCoordinator
         IBootstrapOwnedProcess Process,
         BootstrapSupervisedProcessIdentity Identity,
         Task<string> ErrorDrainTask,
-        Task OutputDrainTask);
+        Task OutputDrainTask,
+        RuntimeEndpointDescriptor? RuntimeEndpoint = null);
 
     private sealed class BootstrapRuntimeReadinessException : Exception
     {

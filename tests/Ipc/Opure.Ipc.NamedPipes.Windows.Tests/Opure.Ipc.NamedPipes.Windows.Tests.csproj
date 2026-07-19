@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Desktop\Opure.Desktop.Contracts\Opure.Desktop.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\src\Desktop\Opure.Desktop.GatewayClient\Opure.Desktop.GatewayClient.csproj" />
+    <ProjectReference Include="..\..\..\src\Ipc\Opure.Ipc.Abstractions\Opure.Ipc.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\src\Ipc\Opure.Ipc.NamedPipes.Windows\Opure.Ipc.NamedPipes.Windows.csproj" />
+    <ProjectReference Include="..\..\..\src\Runtime\Opure.Runtime.Contracts\Opure.Runtime.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

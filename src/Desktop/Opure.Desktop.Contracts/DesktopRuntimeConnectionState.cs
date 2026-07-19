@@ -5,5 +5,6 @@ namespace Opure.Desktop.Contracts;
 /// </summary>
 public enum DesktopRuntimeConnectionState
 {
-    Unavailable = 0
+    Unavailable = 0,
+    Connected = 1
 }

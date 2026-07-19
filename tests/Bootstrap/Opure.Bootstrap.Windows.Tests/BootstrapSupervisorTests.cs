@@ -384,7 +384,8 @@ public sealed class BootstrapSupervisorTests
                 {
                     @event = "runtime.lifecycle",
                     state = "ready",
-                    bootId = Guid.NewGuid().ToString("N")
+                    bootId = Guid.NewGuid().ToString("N"),
+                    runtimeHealthPipe = $"opure-development-{new string('c', 32)}"
                 });
 
             return new FakeOwnedProcess(

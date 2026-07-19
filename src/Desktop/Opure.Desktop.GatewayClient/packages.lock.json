@@ -29,6 +29,9 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.0"
         }
       },
+      "opure.desktop.contracts": {
+        "type": "Project"
+      },
       "opure.ipc.abstractions": {
         "type": "Project",
         "dependencies": {
