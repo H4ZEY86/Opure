@@ -162,47 +162,34 @@ Completed and committed:
 * FND-002 — central build policy;
 * FND-003 — authoritative version source;
 * FND-004 — minimal Runtime executable and lifecycle;
-* FND-005 — disconnected Avalonia Desktop shell.
+* FND-005 — disconnected Avalonia Desktop shell;
+* FND-006 — controlled Bootstrap executable;
+* FND-007 — Windows process supervision and Safe Mode.
 
-Currently in progress:
+Implemented and verified by the current change:
 
-* FND-006 — controlled Bootstrap executable.
+* FND-008 — versioned Runtime Health protobuf contract.
 
-FND-006 currently includes:
+FND-008 includes:
 
-* exact Runtime and Desktop path resolution;
-* executable and companion assembly verification;
-* SHA-256 binary identities;
-* channel-isolated roots;
-* random bounded bootstrap session material;
-* Runtime-before-Desktop launch;
-* explicit Runtime readiness detection;
-* Desktop-before-Runtime shutdown;
-* partial-start rollback;
-* Bootstrap, Runtime and architecture tests;
-* process-tree, channel-root and binary-identity evidence.
+* an authoritative transport-independent protobuf schema;
+* generated client and server contract surfaces;
+* explicit revision negotiation;
+* typed Runtime mode, readiness, health and service states;
+* bounded request, response and service-summary policy;
+* stable safe error categories;
+* semantic validation for required boot and query identities;
+* unknown-field and unknown-enum compatibility tests;
+* golden request and response fixtures;
+* M2 schema, compatibility and golden-message evidence.
 
-The latest FND-006 correction addresses an xUnit analyser rule in:
-
-```text
-tests\Runtime\Opure.Runtime.Tests\RuntimeBootstrapEnvironmentTests.cs
-```
-
-The blocking-reader regression test must use:
-
-```csharp
-TestContext.Current.CancellationToken
-```
-
-Do not assume FND-006 is complete until the complete Bootstrap verifier passes on Windows and the changes are committed and pushed.
-
-The next planned ticket after FND-006 is:
+Named-pipe transport, authentication and live Desktop calls are deliberately deferred. The next planned ticket is:
 
 ```text
-FND-007 — Add Process Supervisor
+FND-009 — Implement Named-Pipe Transport Prototype
 ```
 
-That ticket will introduce Windows Job Object ownership, process health, restart budgets, exponential backoff, crash classification and Safe Mode.
+Do not assume FND-008 is complete until the Runtime Health contract verifier passes and the changes are reviewed, committed and pushed.
 
 ## Build policy
 

@@ -9,7 +9,23 @@
         "contentHash": "ekrfhtcVnPp4rn3+41MCh2eTBC4DKxCtqZFeA1AF5fAIrMNHQGNaCzG8+HdrCLDmDuHpGfKvL1ukTtAK1iN+UA=="
       },
       "opure.runtime.contracts": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "Google.Protobuf": "[3.35.1, )",
+          "Grpc.Core.Api": "[2.80.0, )"
+        }
+      },
+      "Google.Protobuf": {
+        "type": "CentralTransitive",
+        "requested": "[3.35.1, )",
+        "resolved": "3.35.1",
+        "contentHash": "pxtkuXhR8svkvDTQrYew9GZQt6eWhblz/V/WKUFrQgkHYlQPsumJTeF6ppHRJpe6j9ffukkd5lQULiiKaek4xA=="
+      },
+      "Grpc.Core.Api": {
+        "type": "CentralTransitive",
+        "requested": "[2.80.0, )",
+        "resolved": "2.80.0",
+        "contentHash": "i/8s+MOrYa6n7BmZ5bilcbHk+EMJDQHm2MKLhwGAT+urQqlZ6cpjvSivYvuULjebuX+UKieLYZbLRCmVQxFRkw=="
       }
     }
   }

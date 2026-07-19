@@ -1,0 +1,20 @@
+{
+  "result": "Passed",
+  "contractRevision": 1,
+  "encoding": "protobuf-binary-hex-lowercase",
+  "request": {
+    "fixture": "runtime-health-request-v1.hex",
+    "bytes": 72,
+    "sha256": "c254c4b21322401c9323562f341334bf54f26362da1a483edd6b220c0844b720",
+    "hex": "080110011a20616161616161616161616161616161616161616161616161616161616161616122206262626262626262626262626262626262626262626262626262626262626262"
+  },
+  "response": {
+    "fixture": "runtime-health-response-v1.hex",
+    "bytes": 80,
+    "sha256": "b6b3403f4ea72fd171369a8fe8ac41618dbe633f313c57bc99c86c3d9ebbb252",
+    "hex": "0801124c0a0a302e312e302d746573741220636363636363636363636363636363636363636363636363636363636363636318012002280130013a140a0e72756e74696d652e6b65726e656c10031801"
+  },
+  "containsPaths": false,
+  "containsSecrets": false,
+  "containsRawExceptions": false
+}

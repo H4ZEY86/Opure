@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+package opure.runtime.health.v1;
+
+option csharp_namespace = "Opure.Runtime.Contracts.Health.V1";
+
+// Runtime Contracts owns this transport-independent health projection.
+service RuntimeHealthService {
+  rpc GetRuntimeHealth(GetRuntimeHealthRequest)
+      returns (GetRuntimeHealthResponse);
+}
+
+message GetRuntimeHealthRequest {
+  uint32 minimum_contract_revision = 1;
+  uint32 maximum_contract_revision = 2;
+  string query_id = 3;
+  string correlation_id = 4;
+}
+
+message GetRuntimeHealthResponse {
+  uint32 contract_revision = 1;
+
+  oneof outcome {
+    RuntimeHealthProjection health = 2;
+    RuntimeHealthError error = 3;
+  }
+}
+
+message RuntimeHealthProjection {
+  string product_version = 1;
+  string runtime_boot_id = 2;
+  RuntimeMode runtime_mode = 3;
+  RuntimeReadiness readiness = 4;
+  RuntimeHealthState overall_health = 5;
+  int64 generated_unix_time_milliseconds = 6;
+  repeated ServiceHealthSummary services = 7;
+}
+
+message ServiceHealthSummary {
+  string service_id = 1;
+  ServiceHealthState state = 2;
+  bool required_for_readiness = 3;
+  string safe_detail = 4;
+  string recent_failure_code = 5;
+}
+
+message RuntimeHealthError {
+  RuntimeHealthErrorCategory category = 1;
+  string code = 2;
+  string safe_message = 3;
+  bool retryable = 4;
+  bool recovery_required = 5;
+}
+
+enum RuntimeMode {
+  RUNTIME_MODE_UNSPECIFIED = 0;
+  RUNTIME_MODE_NORMAL = 1;
+  RUNTIME_MODE_SAFE_MODE = 2;
+  RUNTIME_MODE_RECOVERY_REQUIRED = 3;
+}
+
+enum RuntimeReadiness {
+  RUNTIME_READINESS_UNSPECIFIED = 0;
+  RUNTIME_READINESS_STARTING = 1;
+  RUNTIME_READINESS_READY = 2;
+  RUNTIME_READINESS_DEGRADED = 3;
+  RUNTIME_READINESS_NOT_READY = 4;
+  RUNTIME_READINESS_STOPPING = 5;
+}
+
+enum RuntimeHealthState {
+  RUNTIME_HEALTH_STATE_UNSPECIFIED = 0;
+  RUNTIME_HEALTH_STATE_HEALTHY = 1;
+  RUNTIME_HEALTH_STATE_DEGRADED = 2;
+  RUNTIME_HEALTH_STATE_RECOVERY_REQUIRED = 3;
+  RUNTIME_HEALTH_STATE_UNAVAILABLE = 4;
+}
+
+enum ServiceHealthState {
+  SERVICE_HEALTH_STATE_UNSPECIFIED = 0;
+  SERVICE_HEALTH_STATE_REGISTERED = 1;
+  SERVICE_HEALTH_STATE_STARTING = 2;
+  SERVICE_HEALTH_STATE_READY = 3;
+  SERVICE_HEALTH_STATE_DEGRADED = 4;
+  SERVICE_HEALTH_STATE_STOPPING = 5;
+  SERVICE_HEALTH_STATE_STOPPED = 6;
+  SERVICE_HEALTH_STATE_FAILED = 7;
+  SERVICE_HEALTH_STATE_DISABLED = 8;
+}
+
+enum RuntimeHealthErrorCategory {
+  RUNTIME_HEALTH_ERROR_CATEGORY_UNSPECIFIED = 0;
+  RUNTIME_HEALTH_ERROR_CATEGORY_INVALID_REQUEST = 1;
+  RUNTIME_HEALTH_ERROR_CATEGORY_INCOMPATIBLE_CONTRACT = 2;
+  RUNTIME_HEALTH_ERROR_CATEGORY_UNAVAILABLE = 3;
+  RUNTIME_HEALTH_ERROR_CATEGORY_INTERNAL = 4;
+}

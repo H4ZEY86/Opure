@@ -20,4 +20,10 @@
     <ProjectReference Include="..\..\..\src\Runtime\Opure.Runtime.Contracts\Opure.Runtime.Contracts.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None
+      Update="Fixtures\*.hex"
+      CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
