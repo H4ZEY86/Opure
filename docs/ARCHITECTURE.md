@@ -420,10 +420,42 @@ canonical-path lease prevents a second owning writer from being opened.
 
 The owning service remains authoritative for schema, SQL, health consequences
 and recovery. Malformed or wrongly identified files are preserved and reported
-with stable codes; they are never silently replaced. FND-014 deliberately does
-not create a Runtime database. Migrations, transactional outboxes, backup,
-restore, integrity scheduling and persistence-health publication remain later
-tickets, so ADR-0005 remains Proposed.
+with stable codes; they are never silently replaced. FND-014 deliberately did
+not create a Runtime database. Transactional outboxes, backup, restore,
+integrity scheduling and persistence-health publication remain later tickets,
+so ADR-0005 remains Proposed.
+
+### 9.4 Provisional M3 SQLite Migration Boundary
+
+Each owning service supplies one immutable, contiguous, forward-only migration
+catalogue to `SqliteMigrationRunner`. Every migration records a stable identifier,
+source and target version, deterministic SHA-256 checksum, description,
+reversibility, data-loss risk, free-space requirement and estimate class. The
+`__opure_migration_history` table is authoritative; `PRAGMA user_version` is a
+coarse compatibility marker updated in the same transaction. Opure never writes
+SQLite's internal `schema_version`.
+
+The runner holds the database's sole writer coordinator while it validates
+applied checksums and executes each missing migration in an immediate
+transaction. The schema change, history row and compatibility marker commit
+together. Before commit it runs `quick_check`, `foreign_key_check` and the
+service's versioned read-only scalar assertions. An unchanged current catalogue
+therefore validates without executing a migration again.
+
+Checksum mutation, inconsistent history, targeted validation failure and a
+newer unsupported schema produce stable recovery codes and block normal writes
+until the owning service presents a valid catalogue. A failed or cancelled
+active step rolls back and no database file or service table is automatically
+deleted. Cancellation is observed between migrations and statements; recovery
+then remains explicit rather than silently continuing.
+
+Material and destructive migrations require a verified receipt from the
+pre-migration Recovery Point hook. FND-015 defines and exercises that hook but
+does not implement the later backup product. The same runner can validate and
+migrate a restored database opened beneath a separate canonical staging root,
+leaving the source database untouched. Developers can inspect the catalogue,
+history and M3 reports or rerun `pwsh ./build.ps1 migration-policy`; migration
+intent/completion Trust receipts and transactional outboxes remain deferred.
 
 ---
 

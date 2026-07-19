@@ -1,0 +1,13 @@
+{
+  "schema": "opure.sqlite-migration-failure/1",
+  "result": "Passed",
+  "errorCode": "PERSISTENCE_MIGRATION_FAILED",
+  "startingSchemaVersion": 1,
+  "schemaVersionAfterFailure": 1,
+  "transientTableCount": 0,
+  "retainedRows": 1,
+  "migrationHistoryRows": 1,
+  "transactionRolledBack": true,
+  "normalWritesBlockedUntilRecovery": true,
+  "automaticDestructiveReset": false
+}

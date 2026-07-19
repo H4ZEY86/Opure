@@ -13,6 +13,21 @@ public static class SqlitePersistenceErrorCodes
     public const string WriterAlreadyOpen = "PERSISTENCE_WRITER_ALREADY_OPEN";
     public const string WriterBusy = "PERSISTENCE_WRITER_BUSY";
     public const string WriteFailed = "PERSISTENCE_WRITE_FAILED";
+    public const string MigrationCatalogueInvalid =
+        "PERSISTENCE_MIGRATION_CATALOGUE_INVALID";
+    public const string MigrationHistoryInvalid =
+        "PERSISTENCE_MIGRATION_HISTORY_INVALID";
+    public const string MigrationChecksumMismatch =
+        "PERSISTENCE_MIGRATION_CHECKSUM_MISMATCH";
+    public const string UnsupportedNewerSchema =
+        "PERSISTENCE_UNSUPPORTED_NEWER_SCHEMA";
+    public const string MigrationRecoveryPointRequired =
+        "PERSISTENCE_MIGRATION_RECOVERY_POINT_REQUIRED";
+    public const string MigrationFailed = "PERSISTENCE_MIGRATION_FAILED";
+    public const string SchemaValidationFailed =
+        "PERSISTENCE_SCHEMA_VALIDATION_FAILED";
+    public const string MigrationReadinessBlocked =
+        "PERSISTENCE_MIGRATION_READINESS_BLOCKED";
 }
 
 /// <summary>

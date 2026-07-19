@@ -171,30 +171,32 @@ Completed and committed:
 * FND-011 — Runtime Service Registry contract.
 * FND-012 — Service Lifecycle State Machine.
 * FND-013 — Runtime Health UI.
+* FND-014 — SQLite Persistence Library.
 
 Implemented and verified by the current change:
 
-* FND-014 — SQLite Persistence Library.
+* FND-015 — Add Migration Runner.
 
-FND-014 includes:
+FND-015 includes:
 
-* centrally pinned and audited Microsoft.Data.Sqlite and native SQLite dependencies;
-* canonical service-owned, channel-isolated database descriptors;
-* rejection of foreign owners, arbitrary options, UNC roots and reparse paths;
-* verified WAL, FULL synchronous, foreign-key and trusted-schema configuration;
-* positive application identity and malformed-file preservation;
-* explicit immediate transactions with commit and rollback behaviour;
-* one bounded writer gate and one process-wide writer lease per canonical database;
-* bounded open/close health and stable recovery error codes;
-* architecture tests preventing Desktop, Bootstrap and Runtime persistence references.
+* immutable contiguous forward-only service migration catalogues;
+* deterministic SHA-256 migration checksums and authoritative history;
+* transactional schema, history and `user_version` updates;
+* quick, foreign-key and versioned targeted schema validation;
+* checksum-mutation, inconsistent-history and newer-schema refusal;
+* migration health projected through the service database health contract;
+* normal-write blocking after failure until a valid catalogue is restored;
+* explicit verified pre-migration Recovery Point hooks for risky migrations;
+* staged restore-copy migration without modifying the source database;
+* migration catalogue, rollback and schema-validation evidence.
 
 The next planned ticket is:
 
 ```text
-FND-015 — Add Migration Runner
+FND-016 — Add Transactional Outbox
 ```
 
-Do not assume FND-014 is complete until the SQLite persistence verifier passes and the changes are reviewed, committed and pushed.
+Do not assume FND-015 is complete until the SQLite migration verifier passes and the changes are reviewed, committed and pushed.
 
 ## Build policy
 

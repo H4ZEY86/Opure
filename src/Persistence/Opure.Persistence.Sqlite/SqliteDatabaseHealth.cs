@@ -6,6 +6,15 @@ public enum SqliteDatabaseHealthState
     Closed = 1
 }
 
+public enum SqliteMigrationHealthState
+{
+    NotChecked = 0,
+    Migrating = 1,
+    Current = 2,
+    RecoveryRequired = 3,
+    UnsupportedNewerSchema = 4
+}
+
 /// <summary>
 /// Contains bounded operational health for one service-owned database.
 /// </summary>
@@ -20,7 +29,11 @@ public sealed record SqliteDatabaseHealth(
     bool ForeignKeysEnabled,
     bool TrustedSchemaEnabled,
     string SynchronousMode,
-    int BusyTimeoutMilliseconds);
+    int BusyTimeoutMilliseconds,
+    SqliteMigrationHealthState MigrationState =
+        SqliteMigrationHealthState.NotChecked,
+    int SchemaVersion = 0,
+    int TargetSchemaVersion = 0);
 
 /// <summary>
 /// Records the managed provider and actual loaded native SQLite identity.

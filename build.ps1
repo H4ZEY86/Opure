@@ -3,7 +3,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('restore', 'build', 'test', 'verify', 'policy', 'version', 'version-policy', 'runtime', 'runtime-policy', 'desktop', 'desktop-policy', 'bootstrap', 'bootstrap-policy', 'supervisor-policy', 'health-contract-policy', 'health-transport-policy', 'health-session-policy', 'service-registry-policy', 'service-lifecycle-policy', 'runtime-health-ui-policy', 'persistence-policy')]
+    [ValidateSet('restore', 'build', 'test', 'verify', 'policy', 'version', 'version-policy', 'runtime', 'runtime-policy', 'desktop', 'desktop-policy', 'bootstrap', 'bootstrap-policy', 'supervisor-policy', 'health-contract-policy', 'health-transport-policy', 'health-session-policy', 'service-registry-policy', 'service-lifecycle-policy', 'runtime-health-ui-policy', 'persistence-policy', 'migration-policy')]
     [string] $Target = 'verify',
 
     [Parameter()]
@@ -125,5 +125,9 @@ switch ($Target) {
 
     'persistence-policy' {
         & (Join-Path $PSScriptRoot 'eng\verify-sqlite-persistence.ps1')
+    }
+
+    'migration-policy' {
+        & (Join-Path $PSScriptRoot 'eng\verify-sqlite-migrations.ps1')
     }
 }

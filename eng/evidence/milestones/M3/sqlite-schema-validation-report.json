@@ -1,0 +1,32 @@
+{
+  "schema": "opure.sqlite-schema-validation/1",
+  "result": "Passed",
+  "currentVersion": 2,
+  "quickCheck": "ok",
+  "foreignKeyCheckRows": 0,
+  "targetedChecks": [
+    {
+      "schemaVersion": 1,
+      "validationId": "project-table-present",
+      "expectedScalar": "1",
+      "actualScalar": "1",
+      "passed": true
+    },
+    {
+      "schemaVersion": 2,
+      "validationId": "project-table-present",
+      "expectedScalar": "1",
+      "actualScalar": "1",
+      "passed": true
+    },
+    {
+      "schemaVersion": 2,
+      "validationId": "project-status-present",
+      "expectedScalar": "1",
+      "actualScalar": "1",
+      "passed": true
+    }
+  ],
+  "migrationState": "Current",
+  "stagedRestoreCopySupported": true
+}

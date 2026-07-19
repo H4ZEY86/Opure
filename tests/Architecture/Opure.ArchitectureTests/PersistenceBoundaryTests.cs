@@ -111,6 +111,63 @@ public sealed class PersistenceBoundaryTests
         Assert.DoesNotContain("ATTACH DATABASE", source, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Migration_coordination_remains_inside_the_persistence_boundary()
+    {
+        string[] unrelatedSourceRoots =
+        [
+            Path.Combine(RepositoryRoot, "src", "Bootstrap"),
+            Path.Combine(RepositoryRoot, "src", "Desktop"),
+            Path.Combine(RepositoryRoot, "src", "Runtime")
+        ];
+
+        foreach (string sourceRoot in unrelatedSourceRoots)
+        {
+            string source = string.Join(
+                Environment.NewLine,
+                Directory.EnumerateFiles(
+                        sourceRoot,
+                        "*.cs",
+                        SearchOption.AllDirectories)
+                    .Select(File.ReadAllText));
+
+            Assert.DoesNotContain(
+                "SqliteMigrationRunner",
+                source,
+                StringComparison.Ordinal);
+            Assert.DoesNotContain(
+                "__opure_migration_history",
+                source,
+                StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public void Migration_runner_preserves_forward_only_recovery_rules()
+    {
+        string sourceRoot = Path.Combine(
+            RepositoryRoot,
+            "src",
+            "Persistence",
+            "Opure.Persistence.Sqlite");
+        string source = string.Join(
+            Environment.NewLine,
+            Directory.EnumerateFiles(sourceRoot, "*.cs")
+                .Select(File.ReadAllText));
+
+        Assert.Contains(
+            "__opure_migration_history",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains("SHA256.HashData", source, StringComparison.Ordinal);
+        Assert.Contains("PRAGMA user_version", source, StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "PRAGMA schema_version =",
+            source,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("File.Delete", source, StringComparison.Ordinal);
+    }
+
     private static string FindRepositoryRoot()
     {
         DirectoryInfo? directory = new(AppContext.BaseDirectory);

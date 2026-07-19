@@ -1,0 +1,33 @@
+{
+  "schema": "opure.sqlite-migration-catalogue/1",
+  "result": "Passed",
+  "forwardOnly": true,
+  "targetSchemaVersion": 2,
+  "historyTable": "__opure_migration_history",
+  "migrations": [
+    {
+      "id": "create-projects",
+      "sourceVersion": 0,
+      "targetVersion": 1,
+      "checksum": "43e798e13c51b9ab59d9f6f2faf849b22e37315d9a14d9f99cb55e057a457821",
+      "description": "Creates the authoritative project table.",
+      "reversible": false,
+      "dataLossRisk": "None",
+      "requiredFreeSpaceBytes": 0,
+      "estimateClass": "Small",
+      "requiresRecoveryPoint": false
+    },
+    {
+      "id": "add-project-status",
+      "sourceVersion": 1,
+      "targetVersion": 2,
+      "checksum": "09aacccc1a66d4c36c30831d9ec7554924059f8cf4993ec98b6555ed79d57a7b",
+      "description": "Adds an explicit project status.",
+      "reversible": false,
+      "dataLossRisk": "None",
+      "requiredFreeSpaceBytes": 0,
+      "estimateClass": "Small",
+      "requiresRecoveryPoint": false
+    }
+  ]
+}
