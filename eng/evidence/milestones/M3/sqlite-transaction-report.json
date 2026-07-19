@@ -1,0 +1,10 @@
+{
+  "schema": "opure.sqlite-transaction-report/1",
+  "result": "Passed",
+  "committedTransactionRows": 8,
+  "rolledBackTransactionRows": 0,
+  "concurrentWriteRequests": 8,
+  "maximumConcurrentWriters": 1,
+  "transactionMode": "Immediate",
+  "busyTimeoutMilliseconds": 2000
+}

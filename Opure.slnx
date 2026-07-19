@@ -12,6 +12,9 @@
     <Project Path="src/Ipc/Opure.Ipc.Abstractions/Opure.Ipc.Abstractions.csproj" />
     <Project Path="src/Ipc/Opure.Ipc.NamedPipes.Windows/Opure.Ipc.NamedPipes.Windows.csproj" />
   </Folder>
+  <Folder Name="/src/Persistence/">
+    <Project Path="src/Persistence/Opure.Persistence.Sqlite/Opure.Persistence.Sqlite.csproj" />
+  </Folder>
   <Folder Name="/src/Runtime/">
     <Project Path="src/Runtime/Opure.Runtime.Contracts/Opure.Runtime.Contracts.csproj" />
     <Project Path="src/Runtime/Opure.Runtime/Opure.Runtime.csproj" />
@@ -28,6 +31,9 @@
   </Folder>
   <Folder Name="/tests/Ipc/">
     <Project Path="tests/Ipc/Opure.Ipc.NamedPipes.Windows.Tests/Opure.Ipc.NamedPipes.Windows.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Persistence/">
+    <Project Path="tests/Persistence/Opure.Persistence.Sqlite.Tests/Opure.Persistence.Sqlite.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Runtime/">
     <Project Path="tests/Runtime/Opure.Runtime.Tests/Opure.Runtime.Tests.csproj" />

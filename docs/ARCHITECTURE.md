@@ -402,6 +402,29 @@ loop; reopening starts a new refresh and the Gateway resolves endpoint and
 session material for each query. Subscription-based updates remain deferred
 until the Desktop Gateway subscription contract exists.
 
+### 9.3 Provisional M3 SQLite Persistence Boundary
+
+`Opure.Persistence.Sqlite` is the shared trusted infrastructure boundary for
+service-owned SQLite databases. It owns no domain state itself. A service creates
+one authority from the Runtime-supplied absolute channel data root and its stable
+service identifier; the authority derives the only permitted path beneath
+`services/<owner>/databases`. A connection factory rejects foreign descriptors,
+UNC roots and reparse paths before opening a database.
+
+The fixed authoritative profile uses private non-pooled connections, verified
+foreign keys, disabled trusted schema, WAL, FULL synchronous durability, a
+bounded busy timeout, disabled memory mapping, an application identifier and a
+quick integrity check. Callers cannot append connection-string options. Each
+open database has one immediate-transaction writer gate, while a process-wide
+canonical-path lease prevents a second owning writer from being opened.
+
+The owning service remains authoritative for schema, SQL, health consequences
+and recovery. Malformed or wrongly identified files are preserved and reported
+with stable codes; they are never silently replaced. FND-014 deliberately does
+not create a Runtime database. Migrations, transactional outboxes, backup,
+restore, integrity scheduling and persistence-health publication remain later
+tickets, so ADR-0005 remains Proposed.
+
 ---
 
 ## 10. Service Ownership

@@ -170,29 +170,31 @@ Completed and committed:
 * FND-010 — named-pipe session authentication.
 * FND-011 — Runtime Service Registry contract.
 * FND-012 — Service Lifecycle State Machine.
+* FND-013 — Runtime Health UI.
 
 Implemented and verified by the current change:
 
-* FND-013 — Runtime Health UI.
+* FND-014 — SQLite Persistence Library.
 
-FND-013 includes:
+FND-014 includes:
 
-* a live, registry-backed Runtime and service-health projection;
-* explicit Connected, Disconnected, Starting, Ready, Degraded and Safe Mode states;
-* authenticated asynchronous refresh with serialised bounded reconnect;
-* stale last-snapshot retention without treating it as current authority;
-* safe boot-identity display and exact clipboard copy;
-* stable service failure codes without exceptions, secrets or implementation detail;
-* keyboard, UI Automation, progressive-disclosure and high-contrast semantics;
-* native-window, reconnect and 64-row performance evidence.
+* centrally pinned and audited Microsoft.Data.Sqlite and native SQLite dependencies;
+* canonical service-owned, channel-isolated database descriptors;
+* rejection of foreign owners, arbitrary options, UNC roots and reparse paths;
+* verified WAL, FULL synchronous, foreign-key and trusted-schema configuration;
+* positive application identity and malformed-file preservation;
+* explicit immediate transactions with commit and rollback behaviour;
+* one bounded writer gate and one process-wide writer lease per canonical database;
+* bounded open/close health and stable recovery error codes;
+* architecture tests preventing Desktop, Bootstrap and Runtime persistence references.
 
 The next planned ticket is:
 
 ```text
-FND-014 — Add SQLite Persistence Library
+FND-015 — Add Migration Runner
 ```
 
-Do not assume FND-013 is complete until the Runtime Health UI verifier passes and the changes are reviewed, committed and pushed.
+Do not assume FND-014 is complete until the SQLite persistence verifier passes and the changes are reviewed, committed and pushed.
 
 ## Build policy
 
