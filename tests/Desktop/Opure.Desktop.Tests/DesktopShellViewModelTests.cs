@@ -34,6 +34,25 @@ public sealed class DesktopShellViewModelTests
         Assert.Equal("Runtime unavailable", viewModel.RuntimeStatusTitle);
     }
 
+    [Fact]
+    public void Safe_mode_projection_is_visible_and_bounded()
+    {
+        DesktopSupervisorProjection supervisor = new(
+            DesktopSupervisorMode.SafeMode,
+            "Quarantined",
+            RuntimeRestartCount: 3);
+
+        DesktopShellSnapshot snapshot =
+            new DisconnectedDesktopShellStateSource(
+                "0.1.0-test",
+                supervisor).GetCurrent();
+
+        Assert.Equal("Opure — Safe Mode", snapshot.WindowTitle);
+        Assert.Equal("Safe Mode", snapshot.RuntimeStatusTitle);
+        Assert.Contains("restart budget was exhausted", snapshot.RuntimeStatusDetail);
+        Assert.Contains("3 restart attempts", snapshot.StatusBarText);
+    }
+
     private static DesktopShellViewModel CreateViewModel()
     {
         DesktopShellSnapshot snapshot =

@@ -3,7 +3,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('restore', 'build', 'test', 'verify', 'policy', 'version', 'version-policy', 'runtime', 'runtime-policy', 'desktop', 'desktop-policy')]
+    [ValidateSet('restore', 'build', 'test', 'verify', 'policy', 'version', 'version-policy', 'runtime', 'runtime-policy', 'desktop', 'desktop-policy', 'bootstrap', 'bootstrap-policy', 'supervisor-policy')]
     [string] $Target = 'verify',
 
     [Parameter()]
@@ -20,7 +20,11 @@ param(
 
     [Parameter()]
     [ValidateRange(0, 60000)]
-    [int] $DesktopDurationMilliseconds = 0
+    [int] $DesktopDurationMilliseconds = 0,
+
+    [Parameter()]
+    [ValidateRange(0, 60000)]
+    [int] $BootstrapDurationMilliseconds = 0
 )
 
 Set-StrictMode -Version Latest
@@ -78,5 +82,20 @@ switch ($Target) {
 
     'desktop-policy' {
         & (Join-Path $PSScriptRoot 'eng\verify-desktop.ps1')
+    }
+
+    'bootstrap' {
+        & (Join-Path $PSScriptRoot 'eng\run-bootstrap.ps1') `
+            -Configuration $Configuration `
+            -Channel $BuildChannel `
+            -DesktopCloseAfterMilliseconds $BootstrapDurationMilliseconds
+    }
+
+    'bootstrap-policy' {
+        & (Join-Path $PSScriptRoot 'eng\verify-bootstrap.ps1')
+    }
+
+    'supervisor-policy' {
+        & (Join-Path $PSScriptRoot 'eng\verify-supervisor.ps1')
     }
 }

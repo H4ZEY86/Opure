@@ -19,7 +19,8 @@ public sealed class RuntimeApplication
 
     public async Task<RuntimeExitCode> RunAsync(
         RuntimeOptions options,
-        RuntimeShutdownSignal shutdownSignal)
+        RuntimeShutdownSignal shutdownSignal,
+        RuntimeBootstrapEnvironment? bootstrapEnvironment = null)
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(shutdownSignal);
@@ -33,7 +34,8 @@ public sealed class RuntimeApplication
         {
             dataRoot = RuntimeDataRootResolver.Resolve(
                 options.ExplicitDataRoot,
-                allowTestOverride: options.ExplicitDataRoot is not null);
+                allowTestOverride: options.ExplicitDataRoot is not null,
+                bootstrapEnvironment);
 
             bootSnapshot = RuntimeProductIdentity.CreateBootSnapshot();
 

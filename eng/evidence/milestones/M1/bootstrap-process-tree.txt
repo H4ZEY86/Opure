@@ -1,0 +1,14 @@
+Opure Bootstrap Process Tree
+============================
+BootstrapProcessId: 48424
+RuntimeProcessId: 43632
+DesktopProcessId: 46392
+StartOrder: Runtime, Desktop
+ShutdownOrder: Desktop, Runtime
+RuntimeParentCorroboratedByCim: True
+DesktopParentCorroboratedByCim: True
+ChildPidSource: Bootstrap structured lifecycle diagnostics
+ChildrenRemainingAfterExit: 0
+ElapsedMilliseconds: 4373
+ExitCode: 0
+Result: Passed

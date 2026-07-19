@@ -1,0 +1,19 @@
+{
+  "result": "Passed",
+  "runtime": {
+    "executableName": "Opure.Runtime.exe",
+    "assemblyName": "Opure.Runtime",
+    "productVersion": "0.1.0.3-preview.0+5cc8c53d624d",
+    "executableSha256": "d454e4071206ce0765892145d0e85e138e15154e53613d2374239174d742a635",
+    "bootId": "d444189a174744918b46c9975e612b33"
+  },
+  "desktop": {
+    "executableName": "Opure.Desktop.exe",
+    "assemblyName": "Opure.Desktop",
+    "productVersion": "0.1.0.3-preview.0+5cc8c53d624d",
+    "executableSha256": "8daa567d8d9da424e8fe507b04668f90e1c4b4c8ad272954cca50fda4d5d43b2"
+  },
+  "absolutePathsVerified": true,
+  "currentDirectorySearchUsed": false,
+  "sessionMaterialRecorded": false
+}

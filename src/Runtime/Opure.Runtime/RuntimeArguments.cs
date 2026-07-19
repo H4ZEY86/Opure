@@ -7,7 +7,8 @@ public sealed record RuntimeOptions(
     TimeSpan? AutomaticShutdownDelay,
     string? ExplicitDataRoot,
     bool TestStartupFailure,
-    bool ShowHelp);
+    bool ShowHelp,
+    TimeSpan? TestCrashAfterReadyDelay = null);
 
 public static class RuntimeArguments
 {
@@ -31,6 +32,7 @@ public static class RuntimeArguments
         int? shutdownAfterMilliseconds = null;
         string? explicitDataRoot = null;
         bool testStartupFailure = false;
+        int? testCrashAfterReadyMilliseconds = null;
         bool showHelp = false;
 
         for (int index = 0; index < arguments.Count; index++)
@@ -95,6 +97,30 @@ public static class RuntimeArguments
                     testStartupFailure = true;
                     break;
 
+                case "--test-crash-after-ready-ms":
+                    if (!testMode)
+                    {
+                        options = null;
+                        error = "--test-crash-after-ready-ms is available only to the Runtime test harness.";
+                        return false;
+                    }
+
+                    if (!TryReadValue(arguments, ref index, out string? crashValue) ||
+                        !int.TryParse(
+                            crashValue,
+                            NumberStyles.None,
+                            CultureInfo.InvariantCulture,
+                            out int parsedCrashMilliseconds) ||
+                        parsedCrashMilliseconds is < 50 or > 60_000)
+                    {
+                        options = null;
+                        error = "--test-crash-after-ready-ms must be between 50 and 60000.";
+                        return false;
+                    }
+
+                    testCrashAfterReadyMilliseconds = parsedCrashMilliseconds;
+                    break;
+
                 default:
                     options = null;
                     error = $"Unknown Runtime argument: {argument}";
@@ -110,7 +136,11 @@ public static class RuntimeArguments
             shutdownDelay,
             explicitDataRoot,
             testStartupFailure,
-            showHelp);
+            showHelp,
+            testCrashAfterReadyMilliseconds is null
+                ? null
+                : TimeSpan.FromMilliseconds(
+                    testCrashAfterReadyMilliseconds.Value));
 
         error = null;
         return true;

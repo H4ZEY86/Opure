@@ -126,7 +126,7 @@
                 Text="{Binding RuntimeStatusTitle}"
                 FontSize="18"
                 FontWeight="SemiBold"
-                AutomationProperties.Name="Runtime unavailable"
+                AutomationProperties.Name="{Binding RuntimeStatusTitle}"
                 AutomationProperties.AutomationId="RuntimeStatusTitle" />
             <TextBlock
                 x:Name="RuntimeStatusDetailText"

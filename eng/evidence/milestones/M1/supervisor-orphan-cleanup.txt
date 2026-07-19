@@ -1,0 +1,10 @@
+FND-007 Job Object Orphan Cleanup
+=================================
+BootstrapProcessId: 41048
+RuntimeProcessId: 45312
+DesktopProcessId: 17976
+Injection: Bootstrap process terminated without tree-kill
+JobLimit: KILL_ON_JOB_CLOSE
+BreakawayAllowed: False
+OwnedChildrenRemaining: 0
+Result: Passed

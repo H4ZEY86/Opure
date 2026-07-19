@@ -1,0 +1,332 @@
+{
+  "result": "Passed",
+  "expectedExitCode": 60,
+  "runtimeStartCount": 4,
+  "restartBudget": 3,
+  "safeModeEntered": true,
+  "diagnosticsContainEnvironmentCanary": false,
+  "events": [
+    {
+      "event": "bootstrap.lifecycle",
+      "state": "starting",
+      "channel": "Development"
+    },
+    {
+      "event": "bootstrap.child.started",
+      "processClass": "runtime",
+      "instanceId": "726109a9b72f40f28ea7dff5d16afe8a",
+      "processId": 39100,
+      "startTimeUtc": "2026-07-19T15:17:52.1270624+01:00",
+      "executableName": "Opure.Runtime.exe",
+      "assemblyName": "Opure.Runtime",
+      "productVersion": "0.1.0.3-preview.0+5cc8c53d624d",
+      "executableSha256": "d454e4071206ce0765892145d0e85e138e15154e53613d2374239174d742a635",
+      "jobOwned": true
+    },
+    {
+      "event": "bootstrap.child.ready",
+      "processClass": "runtime",
+      "instanceId": "726109a9b72f40f28ea7dff5d16afe8a",
+      "bootId": "b108a7999f71487283d933edbbfd0405"
+    },
+    {
+      "event": "bootstrap.child.started",
+      "processClass": "desktop",
+      "instanceId": "c7fe200521244318835cefaa6cadee5f",
+      "processId": 40100,
+      "startTimeUtc": "2026-07-19T15:17:52.269599+01:00",
+      "executableName": "Opure.Desktop.exe",
+      "assemblyName": "Opure.Desktop",
+      "productVersion": "0.1.0.3-preview.0+5cc8c53d624d",
+      "executableSha256": "8daa567d8d9da424e8fe507b04668f90e1c4b4c8ad272954cca50fda4d5d43b2",
+      "jobOwned": true
+    },
+    {
+      "event": "bootstrap.child.exited",
+      "processClass": "runtime",
+      "instanceId": "726109a9b72f40f28ea7dff5d16afe8a",
+      "processId": 39100,
+      "startTimeUtc": "2026-07-19T15:17:52.1270624+01:00",
+      "exitCode": 70,
+      "classification": "crash",
+      "expected": false,
+      "restartEligible": true
+    },
+    {
+      "event": "bootstrap.supervisor.state",
+      "mode": "recovering",
+      "runtimeHealth": "crashed",
+      "restartCount": 0,
+      "reason": "runtime_crash_detected"
+    },
+    {
+      "event": "bootstrap.child.exited",
+      "processClass": "desktop",
+      "instanceId": "c7fe200521244318835cefaa6cadee5f",
+      "processId": 40100,
+      "startTimeUtc": "2026-07-19T15:17:52.269599+01:00",
+      "exitCode": 0,
+      "classification": "policy_stop",
+      "expected": true,
+      "restartEligible": false
+    },
+    {
+      "event": "bootstrap.supervisor.state",
+      "mode": "recovering",
+      "runtimeHealth": "starting",
+      "restartCount": 1,
+      "reason": "runtime_restart_scheduled",
+      "nextRestartDelayMilliseconds": 100
+    },
+    {
+      "event": "bootstrap.child.started",
+      "processClass": "runtime",
+      "instanceId": "9327c6cd86dd4e97b1405a7822a21a7a",
+      "processId": 48540,
+      "startTimeUtc": "2026-07-19T15:17:53.7658202+01:00",
+      "executableName": "Opure.Runtime.exe",
+      "assemblyName": "Opure.Runtime",
+      "productVersion": "0.1.0.3-preview.0+5cc8c53d624d",
+      "executableSha256": "d454e4071206ce0765892145d0e85e138e15154e53613d2374239174d742a635",
+      "jobOwned": true
+    },
+    {
+      "event": "bootstrap.child.ready",
+      "processClass": "runtime",
+      "instanceId": "9327c6cd86dd4e97b1405a7822a21a7a",
+      "bootId": "2d0d0cd0a03040e7a3145d4cb675fce1"
+    },
+    {
+      "event": "bootstrap.child.started",
+      "processClass": "desktop",
+      "instanceId": "5c2a73a6f4574a59b740c7f2dc831870",
+      "processId": 31304,
+      "startTimeUtc": "2026-07-19T15:17:53.87714+01:00",
+      "executableName": "Opure.Desktop.exe",
+      "assemblyName": "Opure.Desktop",
+      "productVersion": "0.1.0.3-preview.0+5cc8c53d624d",
+      "executableSha256": "8daa567d8d9da424e8fe507b04668f90e1c4b4c8ad272954cca50fda4d5d43b2",
+      "jobOwned": true
+    },
+    {
+      "event": "bootstrap.supervisor.state",
+      "mode": "normal",
+      "runtimeHealth": "ready",
+      "restartCount": 1,
+      "reason": "runtime_recovered"
+    },
+    {
+      "event": "bootstrap.child.exited",
+      "processClass": "runtime",
+      "instanceId": "9327c6cd86dd4e97b1405a7822a21a7a",
+      "processId": 48540,
+      "startTimeUtc": "2026-07-19T15:17:53.7658202+01:00",
+      "exitCode": 70,
+      "classification": "crash",
+      "expected": false,
+      "restartEligible": true
+    },
+    {
+      "event": "bootstrap.supervisor.state",
+      "mode": "recovering",
+      "runtimeHealth": "crashed",
+      "restartCount": 1,
+      "reason": "runtime_crash_detected"
+    },
+    {
+      "event": "bootstrap.child.exited",
+      "processClass": "desktop",
+      "instanceId": "5c2a73a6f4574a59b740c7f2dc831870",
+      "processId": 31304,
+      "startTimeUtc": "2026-07-19T15:17:53.87714+01:00",
+      "exitCode": 0,
+      "classification": "policy_stop",
+      "expected": true,
+      "restartEligible": false
+    },
+    {
+      "event": "bootstrap.supervisor.state",
+      "mode": "recovering",
+      "runtimeHealth": "starting",
+      "restartCount": 2,
+      "reason": "runtime_restart_scheduled",
+      "nextRestartDelayMilliseconds": 200
+    },
+    {
+      "event": "bootstrap.child.started",
+      "processClass": "runtime",
+      "instanceId": "2352b7e990d243949db37069f6feac84",
+      "processId": 40700,
+      "startTimeUtc": "2026-07-19T15:17:55.4048584+01:00",
+      "executableName": "Opure.Runtime.exe",
+      "assemblyName": "Opure.Runtime",
+      "productVersion": "0.1.0.3-preview.0+5cc8c53d624d",
+      "executableSha256": "d454e4071206ce0765892145d0e85e138e15154e53613d2374239174d742a635",
+      "jobOwned": true
+    },
+    {
+      "event": "bootstrap.child.ready",
+      "processClass": "runtime",
+      "instanceId": "2352b7e990d243949db37069f6feac84",
+      "bootId": "2e116385a06745a79d9f768e77c0bf12"
+    },
+    {
+      "event": "bootstrap.child.started",
+      "processClass": "desktop",
+      "instanceId": "4b0450c4755946a5818337499a1bea44",
+      "processId": 28136,
+      "startTimeUtc": "2026-07-19T15:17:55.5183668+01:00",
+      "executableName": "Opure.Desktop.exe",
+      "assemblyName": "Opure.Desktop",
+      "productVersion": "0.1.0.3-preview.0+5cc8c53d624d",
+      "executableSha256": "8daa567d8d9da424e8fe507b04668f90e1c4b4c8ad272954cca50fda4d5d43b2",
+      "jobOwned": true
+    },
+    {
+      "event": "bootstrap.supervisor.state",
+      "mode": "normal",
+      "runtimeHealth": "ready",
+      "restartCount": 2,
+      "reason": "runtime_recovered"
+    },
+    {
+      "event": "bootstrap.child.exited",
+      "processClass": "runtime",
+      "instanceId": "2352b7e990d243949db37069f6feac84",
+      "processId": 40700,
+      "startTimeUtc": "2026-07-19T15:17:55.4048584+01:00",
+      "exitCode": 70,
+      "classification": "crash",
+      "expected": false,
+      "restartEligible": true
+    },
+    {
+      "event": "bootstrap.supervisor.state",
+      "mode": "recovering",
+      "runtimeHealth": "crashed",
+      "restartCount": 2,
+      "reason": "runtime_crash_detected"
+    },
+    {
+      "event": "bootstrap.child.exited",
+      "processClass": "desktop",
+      "instanceId": "4b0450c4755946a5818337499a1bea44",
+      "processId": 28136,
+      "startTimeUtc": "2026-07-19T15:17:55.5183668+01:00",
+      "exitCode": 0,
+      "classification": "policy_stop",
+      "expected": true,
+      "restartEligible": false
+    },
+    {
+      "event": "bootstrap.supervisor.state",
+      "mode": "recovering",
+      "runtimeHealth": "starting",
+      "restartCount": 3,
+      "reason": "runtime_restart_scheduled",
+      "nextRestartDelayMilliseconds": 400
+    },
+    {
+      "event": "bootstrap.child.started",
+      "processClass": "runtime",
+      "instanceId": "c695117b611c48a99573322a70f25a1a",
+      "processId": 43460,
+      "startTimeUtc": "2026-07-19T15:17:57.2763151+01:00",
+      "executableName": "Opure.Runtime.exe",
+      "assemblyName": "Opure.Runtime",
+      "productVersion": "0.1.0.3-preview.0+5cc8c53d624d",
+      "executableSha256": "d454e4071206ce0765892145d0e85e138e15154e53613d2374239174d742a635",
+      "jobOwned": true
+    },
+    {
+      "event": "bootstrap.child.ready",
+      "processClass": "runtime",
+      "instanceId": "c695117b611c48a99573322a70f25a1a",
+      "bootId": "50c78a9bf9e84bba941174a88e3bfd45"
+    },
+    {
+      "event": "bootstrap.child.started",
+      "processClass": "desktop",
+      "instanceId": "4316598ba5d441fda0a7d628700c138e",
+      "processId": 42156,
+      "startTimeUtc": "2026-07-19T15:17:57.3885638+01:00",
+      "executableName": "Opure.Desktop.exe",
+      "assemblyName": "Opure.Desktop",
+      "productVersion": "0.1.0.3-preview.0+5cc8c53d624d",
+      "executableSha256": "8daa567d8d9da424e8fe507b04668f90e1c4b4c8ad272954cca50fda4d5d43b2",
+      "jobOwned": true
+    },
+    {
+      "event": "bootstrap.supervisor.state",
+      "mode": "normal",
+      "runtimeHealth": "ready",
+      "restartCount": 3,
+      "reason": "runtime_recovered"
+    },
+    {
+      "event": "bootstrap.child.exited",
+      "processClass": "runtime",
+      "instanceId": "c695117b611c48a99573322a70f25a1a",
+      "processId": 43460,
+      "startTimeUtc": "2026-07-19T15:17:57.2763151+01:00",
+      "exitCode": 70,
+      "classification": "crash",
+      "expected": false,
+      "restartEligible": true
+    },
+    {
+      "event": "bootstrap.supervisor.state",
+      "mode": "recovering",
+      "runtimeHealth": "crashed",
+      "restartCount": 3,
+      "reason": "runtime_crash_detected"
+    },
+    {
+      "event": "bootstrap.child.exited",
+      "processClass": "desktop",
+      "instanceId": "4316598ba5d441fda0a7d628700c138e",
+      "processId": 42156,
+      "startTimeUtc": "2026-07-19T15:17:57.3885638+01:00",
+      "exitCode": 0,
+      "classification": "policy_stop",
+      "expected": true,
+      "restartEligible": false
+    },
+    {
+      "event": "bootstrap.supervisor.state",
+      "mode": "safe_mode",
+      "runtimeHealth": "quarantined",
+      "restartCount": 3,
+      "reason": "runtime_restart_budget_exhausted"
+    },
+    {
+      "event": "bootstrap.child.started",
+      "processClass": "desktop",
+      "instanceId": "3354bdd8ae9a4b2fbd635871fff2feed",
+      "processId": 41636,
+      "startTimeUtc": "2026-07-19T15:17:58.7107182+01:00",
+      "executableName": "Opure.Desktop.exe",
+      "assemblyName": "Opure.Desktop",
+      "productVersion": "0.1.0.3-preview.0+5cc8c53d624d",
+      "executableSha256": "8daa567d8d9da424e8fe507b04668f90e1c4b4c8ad272954cca50fda4d5d43b2",
+      "jobOwned": true
+    },
+    {
+      "event": "bootstrap.child.exited",
+      "processClass": "desktop",
+      "instanceId": "3354bdd8ae9a4b2fbd635871fff2feed",
+      "processId": 41636,
+      "startTimeUtc": "2026-07-19T15:17:58.7107182+01:00",
+      "exitCode": 0,
+      "classification": "clean_exit",
+      "expected": true,
+      "restartEligible": false
+    },
+    {
+      "event": "bootstrap.lifecycle",
+      "state": "stopped",
+      "channel": "Development",
+      "reason": "safe_mode_shutdown"
+    }
+  ]
+}

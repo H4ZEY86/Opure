@@ -10,7 +10,9 @@ public static class DesktopShellComposition
     public static DesktopShellViewModel CreateViewModel()
     {
         DisconnectedDesktopShellStateSource stateSource =
-            new(ThisAssembly.AssemblyInformationalVersion);
+            new(
+                ThisAssembly.AssemblyInformationalVersion,
+                DesktopLaunchContext.SupervisorProjection);
 
         return new DesktopShellViewModel(stateSource.GetCurrent());
     }

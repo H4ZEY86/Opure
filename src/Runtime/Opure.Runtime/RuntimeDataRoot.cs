@@ -8,7 +8,8 @@ public static class RuntimeDataRootResolver
 {
     public static RuntimeDataRoot Resolve(
         string? explicitDataRoot,
-        bool allowTestOverride)
+        bool allowTestOverride,
+        RuntimeBootstrapEnvironment? bootstrapEnvironment = null)
     {
         if (!string.IsNullOrWhiteSpace(explicitDataRoot))
         {
@@ -28,6 +29,13 @@ public static class RuntimeDataRootResolver
             return new RuntimeDataRoot(
                 Path.GetFullPath(explicitDataRoot),
                 "TestOverride");
+        }
+
+        if (bootstrapEnvironment is not null)
+        {
+            return new RuntimeDataRoot(
+                bootstrapEnvironment.DataRoot,
+                $"{bootstrapEnvironment.Channel}Bootstrap");
         }
 
         string localApplicationData = Environment.GetFolderPath(

@@ -175,3 +175,35 @@ pwsh ./build.ps1 desktop-policy
 The initial Desktop uses Avalonia 12.1.0 through a framework-specific adapter project. `Opure.Desktop.Contracts` remains framework neutral so the documented WinUI 3 fallback can reuse its shell state and view model.
 
 The shell reports `Runtime unavailable` honestly until authenticated local IPC exists. It does not read project files, open service databases or own authoritative domain state.
+
+## Bootstrap executable
+
+Run the Development Bootstrap until the Desktop is closed:
+
+```powershell
+pwsh ./build.ps1 bootstrap
+```
+
+Run a bounded process-tree smoke launch:
+
+```powershell
+pwsh ./build.ps1 bootstrap -Configuration Release -BootstrapDurationMilliseconds 3000
+```
+
+Run the complete FND-006 evidence gate:
+
+```powershell
+pwsh ./build.ps1 bootstrap-policy
+```
+
+Run the complete FND-007 process-supervisor evidence gate:
+
+```powershell
+pwsh ./build.ps1 supervisor-policy
+```
+
+Bootstrap verifies absolute Runtime and Desktop executable paths and companion assembly identities before launch. It starts Runtime first, waits for explicit Runtime readiness, starts Desktop second, and shuts down Desktop before Runtime.
+
+Supervisor verification injects a bounded Runtime crash, a rapid crash loop and an abrupt Bootstrap termination. It verifies restart identity, exponential backoff, visible Safe Mode and Windows Job Object orphan cleanup without recording child environment values.
+
+Channel-specific data-root and one-time session material are passed through bounded environment variables. The session secret is not placed on command lines, written to disk or included in diagnostics.
