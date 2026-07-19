@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Bootstrap/">
+    <Project Path="src/Bootstrap/Opure.Bootstrap.Windows/Opure.Bootstrap.Windows.csproj" />
+  </Folder>
+  <Folder Name="/src/Runtime/">
+    <Project Path="src/Runtime/Opure.Runtime.Contracts/Opure.Runtime.Contracts.csproj" />
+    <Project Path="src/Runtime/Opure.Runtime/Opure.Runtime.csproj" />
+  </Folder>
+  <Folder Name="/tests/" />
+  <Folder Name="/tests/Architecture/">
+    <Project Path="tests/Architecture/Opure.ArchitectureTests/Opure.ArchitectureTests.csproj" />
+  </Folder>
+</Solution>

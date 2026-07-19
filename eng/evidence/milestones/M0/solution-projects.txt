@@ -1,0 +1,6 @@
+Project(s)
+----------
+src\Bootstrap\Opure.Bootstrap.Windows\Opure.Bootstrap.Windows.csproj
+src\Runtime\Opure.Runtime.Contracts\Opure.Runtime.Contracts.csproj
+src\Runtime\Opure.Runtime\Opure.Runtime.csproj
+tests\Architecture\Opure.ArchitectureTests\Opure.ArchitectureTests.csproj
