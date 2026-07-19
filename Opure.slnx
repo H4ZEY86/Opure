@@ -3,6 +3,10 @@
   <Folder Name="/src/Bootstrap/">
     <Project Path="src/Bootstrap/Opure.Bootstrap.Windows/Opure.Bootstrap.Windows.csproj" />
   </Folder>
+  <Folder Name="/src/Desktop/">
+    <Project Path="src/Desktop/Opure.Desktop.Contracts/Opure.Desktop.Contracts.csproj" />
+    <Project Path="src/Desktop/Opure.Desktop/Opure.Desktop.csproj" />
+  </Folder>
   <Folder Name="/src/Runtime/">
     <Project Path="src/Runtime/Opure.Runtime.Contracts/Opure.Runtime.Contracts.csproj" />
     <Project Path="src/Runtime/Opure.Runtime/Opure.Runtime.csproj" />
@@ -10,6 +14,9 @@
   <Folder Name="/tests/" />
   <Folder Name="/tests/Architecture/">
     <Project Path="tests/Architecture/Opure.ArchitectureTests/Opure.ArchitectureTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Desktop/">
+    <Project Path="tests/Desktop/Opure.Desktop.Tests/Opure.Desktop.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Runtime/">
     <Project Path="tests/Runtime/Opure.Runtime.Tests/Opure.Runtime.Tests.csproj" />

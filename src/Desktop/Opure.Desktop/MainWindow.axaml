@@ -1,0 +1,164 @@
+<Window
+    x:Class="Opure.Desktop.MainWindow"
+    x:DataType="contracts:DesktopShellViewModel"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:contracts="using:Opure.Desktop.Contracts"
+    mc:Ignorable="d"
+    d:DesignWidth="1000"
+    d:DesignHeight="650"
+    Width="1000"
+    Height="650"
+    MinWidth="760"
+    MinHeight="500"
+    WindowStartupLocation="CenterScreen"
+    Title="{Binding WindowTitle}"
+    AutomationProperties.Name="Opure Desktop main window"
+    AutomationProperties.AutomationId="OpureMainWindow">
+
+  <Grid
+      RowDefinitions="Auto,*,Auto"
+      ColumnDefinitions="220,*">
+
+    <Border
+        Grid.Row="0"
+        Grid.ColumnSpan="2"
+        Padding="24,16">
+      <StackPanel Spacing="4">
+        <TextBlock
+            Text="{Binding ProductHeading}"
+            FontSize="28"
+            FontWeight="SemiBold"
+            AutomationProperties.Name="Opure"
+            AutomationProperties.HeadingLevel="1" />
+        <TextBlock
+            Text="{Binding Motto}"
+            TextWrapping="Wrap"
+            AutomationProperties.Name="Developer Respect. Local Intelligence. Complete Control." />
+      </StackPanel>
+    </Border>
+
+    <Border
+        Grid.Row="1"
+        Grid.Column="0"
+        Padding="16">
+      <StackPanel Spacing="8">
+        <TextBlock
+            Text="Navigation"
+            FontSize="18"
+            FontWeight="SemiBold"
+            AutomationProperties.HeadingLevel="2" />
+
+        <Button
+            x:Name="HomeButton"
+            Content="_Home"
+            Click="OnHomeClick"
+            IsTabStop="True"
+            TabIndex="1"
+            AutomationProperties.Name="Home"
+            AutomationProperties.AutomationId="NavigationHome"
+            AutomationProperties.AccessKey="Alt+H" />
+
+        <Button
+            x:Name="ProjectsButton"
+            Content="_Projects"
+            Click="OnProjectsClick"
+            IsTabStop="True"
+            TabIndex="2"
+            AutomationProperties.Name="Projects"
+            AutomationProperties.AutomationId="NavigationProjects"
+            AutomationProperties.AccessKey="Alt+P" />
+
+        <Button
+            x:Name="WorkflowsButton"
+            Content="_Workflows"
+            Click="OnWorkflowsClick"
+            IsTabStop="True"
+            TabIndex="3"
+            AutomationProperties.Name="Workflows"
+            AutomationProperties.AutomationId="NavigationWorkflows"
+            AutomationProperties.AccessKey="Alt+W" />
+
+        <Button
+            x:Name="TrustCentreButton"
+            Content="_Trust Centre"
+            Click="OnTrustCentreClick"
+            IsTabStop="True"
+            TabIndex="4"
+            AutomationProperties.Name="Trust Centre"
+            AutomationProperties.AutomationId="NavigationTrustCentre"
+            AutomationProperties.AccessKey="Alt+T" />
+      </StackPanel>
+    </Border>
+
+    <ScrollViewer
+        Grid.Row="1"
+        Grid.Column="1"
+        HorizontalScrollBarVisibility="Disabled"
+        VerticalScrollBarVisibility="Auto">
+      <StackPanel
+          Margin="32"
+          Spacing="20">
+
+        <TextBlock
+            x:Name="PageTitleText"
+            Text="{Binding PageTitle}"
+            FontSize="24"
+            FontWeight="SemiBold"
+            AutomationProperties.HeadingLevel="1" />
+
+        <TextBlock
+            x:Name="PageDetailText"
+            Text="{Binding PageDetail}"
+            TextWrapping="Wrap" />
+
+        <GroupBox
+            Header="Runtime connection"
+            AutomationProperties.Name="Runtime connection status"
+            AutomationProperties.AutomationId="RuntimeConnectionStatus">
+          <StackPanel
+              Margin="8"
+              Spacing="8">
+            <TextBlock
+                x:Name="RuntimeStatusText"
+                Text="{Binding RuntimeStatusTitle}"
+                FontSize="18"
+                FontWeight="SemiBold"
+                AutomationProperties.Name="Runtime unavailable"
+                AutomationProperties.AutomationId="RuntimeStatusTitle" />
+            <TextBlock
+                x:Name="RuntimeStatusDetailText"
+                Text="{Binding RuntimeStatusDetail}"
+                TextWrapping="Wrap"
+                AutomationProperties.Name="The Desktop is ready but the Runtime is unavailable" />
+            <TextBlock
+                Text="No connection attempt is hidden. IPC is introduced in a later ticket."
+                TextWrapping="Wrap" />
+          </StackPanel>
+        </GroupBox>
+      </StackPanel>
+    </ScrollViewer>
+
+    <Border
+        Grid.Row="2"
+        Grid.ColumnSpan="2"
+        Padding="16,10">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock
+            x:Name="StatusBarText"
+            Text="{Binding StatusBarText}"
+            TextWrapping="Wrap"
+            AutomationProperties.Name="Offline. Runtime unavailable. No project open."
+            AutomationProperties.AutomationId="DesktopStatusBar" />
+        <TextBlock
+            Grid.Column="1"
+            Margin="16,0,0,0"
+            Text="{Binding ProductVersion}"
+            AutomationProperties.Name="Desktop product version"
+            AutomationProperties.AutomationId="DesktopProductVersion" />
+      </Grid>
+    </Border>
+  </Grid>
+</Window>

@@ -1,0 +1,9 @@
+{
+  "templatePackage": "Avalonia.Templates",
+  "templateVersion": "12.1.0",
+  "templateShortName": "avalonia.app",
+  "materialisation": "reviewed-repository-owned-snapshot",
+  "targetFramework": "net10.0",
+  "desktopPackageVersion": "12.1.0",
+  "createdFor": "FND-005"
+}

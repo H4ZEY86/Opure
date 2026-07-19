@@ -151,3 +151,27 @@ pwsh ./build.ps1 runtime-policy
 ```
 
 Ctrl+C is intercepted through the controlled shutdown signal so the Runtime can report `stopping` and `stopped` before exit. The current shutdown deadline is five seconds.
+
+## Desktop executable
+
+Run the Development Desktop until its main window is closed:
+
+```powershell
+pwsh ./build.ps1 desktop
+```
+
+Run a bounded real-window smoke launch:
+
+```powershell
+pwsh ./build.ps1 desktop -DesktopDurationMilliseconds 1500
+```
+
+Run the complete FND-005 evidence gate:
+
+```powershell
+pwsh ./build.ps1 desktop-policy
+```
+
+The initial Desktop uses Avalonia 12.1.0 through a framework-specific adapter project. `Opure.Desktop.Contracts` remains framework neutral so the documented WinUI 3 fallback can reuse its shell state and view model.
+
+The shell reports `Runtime unavailable` honestly until authenticated local IPC exists. It does not read project files, open service databases or own authoritative domain state.

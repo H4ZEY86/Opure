@@ -3,7 +3,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('restore', 'build', 'test', 'verify', 'policy', 'version', 'version-policy', 'runtime', 'runtime-policy')]
+    [ValidateSet('restore', 'build', 'test', 'verify', 'policy', 'version', 'version-policy', 'runtime', 'runtime-policy', 'desktop', 'desktop-policy')]
     [string] $Target = 'verify',
 
     [Parameter()]
@@ -16,7 +16,11 @@ param(
 
     [Parameter()]
     [ValidateRange(0, 60000)]
-    [int] $RuntimeDurationMilliseconds = 0
+    [int] $RuntimeDurationMilliseconds = 0,
+
+    [Parameter()]
+    [ValidateRange(0, 60000)]
+    [int] $DesktopDurationMilliseconds = 0
 )
 
 Set-StrictMode -Version Latest
@@ -65,5 +69,14 @@ switch ($Target) {
 
     'runtime-policy' {
         & (Join-Path $PSScriptRoot 'eng\verify-runtime.ps1')
+    }
+
+    'desktop' {
+        & (Join-Path $PSScriptRoot 'eng\run-desktop.ps1') `
+            -CloseAfterMilliseconds $DesktopDurationMilliseconds
+    }
+
+    'desktop-policy' {
+        & (Join-Path $PSScriptRoot 'eng\verify-desktop.ps1')
     }
 }

@@ -1,0 +1,12 @@
+Opure Desktop Launch Evidence
+=============================
+Framework: Avalonia
+FrameworkVersion: 12.1.0
+Executable: Opure.Desktop.exe
+ProcessId: 32944
+MainWindowHandleObserved: True
+MainWindowTitle: Opure
+ElapsedMilliseconds: 6338
+ExitCode: 0
+InitialRuntimeState: Unavailable
+Result: Passed
