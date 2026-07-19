@@ -1,0 +1,28 @@
+{
+  "contractRevision": 1,
+  "registry": {
+    "services": [
+      {
+        "serviceId": "runtime.health",
+        "serviceRevision": 1,
+        "contractRevision": 1,
+        "displayName": "Runtime Health",
+        "ownerId": "runtime.kernel",
+        "classification": "RUNTIME_SERVICE_CLASSIFICATION_CRITICAL_CORE",
+        "lifecycleState": "RUNTIME_SERVICE_LIFECYCLE_STATE_REGISTERED",
+        "processPlacement": "RUNTIME_SERVICE_PROCESS_PLACEMENT_RUNTIME_PROCESS",
+        "capabilities": [
+          {
+            "capabilityId": "runtime.health.query",
+            "contractRevision": 1,
+            "safeSummary": "Provides a bounded Runtime and service health projection."
+          }
+        ],
+        "healthReference": {
+          "healthServiceId": "runtime.health",
+          "contractRevision": 1
+        }
+      }
+    ]
+  }
+}

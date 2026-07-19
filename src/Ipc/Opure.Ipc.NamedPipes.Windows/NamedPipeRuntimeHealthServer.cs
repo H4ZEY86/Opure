@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Opure.Ipc.Abstractions;
 using Opure.Runtime.Contracts;
 using Opure.Runtime.Contracts.Health.V1;
+using Opure.Runtime.Contracts.Registry.V1;
 
 namespace Opure.Ipc.NamedPipes.Windows;
 
@@ -34,7 +35,8 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
         RuntimeHealthSessionPolicy sessionPolicy,
         CancellationToken cancellationToken,
         TimeProvider? timeProvider = null,
-        Func<RuntimeHealthAuthenticationEvent, ValueTask>? eventSink = null)
+        Func<RuntimeHealthAuthenticationEvent, ValueTask>? eventSink = null,
+        IRuntimeServiceRegistryRequestHandler? registryRequestHandler = null)
     {
         ArgumentNullException.ThrowIfNull(endpoint);
         ArgumentNullException.ThrowIfNull(requestHandler);
@@ -65,8 +67,12 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
         {
             options.CurrentUserOnly = false;
             options.PipeSecurity = pipeSecurity;
-            options.MaxReadBufferSize = RuntimeHealthContractPolicy.MaximumRequestBytes;
-            options.MaxWriteBufferSize = RuntimeHealthContractPolicy.MaximumResponseBytes;
+            options.MaxReadBufferSize = Math.Max(
+                RuntimeHealthContractPolicy.MaximumRequestBytes,
+                RuntimeServiceRegistryContractPolicy.MaximumRequestBytes);
+            options.MaxWriteBufferSize = Math.Max(
+                RuntimeHealthContractPolicy.MaximumResponseBytes,
+                RuntimeServiceRegistryContractPolicy.MaximumResponseBytes);
         });
         builder.WebHost.UseKestrel(options =>
         {
@@ -75,6 +81,11 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
                 listenOptions => listenOptions.Protocols = HttpProtocols.Http2);
         });
         builder.Services.AddSingleton(requestHandler);
+
+        if (registryRequestHandler is not null)
+        {
+            builder.Services.AddSingleton(registryRequestHandler);
+        }
         builder.Services.AddSingleton(new RuntimeHealthSessionAuthenticator(
             endpoint,
             sessionPolicy,
@@ -83,13 +94,22 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
         builder.Services.AddSingleton<RuntimeHealthAuthenticationInterceptor>();
         builder.Services.AddGrpc(options =>
         {
-            options.MaxReceiveMessageSize = RuntimeHealthContractPolicy.MaximumRequestBytes;
-            options.MaxSendMessageSize = RuntimeHealthContractPolicy.MaximumResponseBytes;
+            options.MaxReceiveMessageSize = Math.Max(
+                RuntimeHealthContractPolicy.MaximumRequestBytes,
+                RuntimeServiceRegistryContractPolicy.MaximumRequestBytes);
+            options.MaxSendMessageSize = Math.Max(
+                RuntimeHealthContractPolicy.MaximumResponseBytes,
+                RuntimeServiceRegistryContractPolicy.MaximumResponseBytes);
             options.Interceptors.Add<RuntimeHealthAuthenticationInterceptor>();
         });
 
         WebApplication application = builder.Build();
         application.MapGrpcService<RuntimeHealthGrpcService>();
+
+        if (registryRequestHandler is not null)
+        {
+            application.MapGrpcService<RuntimeServiceRegistryGrpcService>();
+        }
 
         try
         {
@@ -184,6 +204,28 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
             return await requestHandler
                 .HandleAsync(request, context.CancellationToken)
                 .ConfigureAwait(false);
+        }
+    }
+
+    private sealed class RuntimeServiceRegistryGrpcService(
+        IRuntimeServiceRegistryRequestHandler requestHandler)
+        : RuntimeServiceRegistryService.RuntimeServiceRegistryServiceBase
+    {
+        public override Task<QueryServiceRegistryResponse> QueryServices(
+            QueryServiceRegistryRequest request,
+            ServerCallContext context)
+        {
+            if (request.CalculateSize() >
+                RuntimeServiceRegistryContractPolicy.MaximumRequestBytes)
+            {
+                throw new RpcException(new Status(
+                    StatusCode.ResourceExhausted,
+                    "The Service Registry request exceeded its transport limit."));
+            }
+
+            return requestHandler.HandleAsync(
+                request,
+                context.CancellationToken);
         }
     }
 }

@@ -69,6 +69,52 @@ public sealed class RuntimeHealthContractBoundaryTests
         }
     }
 
+    [Fact]
+    public void Runtime_service_registry_schema_exposes_metadata_not_implementation()
+    {
+        string schemaPath = Path.Combine(
+            RepositoryRoot,
+            "src",
+            "Runtime",
+            "Opure.Runtime.Contracts",
+            "Protos",
+            "registry",
+            "runtime_service_registry.proto");
+
+        string schema = File.ReadAllText(schemaPath);
+        string[] requiredTokens =
+        [
+            "string service_id",
+            "string owner_id",
+            "RuntimeServiceProcessPlacement process_placement",
+            "repeated RuntimeServiceDependency dependencies",
+            "repeated RuntimeCapabilitySummary capabilities",
+            "RuntimeServiceHealthReference health_reference"
+        ];
+        string[] prohibitedTokens =
+        [
+            "google.protobuf.Any",
+            "google.protobuf.Struct",
+            "map<",
+            "bytes ",
+            "class_name",
+            "type_name",
+            "database_path",
+            "connection_string",
+            "exception"
+        ];
+
+        foreach (string token in requiredTokens)
+        {
+            Assert.Contains(token, schema, StringComparison.Ordinal);
+        }
+
+        foreach (string token in prohibitedTokens)
+        {
+            Assert.DoesNotContain(token, schema, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
     private static string FindRepositoryRoot()
     {
         DirectoryInfo? directory = new(AppContext.BaseDirectory);

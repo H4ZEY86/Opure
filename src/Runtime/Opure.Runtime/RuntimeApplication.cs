@@ -68,6 +68,8 @@ public sealed class RuntimeApplication
                 sessionMaterial,
                 DateTimeOffset.UtcNow.Add(
                     RuntimeHealthTransportPolicy.SessionLifetime));
+            RuntimeServiceRegistry serviceRegistry = new();
+            serviceRegistry.Register(RuntimeServiceCatalogue.CreateInitial());
 
             healthTransport = await NamedPipeRuntimeHealthServer.StartAsync(
                 endpoint,
@@ -77,7 +79,8 @@ public sealed class RuntimeApplication
                 eventSink: authenticationEvent =>
                     RuntimeEventWriter.WriteIpcSessionAsync(
                         output,
-                        authenticationEvent)).ConfigureAwait(false);
+                        authenticationEvent),
+                registryRequestHandler: serviceRegistry).ConfigureAwait(false);
 
             lifecycle.TransitionTo(RuntimeLifecycleState.Ready);
 

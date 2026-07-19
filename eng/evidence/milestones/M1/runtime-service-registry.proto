@@ -1,0 +1,127 @@
+syntax = "proto3";
+
+package opure.runtime.registry.v1;
+
+option csharp_namespace = "Opure.Runtime.Contracts.Registry.V1";
+
+// Runtime Contracts owns this transport-independent logical-service projection.
+service RuntimeServiceRegistryService {
+  rpc QueryServices(QueryServiceRegistryRequest)
+      returns (QueryServiceRegistryResponse);
+}
+
+message QueryServiceRegistryRequest {
+  uint32 minimum_contract_revision = 1;
+  uint32 maximum_contract_revision = 2;
+  string query_id = 3;
+  uint32 maximum_results = 4;
+  string after_service_id = 5;
+}
+
+message QueryServiceRegistryResponse {
+  uint32 contract_revision = 1;
+
+  oneof outcome {
+    RuntimeServiceRegistryPage registry = 2;
+    RuntimeServiceRegistryError error = 3;
+  }
+}
+
+message RuntimeServiceRegistryPage {
+  repeated RuntimeServiceDescriptor services = 1;
+  string next_after_service_id = 2;
+}
+
+message RuntimeServiceDescriptor {
+  string service_id = 1;
+  uint32 service_revision = 2;
+  uint32 contract_revision = 3;
+  string display_name = 4;
+  string owner_id = 5;
+  RuntimeServiceClassification classification = 6;
+  RuntimeServiceLifecycleState lifecycle_state = 7;
+  RuntimeServiceProcessPlacement process_placement = 8;
+  repeated RuntimeServiceDependency dependencies = 9;
+  repeated RuntimeCapabilitySummary capabilities = 10;
+  RuntimeServiceHealthReference health_reference = 11;
+}
+
+message RuntimeServiceDependency {
+  RuntimeDependencyKind kind = 1;
+  string target_id = 2;
+  uint32 minimum_contract_revision = 3;
+  RuntimeDependencyRequirement requirement = 4;
+}
+
+message RuntimeCapabilitySummary {
+  string capability_id = 1;
+  uint32 contract_revision = 2;
+  string safe_summary = 3;
+}
+
+message RuntimeServiceHealthReference {
+  string health_service_id = 1;
+  uint32 contract_revision = 2;
+}
+
+message RuntimeServiceRegistryError {
+  RuntimeServiceRegistryErrorCategory category = 1;
+  string code = 2;
+  string safe_message = 3;
+  bool retryable = 4;
+}
+
+enum RuntimeServiceClassification {
+  RUNTIME_SERVICE_CLASSIFICATION_UNSPECIFIED = 0;
+  RUNTIME_SERVICE_CLASSIFICATION_CRITICAL_CORE = 1;
+  RUNTIME_SERVICE_CLASSIFICATION_REQUIRED_PLATFORM = 2;
+  RUNTIME_SERVICE_CLASSIFICATION_OPTIONAL_PLATFORM = 3;
+  RUNTIME_SERVICE_CLASSIFICATION_PROVIDER_ADAPTER = 4;
+  RUNTIME_SERVICE_CLASSIFICATION_PLUGIN_HOST = 5;
+  RUNTIME_SERVICE_CLASSIFICATION_PROJECT_WORKER = 6;
+  RUNTIME_SERVICE_CLASSIFICATION_EPHEMERAL_WORKER = 7;
+  RUNTIME_SERVICE_CLASSIFICATION_EXTERNAL_BRIDGE = 8;
+}
+
+enum RuntimeServiceLifecycleState {
+  RUNTIME_SERVICE_LIFECYCLE_STATE_UNSPECIFIED = 0;
+  RUNTIME_SERVICE_LIFECYCLE_STATE_REGISTERED = 1;
+  RUNTIME_SERVICE_LIFECYCLE_STATE_CONFIGURED = 2;
+  RUNTIME_SERVICE_LIFECYCLE_STATE_STARTING = 3;
+  RUNTIME_SERVICE_LIFECYCLE_STATE_READY = 4;
+  RUNTIME_SERVICE_LIFECYCLE_STATE_DEGRADED = 5;
+  RUNTIME_SERVICE_LIFECYCLE_STATE_STOPPING = 6;
+  RUNTIME_SERVICE_LIFECYCLE_STATE_STOPPED = 7;
+  RUNTIME_SERVICE_LIFECYCLE_STATE_FAILED = 8;
+  RUNTIME_SERVICE_LIFECYCLE_STATE_RESTARTING = 9;
+  RUNTIME_SERVICE_LIFECYCLE_STATE_QUARANTINED = 10;
+  RUNTIME_SERVICE_LIFECYCLE_STATE_DISABLED = 11;
+}
+
+enum RuntimeServiceProcessPlacement {
+  RUNTIME_SERVICE_PROCESS_PLACEMENT_UNSPECIFIED = 0;
+  RUNTIME_SERVICE_PROCESS_PLACEMENT_RUNTIME_PROCESS = 1;
+  RUNTIME_SERVICE_PROCESS_PLACEMENT_PLUGIN_HOST_PROCESS = 2;
+  RUNTIME_SERVICE_PROCESS_PLACEMENT_PROJECT_WORKER_PROCESS = 3;
+  RUNTIME_SERVICE_PROCESS_PLACEMENT_EPHEMERAL_WORKER_PROCESS = 4;
+  RUNTIME_SERVICE_PROCESS_PLACEMENT_EXTERNAL_PROCESS = 5;
+}
+
+enum RuntimeDependencyKind {
+  RUNTIME_DEPENDENCY_KIND_UNSPECIFIED = 0;
+  RUNTIME_DEPENDENCY_KIND_SERVICE = 1;
+  RUNTIME_DEPENDENCY_KIND_CAPABILITY = 2;
+}
+
+enum RuntimeDependencyRequirement {
+  RUNTIME_DEPENDENCY_REQUIREMENT_UNSPECIFIED = 0;
+  RUNTIME_DEPENDENCY_REQUIREMENT_REQUIRED = 1;
+  RUNTIME_DEPENDENCY_REQUIREMENT_OPTIONAL = 2;
+}
+
+enum RuntimeServiceRegistryErrorCategory {
+  RUNTIME_SERVICE_REGISTRY_ERROR_CATEGORY_UNSPECIFIED = 0;
+  RUNTIME_SERVICE_REGISTRY_ERROR_CATEGORY_INVALID_REQUEST = 1;
+  RUNTIME_SERVICE_REGISTRY_ERROR_CATEGORY_INCOMPATIBLE_CONTRACT = 2;
+  RUNTIME_SERVICE_REGISTRY_ERROR_CATEGORY_INTERNAL = 3;
+}

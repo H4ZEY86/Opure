@@ -167,27 +167,29 @@ Completed and committed:
 * FND-007 — Windows process supervision and Safe Mode.
 * FND-008 — versioned Runtime Health protobuf contract.
 * FND-009 — named-pipe transport prototype.
+* FND-010 — named-pipe session authentication.
 
 Implemented and verified by the current change:
 
-* FND-010 — named-pipe session authentication.
+* FND-011 — Runtime Service Registry contract.
 
-FND-010 includes:
+FND-011 includes:
 
-* an explicit protected Windows named-pipe DACL for the current user and LocalSystem;
-* Bootstrap-issued ephemeral session material passed only through child environment variables;
-* per-call mutual HMAC proof bound to the Runtime boot, exact pipe, client class and actual pipe client PID;
-* bounded proof lifetime, replay denial and Runtime-restart invalidation;
-* stable, redacted `ipc.session-established` and `ipc.session-denied` evidence;
-* ACL, same-user denial, replay, restart and secret-canary verification.
+* a versioned protobuf query contract with bounded stable cursor paging;
+* explicit service identity, revision, owner, classification and process placement;
+* typed service and capability dependencies, capability summaries and health references;
+* transactional in-memory registration with duplicate identity and unknown dependency rejection;
+* deterministic query ordering and immutable protobuf projections;
+* an authenticated logical gRPC service on the existing Runtime named pipe;
+* a safe initial catalogue that exposes no implementation type or persistence path.
 
 The next planned ticket is:
 
 ```text
-FND-011 — Add Service Registry Contract
+FND-012 — Add Service Lifecycle State Machine
 ```
 
-Do not assume FND-010 is complete until the Runtime Health session verifier passes and the changes are reviewed, committed and pushed.
+Do not assume FND-011 is complete until the Service Registry verifier passes and the changes are reviewed, committed and pushed.
 
 ## Build policy
 

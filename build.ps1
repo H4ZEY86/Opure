@@ -3,7 +3,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('restore', 'build', 'test', 'verify', 'policy', 'version', 'version-policy', 'runtime', 'runtime-policy', 'desktop', 'desktop-policy', 'bootstrap', 'bootstrap-policy', 'supervisor-policy', 'health-contract-policy', 'health-transport-policy', 'health-session-policy')]
+    [ValidateSet('restore', 'build', 'test', 'verify', 'policy', 'version', 'version-policy', 'runtime', 'runtime-policy', 'desktop', 'desktop-policy', 'bootstrap', 'bootstrap-policy', 'supervisor-policy', 'health-contract-policy', 'health-transport-policy', 'health-session-policy', 'service-registry-policy')]
     [string] $Target = 'verify',
 
     [Parameter()]
@@ -109,5 +109,9 @@ switch ($Target) {
 
     'health-session-policy' {
         & (Join-Path $PSScriptRoot 'eng\verify-health-session.ps1')
+    }
+
+    'service-registry-policy' {
+        & (Join-Path $PSScriptRoot 'eng\verify-service-registry.ps1')
     }
 }

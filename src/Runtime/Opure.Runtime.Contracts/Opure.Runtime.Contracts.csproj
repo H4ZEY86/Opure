@@ -19,6 +19,9 @@
     <Protobuf
       Include="Protos\health\runtime_health.proto"
       GrpcServices="Both" />
+    <Protobuf
+      Include="Protos\registry\runtime_service_registry.proto"
+      GrpcServices="Both" />
   </ItemGroup>
 
 </Project>

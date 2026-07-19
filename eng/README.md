@@ -220,6 +220,12 @@ Run the complete FND-010 named-pipe session-authentication evidence gate:
 pwsh ./build.ps1 health-session-policy
 ```
 
+Run the complete FND-011 Runtime Service Registry contract evidence gate:
+
+```powershell
+pwsh ./build.ps1 service-registry-policy
+```
+
 Bootstrap verifies absolute Runtime and Desktop executable paths and companion assembly identities before launch. It starts Runtime first, waits for explicit Runtime readiness, starts Desktop second, and shuts down Desktop before Runtime.
 
 Supervisor verification injects a bounded Runtime crash, a rapid crash loop and an abrupt Bootstrap termination. It verifies restart identity, exponential backoff, visible Safe Mode and Windows Job Object orphan cleanup without recording child environment values.
@@ -229,5 +235,7 @@ Runtime Health contract verification compiles the protobuf client and server sur
 Named-pipe transport verification exercises the Desktop gateway round trip, deadline, cancellation, message-size and restart/reconnect paths. It records a bounded unary latency baseline and inspects the live Runtime process for TCP and UDP listeners without logging RPC payloads.
 
 Named-pipe session verification inspects the protected DACL, exercises expected and denied same-user sessions, process binding, replay and expiry paths, and confirms Runtime and Desktop restart rotation. It emits only bounded policy results and scans the evidence and running process command lines for authentication material.
+
+Service Registry verification compiles the protobuf query surface, exercises transactional registration, duplicate and dependency rejection, deterministic cursor ordering, serialization and the authenticated named-pipe endpoint. It emits the authoritative schema and safe initial catalogue under `eng/evidence/milestones/M1`.
 
 Channel-specific data-root and one-time session material are passed through bounded environment variables. The session secret is not placed on command lines, written to disk or included in diagnostics.

@@ -10,6 +10,7 @@ using Opure.Ipc.Abstractions;
 using Opure.Ipc.NamedPipes.Windows;
 using Opure.Runtime.Contracts;
 using Opure.Runtime.Contracts.Health.V1;
+using Opure.Runtime.Contracts.Registry.V1;
 using Xunit;
 
 namespace Opure.Ipc.NamedPipes.Windows.Tests;
@@ -95,6 +96,96 @@ public sealed class NamedPipeRuntimeHealthTransportTests
             endpoint.RuntimeBootId[..8],
             snapshot.RuntimeStatusDetail,
             StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Service_registry_query_uses_authenticated_named_pipe()
+    {
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        RuntimeHealthEndpoint endpoint = CreateEndpoint();
+        RuntimeHealthSessionMaterial material = RuntimeHealthSessionMaterial.Create();
+        QueryServiceRegistryResponse expected = new()
+        {
+            ContractRevision = RuntimeServiceRegistryContractPolicy.CurrentRevision,
+            Registry = new RuntimeServiceRegistryPage()
+        };
+        expected.Registry.Services.Add(CreateRegistryDescriptor());
+
+        await using NamedPipeRuntimeHealthServer server =
+            await NamedPipeRuntimeHealthServer.StartAsync(
+                endpoint,
+                new StaticHealthHandler(endpoint.RuntimeBootId),
+                CreatePolicy(material),
+                cancellationToken,
+                registryRequestHandler: new StaticRegistryHandler(expected));
+        using SocketsHttpHandler httpHandler = new()
+        {
+            ConnectCallback = async (_, token) =>
+            {
+                NamedPipeClientStream pipe = new(
+                    ".",
+                    endpoint.PipeName,
+                    PipeDirection.InOut,
+                    PipeOptions.Asynchronous);
+                await pipe.ConnectAsync(token).ConfigureAwait(false);
+                return pipe;
+            }
+        };
+        using Grpc.Net.Client.GrpcChannel channel =
+            Grpc.Net.Client.GrpcChannel.ForAddress(
+                "http://localhost",
+                new Grpc.Net.Client.GrpcChannelOptions
+                {
+                    HttpHandler = httpHandler,
+                    MaxSendMessageSize =
+                        RuntimeServiceRegistryContractPolicy.MaximumRequestBytes,
+                    MaxReceiveMessageSize =
+                        RuntimeServiceRegistryContractPolicy.MaximumResponseBytes
+                });
+        RuntimeServiceRegistryService.RuntimeServiceRegistryServiceClient client =
+            new(channel);
+        const string method =
+            "/opure.runtime.registry.v1.RuntimeServiceRegistryService/QueryServices";
+        Grpc.Core.Metadata headers =
+            RuntimeHealthSessionAuthentication.CreateClientMetadata(
+                endpoint,
+                material,
+                method,
+                Environment.ProcessId,
+                DateTimeOffset.UtcNow,
+                out string nonce,
+                out string clientProof);
+        QueryServiceRegistryRequest request = new()
+        {
+            MinimumContractRevision =
+                RuntimeServiceRegistryContractPolicy.CurrentRevision,
+            MaximumContractRevision =
+                RuntimeServiceRegistryContractPolicy.CurrentRevision,
+            QueryId = Guid.NewGuid().ToString("N"),
+            MaximumResults = 8
+        };
+
+        using Grpc.Core.AsyncUnaryCall<QueryServiceRegistryResponse> call =
+            client.QueryServicesAsync(
+                request,
+                headers,
+                deadline: DateTime.UtcNow.AddSeconds(2),
+                cancellationToken: cancellationToken);
+        Grpc.Core.Metadata responseHeaders =
+            await call.ResponseHeadersAsync;
+        QueryServiceRegistryResponse response =
+            await call.ResponseAsync;
+
+        Assert.Equal(expected, response);
+        Assert.True(RuntimeHealthSessionAuthentication.VerifyServerProof(
+            endpoint,
+            material,
+            method,
+            nonce,
+            clientProof,
+            responseHeaders));
+        Assert.True(
+            RuntimeServiceRegistryContractPolicy.ValidateResponse(response).IsValid);
     }
 
     [Fact]
@@ -645,6 +736,33 @@ public sealed class NamedPipeRuntimeHealthTransportTests
         };
     }
 
+    private static RuntimeServiceDescriptor CreateRegistryDescriptor()
+    {
+        RuntimeServiceDescriptor descriptor = new()
+        {
+            ServiceId = "runtime.health",
+            ServiceRevision = 1,
+            ContractRevision = 1,
+            DisplayName = "Runtime Health",
+            OwnerId = "runtime.kernel",
+            Classification = RuntimeServiceClassification.CriticalCore,
+            LifecycleState = RuntimeServiceLifecycleState.Registered,
+            ProcessPlacement = RuntimeServiceProcessPlacement.RuntimeProcess,
+            HealthReference = new RuntimeServiceHealthReference
+            {
+                HealthServiceId = "runtime.health",
+                ContractRevision = 1
+            }
+        };
+        descriptor.Capabilities.Add(new RuntimeCapabilitySummary
+        {
+            CapabilityId = "runtime.health.query",
+            ContractRevision = 1,
+            SafeSummary = "Provides a bounded Runtime and service health projection."
+        });
+        return descriptor;
+    }
+
     private sealed class StaticHealthHandler(string bootId)
         : IRuntimeHealthRequestHandler
     {
@@ -655,6 +773,20 @@ public sealed class NamedPipeRuntimeHealthTransportTests
             _ = request;
             cancellationToken.ThrowIfCancellationRequested();
             return Task.FromResult(CreateResponse(bootId));
+        }
+    }
+
+    private sealed class StaticRegistryHandler(
+        QueryServiceRegistryResponse response)
+        : IRuntimeServiceRegistryRequestHandler
+    {
+        public Task<QueryServiceRegistryResponse> HandleAsync(
+            QueryServiceRegistryRequest request,
+            CancellationToken cancellationToken)
+        {
+            _ = request;
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(response.Clone());
         }
     }
 
