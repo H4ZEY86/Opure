@@ -1,0 +1,17 @@
+<Project>
+
+  <Target Name="ValidateOpureBuildPolicy" BeforeTargets="PrepareForBuild">
+    <Error
+      Condition="'$(MSBuildProjectName)' != '' and !$(MSBuildProjectName.StartsWith('Opure.'))"
+      Text="First-party project names must begin with 'Opure.': $(MSBuildProjectName)" />
+
+    <Error
+      Condition="'$(TargetFramework)' != '' and '$(TargetFramework)' != '$(OpureTargetFrameworkBaseline)'"
+      Text="Unsupported target framework '$(TargetFramework)' in $(MSBuildProjectName). The current baseline is $(OpureTargetFrameworkBaseline)." />
+
+    <Error
+      Condition="'$(OpureBuildChannel)' != 'Development' and '$(OpureBuildChannel)' != 'Preview' and '$(OpureBuildChannel)' != 'Stable'"
+      Text="OpureBuildChannel must be Development, Preview or Stable. Received '$(OpureBuildChannel)'." />
+  </Target>
+
+</Project>

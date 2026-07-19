@@ -1,0 +1,47 @@
+<Project>
+
+  <PropertyGroup>
+    <OpureTargetFrameworkBaseline>net10.0</OpureTargetFrameworkBaseline>
+    <LangVersion>14.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>10-minimum</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors>$(WarningsAsErrors);NU1605;NU1903;NU1904</WarningsAsErrors>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1901;NU1902</WarningsNotAsErrors>
+
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+
+    <Deterministic>true</Deterministic>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>portable</DebugType>
+    <ContinuousIntegrationBuild
+      Condition="'$(CI)' == 'true' or '$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+    <ArtifactsPath>$(MSBuildThisFileDirectory)artifacts</ArtifactsPath>
+
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreLockedMode Condition="'$(LockedRestore)' == 'true'">true</RestoreLockedMode>
+
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditMode>all</NuGetAuditMode>
+    <NuGetAuditLevel>low</NuGetAuditLevel>
+
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/H4ZEY86/Opure.git</RepositoryUrl>
+
+    <OpureBuildChannel Condition="'$(OpureBuildChannel)' == ''">Development</OpureBuildChannel>
+    <DefineConstants
+      Condition="'$(OpureBuildChannel)' == 'Development'">$(DefineConstants);OPURE_DEVELOPMENT</DefineConstants>
+    <DefineConstants
+      Condition="'$(OpureBuildChannel)' == 'Preview'">$(DefineConstants);OPURE_PREVIEW</DefineConstants>
+    <DefineConstants
+      Condition="'$(OpureBuildChannel)' == 'Stable'">$(DefineConstants);OPURE_STABLE</DefineConstants>
+  </PropertyGroup>
+
+</Project>

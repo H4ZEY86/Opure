@@ -1,51 +1,48 @@
 #requires -Version 7.2
+
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('restore', 'build', 'test', 'verify')]
+    [ValidateSet('restore', 'build', 'test', 'verify', 'policy')]
     [string] $Target = 'verify',
 
     [Parameter()]
     [ValidateSet('Debug', 'Release')]
-    [string] $Configuration = 'Debug'
+    [string] $Configuration = 'Debug',
+
+    [Parameter()]
+    [ValidateSet('Development', 'Preview', 'Stable')]
+    [string] $BuildChannel = 'Development'
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$solution = Join-Path $PSScriptRoot 'Opure.slnx'
-if (-not (Test-Path -LiteralPath $solution)) {
-    throw "Solution not found: $solution"
-}
-
-function Invoke-DotNet {
-    param([Parameter(Mandatory)][string[]] $Arguments)
-
-    & dotnet @Arguments
-    if ($LASTEXITCODE -ne 0) {
-        throw "dotnet command failed with exit code ${LASTEXITCODE}: dotnet $($Arguments -join ' ')"
-    }
-}
-
 switch ($Target) {
     'restore' {
-        Invoke-DotNet @('restore', $solution)
+        & (Join-Path $PSScriptRoot 'eng\restore.ps1') -Locked
     }
 
     'build' {
-        Invoke-DotNet @('restore', $solution)
-        Invoke-DotNet @('build', $solution, '--no-restore', '--configuration', $Configuration)
+        & (Join-Path $PSScriptRoot 'eng\restore.ps1') -Locked
+        & (Join-Path $PSScriptRoot 'eng\build.ps1') `
+            -Configuration $Configuration `
+            -BuildChannel $BuildChannel
     }
 
     'test' {
-        Invoke-DotNet @('restore', $solution)
-        Invoke-DotNet @('build', $solution, '--no-restore', '--configuration', $Configuration)
-        Invoke-DotNet @('test', $solution, '--no-build', '--configuration', $Configuration)
+        & (Join-Path $PSScriptRoot 'eng\verify.ps1') `
+            -Configuration $Configuration `
+            -BuildChannel $BuildChannel
     }
 
     'verify' {
-        Invoke-DotNet @('restore', $solution)
-        Invoke-DotNet @('build', $solution, '--no-restore', '--configuration', $Configuration)
-        Invoke-DotNet @('test', $solution, '--no-build', '--configuration', $Configuration)
+        & (Join-Path $PSScriptRoot 'eng\verify.ps1') `
+            -Configuration $Configuration `
+            -BuildChannel $BuildChannel
+    }
+
+    'policy' {
+        & (Join-Path $PSScriptRoot 'eng\verify-build-policy.ps1')
     }
 }

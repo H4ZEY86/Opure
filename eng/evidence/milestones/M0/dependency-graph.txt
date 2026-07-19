@@ -1,0 +1,33 @@
+Project 'Opure.Bootstrap.Windows' has the following package references
+   [net10.0]: No packages were found for this framework.
+Project 'Opure.Runtime.Contracts' has the following package references
+   [net10.0]: No packages were found for this framework.
+Project 'Opure.Runtime' has the following package references
+   [net10.0]: No packages were found for this framework.
+Project 'Opure.ArchitectureTests' has the following package references
+   [net10.0]: 
+   Top-level Package                Requested   Resolved
+   > Microsoft.NET.Test.Sdk         18.8.1      18.8.1  
+   > xunit.runner.visualstudio      3.1.5       3.1.5   
+   > xunit.v3                       3.2.2       3.2.2   
+
+   Transitive Package                                         Resolved
+   > Microsoft.ApplicationInsights                            2.23.0  
+   > Microsoft.Bcl.AsyncInterfaces                            6.0.0   
+   > Microsoft.CodeCoverage                                   18.8.1  
+   > Microsoft.Testing.Extensions.Telemetry                   1.9.1   
+   > Microsoft.Testing.Extensions.TrxReport.Abstractions      1.9.1   
+   > Microsoft.Testing.Platform                               1.9.1   
+   > Microsoft.Testing.Platform.MSBuild                       1.9.1   
+   > Microsoft.TestPlatform.ObjectModel                       18.8.1  
+   > Microsoft.TestPlatform.TestHost                          18.8.1  
+   > Microsoft.Win32.Registry                                 5.0.0   
+   > xunit.analyzers                                          1.27.0  
+   > xunit.v3.assert                                          3.2.2   
+   > xunit.v3.common                                          3.2.2   
+   > xunit.v3.core.mtp-v1                                     3.2.2   
+   > xunit.v3.extensibility.core                              3.2.2   
+   > xunit.v3.mtp-v1                                          3.2.2   
+   > xunit.v3.runner.common                                   3.2.2   
+   > xunit.v3.runner.inproc.console                           3.2.2   
+
