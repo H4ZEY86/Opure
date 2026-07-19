@@ -1,0 +1,9 @@
+Opure Runtime Offline Endpoint Evidence
+=======================================
+CapturePlatform: Microsoft Windows NT 10.0.26300.0
+CaptureMethod: Get-NetTCPConnection and Get-NetUDPEndpoint by owning process
+RuntimeProcessId: 8796
+TcpEndpointCount: 0
+UdpEndpointCount: 0
+Expected: zero Runtime-owned TCP or UDP endpoints
+Result: Passed

@@ -1,0 +1,13 @@
+Opure Runtime Process Inventory
+===============================
+Host: dotnet
+Assembly: Opure.Runtime.dll
+FirstExitCode: 0
+FirstElapsedMilliseconds: 159
+SecondExitCode: 0
+SecondElapsedMilliseconds: 161
+NetworkProbeExitCode: 0
+NetworkProbeElapsedMilliseconds: 2104
+StartupFailureExitCode: 20
+ChildProcessesStarted: 0
+DomainServicesLoaded: 0

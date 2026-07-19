@@ -3,7 +3,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('restore', 'build', 'test', 'verify', 'policy', 'version', 'version-policy')]
+    [ValidateSet('restore', 'build', 'test', 'verify', 'policy', 'version', 'version-policy', 'runtime', 'runtime-policy')]
     [string] $Target = 'verify',
 
     [Parameter()]
@@ -12,7 +12,11 @@ param(
 
     [Parameter()]
     [ValidateSet('Development', 'Preview', 'Stable')]
-    [string] $BuildChannel = 'Development'
+    [string] $BuildChannel = 'Development',
+
+    [Parameter()]
+    [ValidateRange(0, 60000)]
+    [int] $RuntimeDurationMilliseconds = 0
 )
 
 Set-StrictMode -Version Latest
@@ -52,5 +56,14 @@ switch ($Target) {
 
     'version-policy' {
         & (Join-Path $PSScriptRoot 'eng\verify-versioning.ps1')
+    }
+
+    'runtime' {
+        & (Join-Path $PSScriptRoot 'eng\run-runtime.ps1') `
+            -ShutdownAfterMilliseconds $RuntimeDurationMilliseconds
+    }
+
+    'runtime-policy' {
+        & (Join-Path $PSScriptRoot 'eng\verify-runtime.ps1')
     }
 }

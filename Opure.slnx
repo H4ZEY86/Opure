@@ -11,4 +11,7 @@
   <Folder Name="/tests/Architecture/">
     <Project Path="tests/Architecture/Opure.ArchitectureTests/Opure.ArchitectureTests.csproj" />
   </Folder>
+  <Folder Name="/tests/Runtime/">
+    <Project Path="tests/Runtime/Opure.Runtime.Tests/Opure.Runtime.Tests.csproj" />
+  </Folder>
 </Solution>
