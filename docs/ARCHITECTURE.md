@@ -422,8 +422,8 @@ The owning service remains authoritative for schema, SQL, health consequences
 and recovery. Malformed or wrongly identified files are preserved and reported
 with stable codes; they are never silently replaced. FND-014 deliberately did
 not create a Runtime database. Transactional outboxes, backup, restore,
-integrity scheduling and persistence-health publication remain later tickets,
-so ADR-0005 remains Proposed.
+integrity scheduling and persistence-health publication were separate follow-up
+tickets, so ADR-0005 remains Proposed.
 
 ### 9.4 Provisional M3 SQLite Migration Boundary
 
@@ -454,8 +454,45 @@ pre-migration Recovery Point hook. FND-015 defines and exercises that hook but
 does not implement the later backup product. The same runner can validate and
 migrate a restored database opened beneath a separate canonical staging root,
 leaving the source database untouched. Developers can inspect the catalogue,
-history and M3 reports or rerun `pwsh ./build.ps1 migration-policy`; migration
-intent/completion Trust receipts and transactional outboxes remain deferred.
+history and M3 reports or rerun `pwsh ./build.ps1 migration-policy`; typed
+migration intent/completion Trust records remain deferred.
+
+### 9.5 Provisional M3 Transactional Outbox Boundary
+
+An owning service adds `SqliteOutboxSchema` through its reviewed migration
+catalogue. The schema separates immutable message envelopes, mutable delivery
+progress and monotonic per-owner-stream counters. `SqliteOutboxWriter` verifies
+that its descriptor owns the active connection, then allocates the sequence and
+inserts the message and initial delivery state inside the caller's existing
+domain transaction. Rollback therefore removes the domain change, envelope and
+sequence allocation together.
+
+Each bounded envelope includes owner-derived identity, stream and sequence,
+event type and revision, explicit non-secret data classification, opaque
+operation/correlation references, idempotency hash, payload or payload reference
+and SHA-256 payload hash. SQLite triggers reject message updates and deletion;
+delivery completion changes only the separate progress row. This is local
+integrity and consistency evidence, not external proof. The owning service must
+still enforce its event schema, classification and redaction rules: secret
+values are prohibited, and FND-016 does not claim to provide content scanning.
+
+`SqliteOutboxDispatcher` leases only the earliest undelivered message in each
+stream, publishes outside the database transaction, and conditionally records
+delivery with the same lease token. Retry count, exponential delay and lease
+duration are bounded and persisted. A restart recovers committed pending rows;
+a crash after publication but before marking delivery causes the expired lease
+to publish again. Delivery is therefore at least once, never described as
+exactly once, and consumers require idempotency.
+
+Backlog health exposes bounded pending, leased, blocked and delivered counts,
+oldest-undelivered age and next-attempt time without exposing payloads. Delivered
+identity is retained; compaction is not implemented until consumer progress,
+recovery window and audit policy exist. Cancellation during publication leaves
+the lease to expire safely. Developers can inspect the three outbox tables and
+M3 reports or run `pwsh ./build.ps1 outbox-policy`. The publisher interface is
+the Runtime Messaging integration seam; durable consumer inbox/deduplication is
+FND-017, while Trust Evidence ingestion and user-facing projection remain later
+work.
 
 ---
 

@@ -1,0 +1,12 @@
+{
+  "schema": "opure.sqlite-outbox-crash-matrix/1",
+  "result": "Passed",
+  "crashAfterCommitBeforeDeliveryRecovered": true,
+  "crashDuringDeliveryRecovered": true,
+  "beforeDeliveryPublishCount": 1,
+  "duringDeliveryPublishCount": 2,
+  "lostMessages": 0,
+  "duplicateDeliveryExpected": true,
+  "deliverySemantics": "AtLeastOnce",
+  "expiredLeaseAttempt": 2
+}

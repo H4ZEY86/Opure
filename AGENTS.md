@@ -172,31 +172,33 @@ Completed and committed:
 * FND-012 — Service Lifecycle State Machine.
 * FND-013 — Runtime Health UI.
 * FND-014 — SQLite Persistence Library.
+* FND-015 — Add Migration Runner.
 
 Implemented and verified by the current change:
 
-* FND-015 — Add Migration Runner.
+* FND-016 — Add Transactional Outbox.
 
-FND-015 includes:
+FND-016 includes:
 
-* immutable contiguous forward-only service migration catalogues;
-* deterministic SHA-256 migration checksums and authoritative history;
-* transactional schema, history and `user_version` updates;
-* quick, foreign-key and versioned targeted schema validation;
-* checksum-mutation, inconsistent-history and newer-schema refusal;
-* migration health projected through the service database health contract;
-* normal-write blocking after failure until a valid catalogue is restored;
-* explicit verified pre-migration Recovery Point hooks for risky migrations;
-* staged restore-copy migration without modifying the source database;
-* migration catalogue, rollback and schema-validation evidence.
+* a migration-owned outbox schema with immutable message envelopes;
+* atomic domain state, owner sequence, message and delivery-state commit;
+* monotonic per-owner-stream sequence allocation with rollback safety;
+* SHA-256 payload and idempotency binding plus explicit data classification;
+* connection ownership checks and foreign-owner rejection;
+* ordered persisted leases with at-least-once delivery semantics;
+* bounded exponential retry and terminal blocked state;
+* restart and expired-lease recovery with expected duplicate delivery;
+* backlog health without payload or local-path disclosure;
+* retained delivered identity and no premature compaction;
+* transaction, crash-matrix and owner-sequence evidence.
 
 The next planned ticket is:
 
 ```text
-FND-016 — Add Transactional Outbox
+FND-017 — Add Transactional Inbox
 ```
 
-Do not assume FND-015 is complete until the SQLite migration verifier passes and the changes are reviewed, committed and pushed.
+Do not assume FND-016 is complete until the transactional outbox verifier passes and the changes are reviewed, committed and pushed.
 
 ## Build policy
 

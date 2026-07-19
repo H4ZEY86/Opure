@@ -388,6 +388,13 @@ public sealed class SqliteMigrationRunnerTests
                 1,
                 "Attempts to hide transaction control behind a comment.",
                 ["-- reviewed\nCOMMIT"]));
+        _ = Assert.Throws<ArgumentException>(() =>
+            new SqliteMigration(
+                "concatenated-triggers",
+                0,
+                1,
+                "Attempts to concatenate trigger statements.",
+                ["CREATE TRIGGER first AFTER INSERT ON items BEGIN SELECT 1; END; CREATE TRIGGER second AFTER INSERT ON items BEGIN SELECT 2; END"]));
     }
 
     private const string CreateProjectsTableSql = """

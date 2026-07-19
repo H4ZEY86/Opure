@@ -1,0 +1,21 @@
+{
+  "schema": "opure.sqlite-outbox-owner-sequence/1",
+  "result": "Passed",
+  "ownerServiceId": "outbox.persistence",
+  "alphaSequences": [
+    1,
+    2,
+    3
+  ],
+  "betaSequences": [
+    1
+  ],
+  "alphaDeliveryOrder": [
+    "alpha-001",
+    "alpha-002",
+    "alpha-003"
+  ],
+  "perStreamOrdering": true,
+  "idempotencyMetadataBound": true,
+  "payloadHashesBound": true
+}

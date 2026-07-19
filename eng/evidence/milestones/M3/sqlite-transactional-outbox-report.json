@@ -1,0 +1,15 @@
+{
+  "schema": "opure.sqlite-outbox-transaction/1",
+  "result": "Passed",
+  "domainAndOutboxCommitAtomically": true,
+  "domainAndOutboxRollbackAtomically": true,
+  "rolledBackDomainRows": 0,
+  "rolledBackOutboxRows": 0,
+  "rolledBackSequenceRows": 0,
+  "firstSequenceAfterRollback": 1,
+  "ownerSequence": 1,
+  "payloadSha256": "d9456b9ad08d30922546856978a1f64d459aaa6ce4270bf62893aed9aa6d40a1",
+  "idempotencySha256": "6dfd819d1404afbc4825d94e470fcc354383a909788588f652214e146af3d101",
+  "payloadImmutable": true,
+  "deliveredIdentityRetained": true
+}

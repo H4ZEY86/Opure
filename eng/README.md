@@ -250,6 +250,12 @@ Run the complete FND-015 SQLite migration evidence gate:
 pwsh ./build.ps1 migration-policy
 ```
 
+Run the complete FND-016 transactional outbox evidence gate:
+
+```powershell
+pwsh ./build.ps1 outbox-policy
+```
+
 Bootstrap verifies absolute Runtime and Desktop executable paths and companion assembly identities before launch. It starts Runtime first, waits for explicit Runtime readiness, starts Desktop second, and shuts down Desktop before Runtime.
 
 Supervisor verification injects a bounded Runtime crash, a rapid crash loop and an abrupt Bootstrap termination. It verifies restart identity, exponential backoff, visible Safe Mode and Windows Job Object orphan cleanup without recording child environment values.
@@ -269,5 +275,7 @@ Runtime Health UI verification exercises the live registry-backed projection, au
 SQLite persistence verification exercises canonical channel-isolated ownership paths, fixed connection strings, WAL/FULL/foreign-key/trusted-schema configuration, application identity, commit and rollback, one process-wide writer, malformed database preservation and architecture isolation. It records the loaded native SQLite dependency manifest, transaction report and reviewed library design under `eng/evidence/milestones/M3`.
 
 SQLite migration verification exercises fresh and incremental forward migration, deterministic checksum history, per-migration rollback, interruption recovery, unsupported-newer-schema refusal, readiness blocking, verified Recovery Point hooks and staged-restore-copy invocation. It records the reviewed migration catalogue, failure/rollback report and schema-validation report under `eng/evidence/milestones/M3`.
+
+Transactional outbox verification exercises atomic domain/envelope commit and rollback, immutable payload identity, monotonic owner sequences, ordered leases, bounded retry, backlog health, restart recovery and expected duplicate delivery after an expired in-flight lease. It records the atomic transaction report, crash matrix and owner-sequence report under `eng/evidence/milestones/M3` without claiming exactly-once delivery.
 
 Channel-specific data-root and one-time session material are passed through bounded environment variables. The session secret is not placed on command lines, written to disk or included in diagnostics.

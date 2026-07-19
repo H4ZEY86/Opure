@@ -28,6 +28,14 @@ public static class SqlitePersistenceErrorCodes
         "PERSISTENCE_SCHEMA_VALIDATION_FAILED";
     public const string MigrationReadinessBlocked =
         "PERSISTENCE_MIGRATION_READINESS_BLOCKED";
+    public const string OutboxSchemaUnavailable =
+        "PERSISTENCE_OUTBOX_SCHEMA_UNAVAILABLE";
+    public const string OutboxDuplicate = "PERSISTENCE_OUTBOX_DUPLICATE";
+    public const string OutboxPayloadHashMismatch =
+        "PERSISTENCE_OUTBOX_PAYLOAD_HASH_MISMATCH";
+    public const string OutboxLeaseLost = "PERSISTENCE_OUTBOX_LEASE_LOST";
+    public const string OutboxPublishFailed =
+        "PERSISTENCE_OUTBOX_PUBLISH_FAILED";
 }
 
 /// <summary>

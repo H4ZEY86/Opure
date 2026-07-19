@@ -141,7 +141,18 @@ public sealed class SqliteMigration
             normalised = normalised[..^1].TrimEnd();
         }
 
-        if (normalised.Contains(';', StringComparison.Ordinal))
+        bool isTrigger = normalised.StartsWith(
+            "CREATE TRIGGER ",
+            StringComparison.OrdinalIgnoreCase);
+        bool isSingleTrigger = isTrigger &&
+            normalised.EndsWith("END", StringComparison.OrdinalIgnoreCase) &&
+            normalised.IndexOf(
+                "CREATE TRIGGER ",
+                "CREATE TRIGGER ".Length,
+                StringComparison.OrdinalIgnoreCase) < 0;
+
+        if ((!isTrigger && normalised.Contains(';', StringComparison.Ordinal)) ||
+            (isTrigger && !isSingleTrigger))
         {
             throw new ArgumentException(
                 "Each migration command must contain exactly one SQL statement.",

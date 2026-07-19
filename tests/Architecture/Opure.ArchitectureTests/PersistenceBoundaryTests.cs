@@ -168,6 +168,84 @@ public sealed class PersistenceBoundaryTests
         Assert.DoesNotContain("File.Delete", source, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Transactional_outbox_remains_inside_the_persistence_boundary()
+    {
+        string[] unrelatedSourceRoots =
+        [
+            Path.Combine(RepositoryRoot, "src", "Bootstrap"),
+            Path.Combine(RepositoryRoot, "src", "Desktop"),
+            Path.Combine(RepositoryRoot, "src", "Runtime")
+        ];
+
+        foreach (string sourceRoot in unrelatedSourceRoots)
+        {
+            string source = string.Join(
+                Environment.NewLine,
+                Directory.EnumerateFiles(
+                        sourceRoot,
+                        "*.cs",
+                        SearchOption.AllDirectories)
+                    .Select(File.ReadAllText));
+
+            Assert.DoesNotContain(
+                "SqliteOutboxWriter",
+                source,
+                StringComparison.Ordinal);
+            Assert.DoesNotContain(
+                "SqliteOutboxDispatcher",
+                source,
+                StringComparison.Ordinal);
+            Assert.DoesNotContain(
+                "__opure_outbox_",
+                source,
+                StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public void Outbox_schema_preserves_immutable_at_least_once_identity()
+    {
+        string sourceRoot = Path.Combine(
+            RepositoryRoot,
+            "src",
+            "Persistence",
+            "Opure.Persistence.Sqlite");
+        string outboxSource = string.Join(
+            Environment.NewLine,
+            Directory.EnumerateFiles(sourceRoot, "SqliteOutbox*.cs")
+                .Select(File.ReadAllText));
+
+        Assert.Contains(
+            "__opure_outbox_messages_immutable",
+            outboxSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "__opure_outbox_messages_retained",
+            outboxSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "SqliteMigration",
+            outboxSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "payload_sha256",
+            outboxSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "owner_sequence",
+            outboxSource,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "DELETE FROM __opure_outbox",
+            outboxSource,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(
+            "ExactlyOnce",
+            outboxSource,
+            StringComparison.Ordinal);
+    }
+
     private static string FindRepositoryRoot()
     {
         DirectoryInfo? directory = new(AppContext.BaseDirectory);
