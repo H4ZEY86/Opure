@@ -14,18 +14,11 @@ internal static class WindowsNamedPipeSecurity
             WindowsIdentity.GetCurrent().User ??
             throw new InvalidOperationException(
                 "The current Windows user identity is unavailable.");
-        SecurityIdentifier localSystem = new(
-            WellKnownSidType.LocalSystemSid,
-            domainSid: null);
         PipeSecurity security = new();
         security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
         security.SetOwner(currentUser);
         security.AddAccessRule(new PipeAccessRule(
             currentUser,
-            PipeAccessRights.FullControl,
-            AccessControlType.Allow));
-        security.AddAccessRule(new PipeAccessRule(
-            localSystem,
             PipeAccessRights.FullControl,
             AccessControlType.Allow));
         return security;
