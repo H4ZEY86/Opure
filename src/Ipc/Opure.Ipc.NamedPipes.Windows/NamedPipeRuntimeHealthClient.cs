@@ -217,6 +217,14 @@ public sealed class NamedPipeRuntimeHealthClient : IRuntimeHealthTransportClient
                 retryable: true,
                 exception);
         }
+        catch (RpcException exception)
+        {
+            throw new RuntimeHealthTransportException(
+                RuntimeHealthTransportErrorCodes.Unavailable,
+                "The Runtime Health call failed with an unexpected transport status.",
+                retryable: true,
+                exception);
+        }
     }
 
     public ValueTask DisposeAsync()
