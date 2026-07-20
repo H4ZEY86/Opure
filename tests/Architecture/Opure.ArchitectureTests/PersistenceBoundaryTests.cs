@@ -246,6 +246,90 @@ public sealed class PersistenceBoundaryTests
             StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Transactional_inbox_remains_inside_the_persistence_boundary()
+    {
+        string[] unrelatedSourceRoots =
+        [
+            Path.Combine(RepositoryRoot, "src", "Bootstrap"),
+            Path.Combine(RepositoryRoot, "src", "Desktop"),
+            Path.Combine(RepositoryRoot, "src", "Runtime")
+        ];
+
+        foreach (string sourceRoot in unrelatedSourceRoots)
+        {
+            string source = string.Join(
+                Environment.NewLine,
+                Directory.EnumerateFiles(
+                        sourceRoot,
+                        "*.cs",
+                        SearchOption.AllDirectories)
+                    .Select(File.ReadAllText));
+
+            Assert.DoesNotContain(
+                "SqliteInboxProcessor",
+                source,
+                StringComparison.Ordinal);
+            Assert.DoesNotContain(
+                "SqliteInboxSchema",
+                source,
+                StringComparison.Ordinal);
+            Assert.DoesNotContain(
+                "__opure_inbox_",
+                source,
+                StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public void Inbox_schema_preserves_receipt_and_conflict_identity()
+    {
+        string inboxPath = Path.Combine(
+            RepositoryRoot,
+            "src",
+            "Persistence",
+            "Opure.Persistence.Sqlite",
+            "SqliteInbox.cs");
+        string source = File.ReadAllText(inboxPath);
+
+        Assert.Contains(
+            "__opure_inbox_receipts_immutable",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "__opure_inbox_receipts_retained",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "__opure_inbox_conflicts_retained",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "__opure_inbox_conflict_identity_immutable",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "conflicting_payload_sha256",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "source_service_id",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "SqliteMigration",
+            source,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "DELETE FROM __opure_inbox",
+            source,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(
+            "ExactlyOnce",
+            source,
+            StringComparison.Ordinal);
+    }
+
     private static string FindRepositoryRoot()
     {
         DirectoryInfo? directory = new(AppContext.BaseDirectory);

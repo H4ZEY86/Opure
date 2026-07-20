@@ -491,8 +491,39 @@ recovery window and audit policy exist. Cancellation during publication leaves
 the lease to expire safely. Developers can inspect the three outbox tables and
 M3 reports or run `pwsh ./build.ps1 outbox-policy`. The publisher interface is
 the Runtime Messaging integration seam; durable consumer inbox/deduplication is
-FND-017, while Trust Evidence ingestion and user-facing projection remain later
-work.
+provided by the FND-017 boundary below, while Trust Evidence ingestion and
+user-facing projection remain later work.
+
+### 9.6 Provisional M3 Transactional Inbox Boundary
+
+A receiving service adds `SqliteInboxSchema` through its own reviewed migration
+catalogue and configures `SqliteInboxProcessor` with explicit source-service,
+message-type and supported-revision ranges. The source identity is required and
+must be bound by the caller from the authenticated service session rather than
+copied from an untrusted payload. It forms part of the durable message identity;
+an unsupported source, contract or revision is rejected before any receipt or
+domain mutation.
+
+For a first valid delivery, the processor inserts an immutable receipt before
+invoking the receiving service's deterministic domain callback inside the same
+short SQLite transaction. A callback failure rolls back both records. After a
+successful commit, an identical replay returns an acknowledged duplicate
+without invoking the callback, including after receiver restart. The callback
+must not wait for external work or perform non-transactional side effects.
+
+The receipt binds source, message identity, contract revision, classification
+and SHA-256 payload hash without copying the payload into inbox storage. A
+same-identity envelope mismatch creates or updates retained quarantine metadata
+containing accepted and conflicting hashes, stable reason, timestamps and a
+bounded observation count; the conflicting payload bytes are rejected rather
+than persisted. Conflict health exposes aggregate receipt, message, variant and
+observation counts plus the last conflict time without payloads or local paths.
+
+Developers can inspect the two inbox tables and M3 reports or run
+`pwsh ./build.ps1 inbox-policy`. The conflict ledger and report are local
+integrity evidence. Typed Trust Evidence schemas and ingestion are deliberately
+deferred to FND-021 through FND-024, so FND-017 does not claim a completed Trust
+Centre projection.
 
 ---
 

@@ -173,32 +173,32 @@ Completed and committed:
 * FND-013 — Runtime Health UI.
 * FND-014 — SQLite Persistence Library.
 * FND-015 — Add Migration Runner.
+* FND-016 — Add Transactional Outbox.
 
 Implemented and verified by the current change:
 
-* FND-016 — Add Transactional Outbox.
+* FND-017 — Add Transactional Inbox.
 
-FND-016 includes:
+FND-017 includes:
 
-* a migration-owned outbox schema with immutable message envelopes;
-* atomic domain state, owner sequence, message and delivery-state commit;
-* monotonic per-owner-stream sequence allocation with rollback safety;
-* SHA-256 payload and idempotency binding plus explicit data classification;
-* connection ownership checks and foreign-owner rejection;
-* ordered persisted leases with at-least-once delivery semantics;
-* bounded exponential retry and terminal blocked state;
-* restart and expired-lease recovery with expected duplicate delivery;
-* backlog health without payload or local-path disclosure;
-* retained delivered identity and no premature compaction;
-* transaction, crash-matrix and owner-sequence evidence.
+* a migration-owned immutable inbox receipt and retained conflict ledger;
+* explicit source-service and supported contract-revision admission;
+* atomic receipt insertion and receiver-owned domain effects;
+* source-scoped message identity and SHA-256 payload binding;
+* identical duplicate acknowledgement without a second domain effect;
+* same-identity envelope-conflict quarantine without payload persistence;
+* persisted conflict variants, observations and bounded aggregate health;
+* rollback-safe crash-before-commit recovery;
+* restart-safe crash-after-commit duplicate replay;
+* idempotency and conflicting-duplicate evidence reports.
 
 The next planned ticket is:
 
 ```text
-FND-017 — Add Transactional Inbox
+FND-018 — Add Structured Logging
 ```
 
-Do not assume FND-016 is complete until the transactional outbox verifier passes and the changes are reviewed, committed and pushed.
+Do not assume FND-017 is complete until the transactional inbox verifier passes and the changes are reviewed, committed and pushed.
 
 ## Build policy
 

@@ -1,0 +1,18 @@
+{
+  "schema": "opure.sqlite-inbox-idempotency/1",
+  "result": "Passed",
+  "receiverServiceId": "inbox.persistence",
+  "sourceServiceId": "source.service",
+  "firstDeliveryState": "Applied",
+  "matchingDuplicateState": "Duplicate",
+  "domainEffectCount": 1,
+  "receiptCount": 1,
+  "payloadSha256": "f866167d80c91f0da4cefa9d854480f60722a4ece063d650db259f8e75c61546",
+  "duplicatePayloadSha256": "f866167d80c91f0da4cefa9d854480f60722a4ece063d650db259f8e75c61546",
+  "receiptAndDomainEffectAtomic": true,
+  "matchingDuplicateAcknowledged": true,
+  "duplicateDomainEffectApplied": false,
+  "crashBeforeCommitReplaySafe": true,
+  "crashAfterCommitReplaySafe": true,
+  "receiptSurvivesRestart": true
+}

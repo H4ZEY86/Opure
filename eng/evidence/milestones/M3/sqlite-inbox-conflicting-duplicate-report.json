@@ -1,0 +1,18 @@
+{
+  "schema": "opure.sqlite-inbox-conflicting-duplicate/1",
+  "result": "Passed",
+  "conflictState": "ConflictingDuplicate",
+  "stableConflictReason": "INBOX_PAYLOAD_CONFLICT",
+  "acceptedPayloadSha256": "f866167d80c91f0da4cefa9d854480f60722a4ece063d650db259f8e75c61546",
+  "conflictingPayloadSha256": "c7fc5153f267ebfa747726a44c49a606ea7dacf655a6ca932a479116459d69fa",
+  "domainEffectCount": 1,
+  "receiptCount": 1,
+  "distinctConflictedMessages": 1,
+  "conflictVariants": 1,
+  "conflictObservations": 2,
+  "healthState": "ConflictDetected",
+  "conflictingPayloadPersisted": false,
+  "conflictIdentityRetained": true,
+  "materialIntegrityEvidenceRecorded": true,
+  "typedTrustEvidenceEmissionDeferred": true
+}
