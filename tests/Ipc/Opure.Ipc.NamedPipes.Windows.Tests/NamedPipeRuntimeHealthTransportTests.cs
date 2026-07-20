@@ -268,6 +268,33 @@ public sealed class NamedPipeRuntimeHealthTransportTests
     }
 
     [Fact]
+    public async Task Unexpected_server_failure_surfaces_stable_transport_error()
+    {
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        RuntimeHealthEndpoint endpoint = CreateEndpoint();
+        RuntimeHealthSessionMaterial material = RuntimeHealthSessionMaterial.Create();
+
+        await using NamedPipeRuntimeHealthServer server =
+            await NamedPipeRuntimeHealthServer.StartAsync(
+                endpoint,
+                new ThrowingHealthHandler(),
+                CreatePolicy(material),
+                cancellationToken);
+        await using NamedPipeRuntimeHealthClient client = new(endpoint, material);
+
+        RuntimeHealthTransportException exception = await Assert.ThrowsAsync<
+            RuntimeHealthTransportException>(() => client.GetRuntimeHealthAsync(
+                CreateRequest(),
+                RuntimeHealthContractPolicy.DefaultDeadline,
+                cancellationToken));
+
+        Assert.Equal(
+            RuntimeHealthTransportErrorCodes.Unavailable,
+            exception.ErrorCode);
+        Assert.True(exception.Retryable);
+    }
+
+    [Fact]
     public async Task Cancellation_closes_call_promptly()
     {
         CancellationToken testCancellation = TestContext.Current.CancellationToken;
@@ -838,6 +865,19 @@ public sealed class NamedPipeRuntimeHealthTransportTests
             _ = request;
             cancellationToken.ThrowIfCancellationRequested();
             return Task.FromResult(response.Clone());
+        }
+    }
+
+    private sealed class ThrowingHealthHandler : IRuntimeHealthRequestHandler
+    {
+        public Task<GetRuntimeHealthResponse> HandleAsync(
+            GetRuntimeHealthRequest request,
+            CancellationToken cancellationToken)
+        {
+            _ = request;
+            cancellationToken.ThrowIfCancellationRequested();
+            throw new InvalidOperationException(
+                "The Runtime Health handler failed unexpectedly.");
         }
     }
 
