@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Data.Sqlite;
@@ -160,16 +159,16 @@ public sealed class SqliteOutboxEnvelope
         string? causationId = null,
         string? payloadReference = null)
     {
-        SqliteOutboxIdentifier.Validate(messageId, nameof(messageId));
-        SqliteOutboxIdentifier.Validate(streamId, nameof(streamId));
-        SqliteOutboxIdentifier.Validate(eventType, nameof(eventType));
-        SqliteOutboxIdentifier.Validate(idempotencyKey, nameof(idempotencyKey));
-        SqliteOutboxIdentifier.ValidateOptional(operationId, nameof(operationId));
-        SqliteOutboxIdentifier.ValidateOptional(
+        SqliteIdentifier.Validate(messageId, nameof(messageId));
+        SqliteIdentifier.Validate(streamId, nameof(streamId));
+        SqliteIdentifier.Validate(eventType, nameof(eventType));
+        SqliteIdentifier.Validate(idempotencyKey, nameof(idempotencyKey));
+        SqliteIdentifier.ValidateOptional(operationId, nameof(operationId));
+        SqliteIdentifier.ValidateOptional(
             correlationId,
             nameof(correlationId));
-        SqliteOutboxIdentifier.ValidateOptional(causationId, nameof(causationId));
-        SqliteOutboxIdentifier.ValidateOptional(
+        SqliteIdentifier.ValidateOptional(causationId, nameof(causationId));
+        SqliteIdentifier.ValidateOptional(
             payloadReference,
             nameof(payloadReference));
 
@@ -297,11 +296,11 @@ public sealed class SqliteOutboxWriter
                 recoveryRequired: false);
         }
 
-        string payloadHash = SqliteOutboxHash.Calculate(
+        string payloadHash = SqliteHash.Calculate(
             envelope.PayloadUtf8Json.Span);
-        string idempotencyHash = SqliteOutboxHash.Calculate(
+        string idempotencyHash = SqliteHash.Calculate(
             Encoding.UTF8.GetBytes(envelope.IdempotencyKey));
-        string enqueuedAt = SqliteOutboxTime.Format(
+        string enqueuedAt = SqliteTime.Format(
             timeProvider.GetUtcNow());
 
         try
@@ -439,7 +438,7 @@ public sealed class SqliteOutboxWriter
             envelope.DataClassification.ToString());
         _ = command.Parameters.AddWithValue(
             "$occurredAtUtc",
-            SqliteOutboxTime.Format(envelope.OccurredAtUtc));
+            SqliteTime.Format(envelope.OccurredAtUtc));
         _ = command.Parameters.AddWithValue("$enqueuedAtUtc", enqueuedAt);
         AddNullable(command, "$operationId", envelope.OperationId);
         AddNullable(command, "$correlationId", envelope.CorrelationId);
@@ -484,55 +483,5 @@ public sealed class SqliteOutboxWriter
         _ = command.Parameters.AddWithValue(
             parameterName,
             (object?)value ?? DBNull.Value);
-    }
-}
-
-internal static class SqliteOutboxIdentifier
-{
-    private const int MaximumLength = 128;
-
-    internal static void Validate(string value, string parameterName)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(value, parameterName);
-
-        bool validFirstCharacter = value[0] is >= 'a' and <= 'z' or
-            >= '0' and <= '9';
-
-        if (value.Length > MaximumLength ||
-            !validFirstCharacter ||
-            value[^1] is '.' or ':' or '-' or '_' ||
-            value.Any(character => character is not (>= 'a' and <= 'z' or
-                >= '0' and <= '9' or '.' or ':' or '-' or '_')))
-        {
-            throw new ArgumentException(
-                "An outbox identifier must use a bounded lowercase opaque form.",
-                parameterName);
-        }
-    }
-
-    internal static void ValidateOptional(
-        string? value,
-        string parameterName)
-    {
-        if (value is not null)
-        {
-            Validate(value, parameterName);
-        }
-    }
-}
-
-internal static class SqliteOutboxHash
-{
-    internal static string Calculate(ReadOnlySpan<byte> value)
-    {
-        return Convert.ToHexStringLower(SHA256.HashData(value));
-    }
-}
-
-internal static class SqliteOutboxTime
-{
-    internal static string Format(DateTimeOffset value)
-    {
-        return value.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture);
     }
 }
