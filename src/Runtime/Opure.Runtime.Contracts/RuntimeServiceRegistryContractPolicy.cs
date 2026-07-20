@@ -24,15 +24,10 @@ public static partial class RuntimeServiceRegistryContractPolicy
         uint minimumRevision,
         uint maximumRevision)
     {
-        if (minimumRevision == 0 ||
-            maximumRevision < minimumRevision ||
-            CurrentRevision < minimumRevision ||
-            CurrentRevision > maximumRevision)
-        {
-            return 0;
-        }
-
-        return CurrentRevision;
+        return RuntimeContractPolicyPrimitives.NegotiateRevision(
+            CurrentRevision,
+            minimumRevision,
+            maximumRevision);
     }
 
     public static RuntimeServiceRegistryValidationResult ValidateRequest(
@@ -56,7 +51,8 @@ public static partial class RuntimeServiceRegistryContractPolicy
                 "The requested Service Registry contract revision is not supported.");
         }
 
-        if (!OpaqueIdentifierPattern().IsMatch(request.QueryId))
+        if (!RuntimeContractPolicyPrimitives.OpaqueIdentifierPattern()
+                .IsMatch(request.QueryId))
         {
             return Failure(
                 RuntimeServiceRegistryErrorCodes.InvalidQueryId,
@@ -71,7 +67,8 @@ public static partial class RuntimeServiceRegistryContractPolicy
         }
 
         if (request.AfterServiceId.Length > 0 &&
-            !ServiceIdentifierPattern().IsMatch(request.AfterServiceId))
+            !RuntimeContractPolicyPrimitives.ServiceIdentifierPattern()
+                .IsMatch(request.AfterServiceId))
         {
             return Failure(
                 RuntimeServiceRegistryErrorCodes.InvalidCursor,
@@ -86,7 +83,8 @@ public static partial class RuntimeServiceRegistryContractPolicy
     {
         ArgumentNullException.ThrowIfNull(descriptor);
 
-        if (!ServiceIdentifierPattern().IsMatch(descriptor.ServiceId) ||
+        if (!RuntimeContractPolicyPrimitives.ServiceIdentifierPattern()
+                .IsMatch(descriptor.ServiceId) ||
             descriptor.ServiceRevision == 0 ||
             descriptor.ContractRevision == 0 ||
             descriptor.CalculateSize() > MaximumDescriptorBytes)
@@ -98,11 +96,14 @@ public static partial class RuntimeServiceRegistryContractPolicy
 
         if (string.IsNullOrWhiteSpace(descriptor.DisplayName) ||
             descriptor.DisplayName.Length > 128 ||
-            ContainsUnsafeText(descriptor.DisplayName) ||
-            !ServiceIdentifierPattern().IsMatch(descriptor.OwnerId) ||
-            !IsDefinedNonDefault(descriptor.Classification) ||
-            !IsDefinedNonDefault(descriptor.LifecycleState) ||
-            !IsDefinedNonDefault(descriptor.ProcessPlacement))
+            RuntimeContractPolicyPrimitives.ContainsUnsafeText(
+                descriptor.DisplayName,
+                rejectPathSeparators: true) ||
+            !RuntimeContractPolicyPrimitives.ServiceIdentifierPattern()
+                .IsMatch(descriptor.OwnerId) ||
+            !RuntimeContractPolicyPrimitives.IsDefinedNonDefault(descriptor.Classification) ||
+            !RuntimeContractPolicyPrimitives.IsDefinedNonDefault(descriptor.LifecycleState) ||
+            !RuntimeContractPolicyPrimitives.IsDefinedNonDefault(descriptor.ProcessPlacement))
         {
             return Failure(
                 RuntimeServiceRegistryErrorCodes.InvalidDescriptor,
@@ -139,7 +140,8 @@ public static partial class RuntimeServiceRegistryContractPolicy
             bool validTarget = dependency.Kind switch
             {
                 RuntimeDependencyKind.Service =>
-                    ServiceIdentifierPattern().IsMatch(dependency.TargetId),
+                    RuntimeContractPolicyPrimitives.ServiceIdentifierPattern()
+                        .IsMatch(dependency.TargetId),
                 RuntimeDependencyKind.Capability =>
                     CapabilityIdentifierPattern().IsMatch(dependency.TargetId),
                 _ => false
@@ -153,7 +155,8 @@ public static partial class RuntimeServiceRegistryContractPolicy
 
             if (!validTarget ||
                 dependency.MinimumContractRevision == 0 ||
-                !IsDefinedNonDefault(dependency.Requirement) ||
+                !RuntimeContractPolicyPrimitives.IsDefinedNonDefault(
+                    dependency.Requirement) ||
                 !dependencies.Add(key))
             {
                 return Failure(
@@ -170,7 +173,9 @@ public static partial class RuntimeServiceRegistryContractPolicy
                 capability.ContractRevision == 0 ||
                 string.IsNullOrWhiteSpace(capability.SafeSummary) ||
                 capability.SafeSummary.Length > 128 ||
-                ContainsUnsafeText(capability.SafeSummary) ||
+                RuntimeContractPolicyPrimitives.ContainsUnsafeText(
+                    capability.SafeSummary,
+                    rejectPathSeparators: true) ||
                 !capabilities.Add(capability.CapabilityId))
             {
                 return Failure(
@@ -179,7 +184,7 @@ public static partial class RuntimeServiceRegistryContractPolicy
             }
         }
 
-        if (!ServiceIdentifierPattern().IsMatch(
+        if (!RuntimeContractPolicyPrimitives.ServiceIdentifierPattern().IsMatch(
                 descriptor.HealthReference.HealthServiceId) ||
             descriptor.HealthReference.ContractRevision == 0)
         {
@@ -292,11 +297,14 @@ public static partial class RuntimeServiceRegistryContractPolicy
     private static RuntimeServiceRegistryValidationResult ValidateError(
         RuntimeServiceRegistryError error)
     {
-        if (!IsDefinedNonDefault(error.Category) ||
-            !StableErrorCodePattern().IsMatch(error.Code) ||
+        if (!RuntimeContractPolicyPrimitives.IsDefinedNonDefault(error.Category) ||
+            !RuntimeContractPolicyPrimitives.StableErrorCodePattern()
+                .IsMatch(error.Code) ||
             string.IsNullOrWhiteSpace(error.SafeMessage) ||
             error.SafeMessage.Length > 256 ||
-            ContainsUnsafeText(error.SafeMessage))
+            RuntimeContractPolicyPrimitives.ContainsUnsafeText(
+                error.SafeMessage,
+                rejectPathSeparators: true))
         {
             return Failure(
                 RuntimeServiceRegistryErrorCodes.InvalidErrorEnvelope,
@@ -306,51 +314,15 @@ public static partial class RuntimeServiceRegistryContractPolicy
         return RuntimeServiceRegistryValidationResult.Success;
     }
 
-    private static bool IsDefinedNonDefault<TEnum>(TEnum value)
-        where TEnum : struct, Enum
-    {
-        return Convert.ToInt32(
-                value,
-                System.Globalization.CultureInfo.InvariantCulture) != 0 &&
-            Enum.IsDefined(value);
-    }
-
-    private static bool ContainsUnsafeText(string value)
-    {
-        return value.Any(char.IsControl) ||
-            Path.IsPathRooted(value) ||
-            PortableDrivePathPattern().IsMatch(value) ||
-            value.Contains('\\', StringComparison.Ordinal) ||
-            value.Contains('/', StringComparison.Ordinal);
-    }
-
     private static RuntimeServiceRegistryValidationResult Failure(
         string code,
         string message) =>
         new(false, code, message);
 
-    [GeneratedRegex("^[0-9a-f]{32}$", RegexOptions.CultureInvariant)]
-    private static partial Regex OpaqueIdentifierPattern();
-
-    [GeneratedRegex(
-        "^[a-z][a-z0-9]*(?:\\.[a-z][a-z0-9]*){1,7}$",
-        RegexOptions.CultureInvariant)]
-    private static partial Regex ServiceIdentifierPattern();
-
     [GeneratedRegex(
         "^[a-z][a-z0-9]*(?:[.-][a-z][a-z0-9]*){1,11}$",
         RegexOptions.CultureInvariant)]
     private static partial Regex CapabilityIdentifierPattern();
-
-    [GeneratedRegex(
-        "^[A-Z][A-Z0-9_]{2,63}$",
-        RegexOptions.CultureInvariant)]
-    private static partial Regex StableErrorCodePattern();
-
-    [GeneratedRegex(
-        "^[A-Za-z]:[\\\\/]",
-        RegexOptions.CultureInvariant)]
-    private static partial Regex PortableDrivePathPattern();
 }
 
 public sealed record RuntimeServiceRegistryValidationResult(

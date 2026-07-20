@@ -194,7 +194,7 @@ public sealed class SqliteOutboxPublishResult
     public static SqliteOutboxPublishResult Delivered(
         string publicationReceiptId)
     {
-        SqliteOutboxIdentifier.Validate(
+        SqliteIdentifier.Validate(
             publicationReceiptId,
             nameof(publicationReceiptId));
         return new SqliteOutboxPublishResult(
@@ -220,7 +220,7 @@ public sealed class SqliteOutboxPublishResult
         string stableErrorCode,
         bool retryable)
     {
-        SqliteOutboxIdentifier.Validate(
+        SqliteIdentifier.Validate(
             stableErrorCode,
             nameof(stableErrorCode));
         return new SqliteOutboxPublishResult(
@@ -278,7 +278,7 @@ public sealed class SqliteOutboxDispatcher
         CancellationToken cancellationToken = default)
     {
         DateTimeOffset now = timeProvider.GetUtcNow();
-        string nowText = SqliteOutboxTime.Format(now);
+        string nowText = SqliteTime.Format(now);
 
         return database.ExecuteTransaction((connection, transaction) =>
         {
@@ -293,7 +293,7 @@ public sealed class SqliteOutboxDispatcher
                 return null;
             }
 
-            string actualPayloadHash = SqliteOutboxHash.Calculate(
+            string actualPayloadHash = SqliteHash.Calculate(
                 candidate.PayloadUtf8Json);
 
             if (!string.Equals(
@@ -317,7 +317,7 @@ public sealed class SqliteOutboxDispatcher
                 leaseToken,
                 attemptNumber,
                 nowText,
-                SqliteOutboxTime.Format(expires));
+                SqliteTime.Format(expires));
 
             if (changed != 1)
             {
@@ -341,11 +341,11 @@ public sealed class SqliteOutboxDispatcher
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(lease);
-        SqliteOutboxIdentifier.Validate(
+        SqliteIdentifier.Validate(
             publicationReceiptId,
             nameof(publicationReceiptId));
         EnsureOwnedLease(lease);
-        string deliveredAt = SqliteOutboxTime.Format(
+        string deliveredAt = SqliteTime.Format(
             timeProvider.GetUtcNow());
 
         int changed = database.ExecuteTransaction((connection, transaction) =>
@@ -389,7 +389,7 @@ public sealed class SqliteOutboxDispatcher
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(lease);
-        SqliteOutboxIdentifier.Validate(
+        SqliteIdentifier.Validate(
             stableErrorCode,
             nameof(stableErrorCode));
         EnsureOwnedLease(lease);
@@ -401,7 +401,7 @@ public sealed class SqliteOutboxDispatcher
             ? now.Add(retryPolicy.GetDelay(lease.AttemptNumber))
             : null;
         string state = willRetry ? "Pending" : "Blocked";
-        string nextAttemptText = SqliteOutboxTime.Format(
+        string nextAttemptText = SqliteTime.Format(
             nextAttempt ?? now);
 
         int changed = database.ExecuteTransaction((connection, transaction) =>

@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Google.Protobuf;
 using Opure.Runtime.Contracts.Health.V1;
 
@@ -7,7 +6,7 @@ namespace Opure.Runtime.Contracts;
 /// <summary>
 /// Defines bounded semantic policy for the Runtime Health protobuf contract.
 /// </summary>
-public static partial class RuntimeHealthContractPolicy
+public static class RuntimeHealthContractPolicy
 {
     /// <summary>
     /// Gets the only contract revision supported by this foundation slice.
@@ -41,15 +40,10 @@ public static partial class RuntimeHealthContractPolicy
         uint minimumRevision,
         uint maximumRevision)
     {
-        if (minimumRevision == 0 ||
-            maximumRevision < minimumRevision ||
-            CurrentRevision < minimumRevision ||
-            CurrentRevision > maximumRevision)
-        {
-            return 0;
-        }
-
-        return CurrentRevision;
+        return RuntimeContractPolicyPrimitives.NegotiateRevision(
+            CurrentRevision,
+            minimumRevision,
+            maximumRevision);
     }
 
     /// <summary>
@@ -76,7 +70,8 @@ public static partial class RuntimeHealthContractPolicy
                 "The requested Runtime Health contract revision is not supported.");
         }
 
-        if (!OpaqueIdentifierPattern().IsMatch(request.QueryId))
+        if (!RuntimeContractPolicyPrimitives.OpaqueIdentifierPattern()
+                .IsMatch(request.QueryId))
         {
             return RuntimeHealthValidationResult.Failure(
                 RuntimeHealthContractErrorCodes.InvalidQueryId,
@@ -84,7 +79,8 @@ public static partial class RuntimeHealthContractPolicy
         }
 
         if (request.CorrelationId.Length > 0 &&
-            !OpaqueIdentifierPattern().IsMatch(request.CorrelationId))
+            !RuntimeContractPolicyPrimitives.OpaqueIdentifierPattern()
+                .IsMatch(request.CorrelationId))
         {
             return RuntimeHealthValidationResult.Failure(
                 RuntimeHealthContractErrorCodes.InvalidCorrelationId,
@@ -153,23 +149,25 @@ public static partial class RuntimeHealthContractPolicy
     {
         if (string.IsNullOrWhiteSpace(projection.ProductVersion) ||
             projection.ProductVersion.Length > 128 ||
-            ContainsUnsafeText(projection.ProductVersion))
+            RuntimeContractPolicyPrimitives.ContainsUnsafeText(
+                projection.ProductVersion))
         {
             return RuntimeHealthValidationResult.Failure(
                 RuntimeHealthContractErrorCodes.InvalidProductVersion,
                 "The Runtime product version is invalid.");
         }
 
-        if (!OpaqueIdentifierPattern().IsMatch(projection.RuntimeBootId))
+        if (!RuntimeContractPolicyPrimitives.OpaqueIdentifierPattern()
+                .IsMatch(projection.RuntimeBootId))
         {
             return RuntimeHealthValidationResult.Failure(
                 RuntimeHealthContractErrorCodes.MissingBootIdentity,
                 "The Runtime boot identity is missing or invalid.");
         }
 
-        if (!IsDefinedNonDefault(projection.RuntimeMode) ||
-            !IsDefinedNonDefault(projection.Readiness) ||
-            !IsDefinedNonDefault(projection.OverallHealth))
+        if (!RuntimeContractPolicyPrimitives.IsDefinedNonDefault(projection.RuntimeMode) ||
+            !RuntimeContractPolicyPrimitives.IsDefinedNonDefault(projection.Readiness) ||
+            !RuntimeContractPolicyPrimitives.IsDefinedNonDefault(projection.OverallHealth))
         {
             return RuntimeHealthValidationResult.Failure(
                 RuntimeHealthContractErrorCodes.InvalidHealthState,
@@ -216,14 +214,15 @@ public static partial class RuntimeHealthContractPolicy
     private static RuntimeHealthValidationResult ValidateServiceSummary(
         ServiceHealthSummary service)
     {
-        if (!ServiceIdentifierPattern().IsMatch(service.ServiceId))
+        if (!RuntimeContractPolicyPrimitives.ServiceIdentifierPattern()
+                .IsMatch(service.ServiceId))
         {
             return RuntimeHealthValidationResult.Failure(
                 RuntimeHealthContractErrorCodes.InvalidServiceSummary,
                 "A Runtime service identifier is invalid.");
         }
 
-        if (!IsDefinedNonDefault(service.State))
+        if (!RuntimeContractPolicyPrimitives.IsDefinedNonDefault(service.State))
         {
             return RuntimeHealthValidationResult.Failure(
                 RuntimeHealthContractErrorCodes.InvalidServiceSummary,
@@ -231,7 +230,7 @@ public static partial class RuntimeHealthContractPolicy
         }
 
         if (service.SafeDetail.Length > 256 ||
-            ContainsUnsafeText(service.SafeDetail))
+            RuntimeContractPolicyPrimitives.ContainsUnsafeText(service.SafeDetail))
         {
             return RuntimeHealthValidationResult.Failure(
                 RuntimeHealthContractErrorCodes.InvalidServiceSummary,
@@ -239,7 +238,8 @@ public static partial class RuntimeHealthContractPolicy
         }
 
         if (service.RecentFailureCode.Length > 0 &&
-            !StableErrorCodePattern().IsMatch(service.RecentFailureCode))
+            !RuntimeContractPolicyPrimitives.StableErrorCodePattern()
+                .IsMatch(service.RecentFailureCode))
         {
             return RuntimeHealthValidationResult.Failure(
                 RuntimeHealthContractErrorCodes.InvalidServiceSummary,
@@ -252,11 +252,12 @@ public static partial class RuntimeHealthContractPolicy
     private static RuntimeHealthValidationResult ValidateError(
         RuntimeHealthError error)
     {
-        if (!IsDefinedNonDefault(error.Category) ||
-            !StableErrorCodePattern().IsMatch(error.Code) ||
+        if (!RuntimeContractPolicyPrimitives.IsDefinedNonDefault(error.Category) ||
+            !RuntimeContractPolicyPrimitives.StableErrorCodePattern()
+                .IsMatch(error.Code) ||
             string.IsNullOrWhiteSpace(error.SafeMessage) ||
             error.SafeMessage.Length > 256 ||
-            ContainsUnsafeText(error.SafeMessage))
+            RuntimeContractPolicyPrimitives.ContainsUnsafeText(error.SafeMessage))
         {
             return RuntimeHealthValidationResult.Failure(
                 RuntimeHealthContractErrorCodes.InvalidErrorEnvelope,
@@ -266,37 +267,6 @@ public static partial class RuntimeHealthContractPolicy
         return RuntimeHealthValidationResult.Success;
     }
 
-    private static bool IsDefinedNonDefault<TEnum>(TEnum value)
-        where TEnum : struct, Enum
-    {
-        return Convert.ToInt32(value, System.Globalization.CultureInfo.InvariantCulture) != 0 &&
-            Enum.IsDefined(value);
-    }
-
-    private static bool ContainsUnsafeText(string value)
-    {
-        return value.Any(char.IsControl) ||
-            Path.IsPathRooted(value) ||
-            PortableDrivePathPattern().IsMatch(value);
-    }
-
-    [GeneratedRegex("^[0-9a-f]{32}$", RegexOptions.CultureInvariant)]
-    private static partial Regex OpaqueIdentifierPattern();
-
-    [GeneratedRegex(
-        "^[a-z][a-z0-9]*(?:\\.[a-z][a-z0-9]*){1,7}$",
-        RegexOptions.CultureInvariant)]
-    private static partial Regex ServiceIdentifierPattern();
-
-    [GeneratedRegex(
-        "^[A-Z][A-Z0-9_]{2,63}$",
-        RegexOptions.CultureInvariant)]
-    private static partial Regex StableErrorCodePattern();
-
-    [GeneratedRegex(
-        "^[A-Za-z]:[\\\\/]",
-        RegexOptions.CultureInvariant)]
-    private static partial Regex PortableDrivePathPattern();
 }
 
 /// <summary>

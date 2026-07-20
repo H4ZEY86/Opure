@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
-using System.Security.Cryptography;
 using System.Text.Json;
 using Microsoft.Data.Sqlite;
 
@@ -183,10 +182,10 @@ public sealed record SqliteInboxContract
         int minimumRevision,
         int maximumRevision)
     {
-        SqliteInboxIdentifier.Validate(
+        SqliteIdentifier.Validate(
             sourceServiceId,
             nameof(sourceServiceId));
-        SqliteInboxIdentifier.Validate(messageType, nameof(messageType));
+        SqliteIdentifier.Validate(messageType, nameof(messageType));
 
         if (minimumRevision <= 0)
         {
@@ -245,11 +244,11 @@ public sealed class SqliteInboxMessage
         DateTimeOffset occurredAtUtc,
         ReadOnlyMemory<byte> payloadUtf8Json)
     {
-        SqliteInboxIdentifier.Validate(
+        SqliteIdentifier.Validate(
             sourceServiceId,
             nameof(sourceServiceId));
-        SqliteInboxIdentifier.Validate(messageId, nameof(messageId));
-        SqliteInboxIdentifier.Validate(messageType, nameof(messageType));
+        SqliteIdentifier.Validate(messageId, nameof(messageId));
+        SqliteIdentifier.Validate(messageType, nameof(messageType));
 
         if (contractRevision <= 0)
         {
@@ -376,9 +375,9 @@ public sealed class SqliteInboxProcessor
         ArgumentNullException.ThrowIfNull(applyDomainEffect);
         ValidateContract(message);
 
-        string payloadHash = SqliteInboxHash.Calculate(
+        string payloadHash = SqliteHash.Calculate(
             message.PayloadUtf8Json.Span);
-        string receivedAt = SqliteInboxTime.Format(timeProvider.GetUtcNow());
+        string receivedAt = SqliteTime.Format(timeProvider.GetUtcNow());
 
         return database.ExecuteTransaction((connection, transaction) =>
         {
@@ -555,7 +554,7 @@ public sealed class SqliteInboxProcessor
             message.DataClassification.ToString());
         _ = command.Parameters.AddWithValue(
             "$occurredAtUtc",
-            SqliteInboxTime.Format(message.OccurredAtUtc));
+            SqliteTime.Format(message.OccurredAtUtc));
         _ = command.Parameters.AddWithValue("$receivedAtUtc", receivedAt);
         _ = command.Parameters.AddWithValue("$payloadSha256", payloadHash);
         _ = command.ExecuteNonQuery();
@@ -747,44 +746,4 @@ public sealed class SqliteInboxProcessor
         int ContractRevision,
         string DataClassification,
         string PayloadSha256);
-}
-
-internal static class SqliteInboxIdentifier
-{
-    private const int MaximumLength = 128;
-
-    internal static void Validate(string value, string parameterName)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(value, parameterName);
-
-        bool validFirstCharacter = value[0] is >= 'a' and <= 'z' or
-            >= '0' and <= '9';
-
-        if (value.Length > MaximumLength ||
-            !validFirstCharacter ||
-            value[^1] is '.' or ':' or '-' or '_' ||
-            value.Any(character => character is not (>= 'a' and <= 'z' or
-                >= '0' and <= '9' or '.' or ':' or '-' or '_')))
-        {
-            throw new ArgumentException(
-                "An inbox identifier must use a bounded lowercase opaque form.",
-                parameterName);
-        }
-    }
-}
-
-internal static class SqliteInboxHash
-{
-    internal static string Calculate(ReadOnlySpan<byte> value)
-    {
-        return Convert.ToHexStringLower(SHA256.HashData(value));
-    }
-}
-
-internal static class SqliteInboxTime
-{
-    internal static string Format(DateTimeOffset value)
-    {
-        return value.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture);
-    }
 }
