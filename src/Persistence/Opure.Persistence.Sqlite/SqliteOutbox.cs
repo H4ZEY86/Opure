@@ -63,7 +63,7 @@ public static class SqliteOutboxSchema
             $"""
             CREATE TABLE {DeliveryTableName} (
                 message_id TEXT PRIMARY KEY,
-                state TEXT NOT NULL CHECK (state IN ('Pending', 'Leased', 'Delivered', 'Blocked')),
+                state TEXT NOT NULL CHECK (state IN ('Pending', 'Leased', 'Delivered', 'Blocked', 'DeadLettered')),
                 attempt_count INTEGER NOT NULL CHECK (attempt_count >= 0),
                 next_attempt_utc TEXT NOT NULL,
                 lease_token TEXT NULL,

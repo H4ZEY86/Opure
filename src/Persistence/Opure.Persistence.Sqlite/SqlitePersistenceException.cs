@@ -36,6 +36,8 @@ public static class SqlitePersistenceErrorCodes
     public const string OutboxLeaseLost = "PERSISTENCE_OUTBOX_LEASE_LOST";
     public const string OutboxPublishFailed =
         "PERSISTENCE_OUTBOX_PUBLISH_FAILED";
+    public const string OutboxNotBlocked =
+        "PERSISTENCE_OUTBOX_NOT_BLOCKED";
     public const string InboxUnsupportedContract =
         "PERSISTENCE_INBOX_UNSUPPORTED_CONTRACT";
     public const string InboxUnsupportedContractRevision =

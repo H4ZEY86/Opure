@@ -135,6 +135,65 @@ public sealed class SqliteInboxTests
     }
 
     [Fact]
+    public void Retained_conflict_variants_are_bounded_by_the_configured_cap()
+    {
+        using TestDataRoot testRoot = new();
+        ManualTimeProvider timeProvider = CreateTimeProvider();
+        using SqliteServiceDatabase database = OpenDatabase(
+            testRoot.ChannelRoot,
+            timeProvider);
+        SqliteInboxProcessor processor = new(
+            database,
+            [
+                new SqliteInboxContract(
+                    "source.service",
+                    "sample.domain-command",
+                    1,
+                    1)
+            ],
+            timeProvider,
+            maximumConflictVariantsPerMessage: 3);
+        _ = processor.Process(
+            CreateMessage("source.service", "message-001", "accepted"),
+            InsertDomainEffect,
+            TestContext.Current.CancellationToken);
+        int callbackCount = 0;
+
+        for (int variant = 0; variant < 7; variant++)
+        {
+            SqliteInboxProcessResult conflict = processor.Process(
+                CreateMessage(
+                    "source.service",
+                    "message-001",
+                    string.Create(
+                        CultureInfo.InvariantCulture,
+                        $"conflicting-{variant}")),
+                (_, _, _) => callbackCount++,
+                TestContext.Current.CancellationToken);
+            Assert.Equal(
+                SqliteInboxProcessState.ConflictingDuplicate,
+                conflict.State);
+        }
+
+        SqliteInboxConflictHealth health = processor.ReadConflictHealth(
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(0, callbackCount);
+        Assert.Equal(
+            3,
+            ReadCount(database, SqliteInboxSchema.ConflictTableName));
+        Assert.Equal(3, health.ConflictVariantCount);
+        Assert.Equal(7, health.ConflictObservationCount);
+        Assert.Equal(1, health.DistinctConflictedMessageCount);
+        Assert.Equal(
+            SqliteInboxConflictHealthState.ConflictDetected,
+            health.State);
+        Assert.Equal(
+            1,
+            ReadCount(database, SqliteInboxSchema.ReceiptTableName));
+    }
+
+    [Fact]
     public void Crash_before_commit_rolls_back_receipt_and_domain_effect()
     {
         using TestDataRoot testRoot = new();

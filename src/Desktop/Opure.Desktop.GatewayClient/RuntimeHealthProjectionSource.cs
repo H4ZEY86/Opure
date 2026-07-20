@@ -102,8 +102,10 @@ public sealed class RuntimeHealthProjectionSource : IDesktopRuntimeHealthSource
             .ToArray();
         DesktopRuntimeDisplayState displayState = MapDisplayState(projection);
         string stableErrorCode = services
+            .Where(static service => service.StableFailureCode.Length > 0)
+            .OrderByDescending(static service => service.RequiredForReadiness)
             .Select(static service => service.StableFailureCode)
-            .FirstOrDefault(static code => code.Length > 0) ?? string.Empty;
+            .FirstOrDefault() ?? string.Empty;
 
         return new DesktopRuntimeHealthSnapshot(
             DesktopRuntimeConnectionState.Connected,

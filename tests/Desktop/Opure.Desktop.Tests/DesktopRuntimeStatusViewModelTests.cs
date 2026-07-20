@@ -125,6 +125,30 @@ public sealed class DesktopRuntimeStatusViewModelTests
     }
 
     [Fact]
+    public async Task Stale_retention_marks_recovering_projection_title_as_stale()
+    {
+        DesktopRuntimeHealthSnapshot ready = CreateConnected(
+            DesktopRuntimeDisplayState.Ready);
+        DesktopRuntimeHealthSnapshot recovering =
+            DesktopRuntimeHealthSnapshot.CreateDisconnected(
+                "1.0.0-test",
+                new DesktopSupervisorProjection(
+                    DesktopSupervisorMode.Recovering,
+                    string.Empty,
+                    1));
+        SequenceSource source = new(recovering);
+        DesktopRuntimeStatusViewModel viewModel = new(ready, source);
+
+        await viewModel.RefreshAsync(TestContext.Current.CancellationToken);
+
+        Assert.True(viewModel.IsStale);
+        Assert.Equal(
+            DesktopRuntimeDisplayState.Starting,
+            viewModel.DisplayState);
+        Assert.Equal("Runtime starting — snapshot stale", viewModel.StatusTitle);
+    }
+
+    [Fact]
     public void Large_service_projection_is_bounded_and_fast_to_materialise()
     {
         DesktopServiceHealthRow[] services = Enumerable.Range(0, 64)

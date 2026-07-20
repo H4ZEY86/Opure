@@ -327,20 +327,36 @@ public sealed record SqliteInboxConflictHealth(
 /// </summary>
 public sealed class SqliteInboxProcessor
 {
+    public const int DefaultMaximumConflictVariantsPerMessage = 32;
+
     private readonly SqliteServiceDatabase database;
     private readonly Dictionary<(string Source, string Type), SqliteInboxContract>
         contracts;
     private readonly TimeProvider timeProvider;
+    private readonly int maximumConflictVariantsPerMessage;
 
     public SqliteInboxProcessor(
         SqliteServiceDatabase database,
         IEnumerable<SqliteInboxContract> supportedContracts,
-        TimeProvider? timeProvider = null)
+        TimeProvider? timeProvider = null,
+        int maximumConflictVariantsPerMessage =
+            DefaultMaximumConflictVariantsPerMessage)
     {
         this.database = database ??
             throw new ArgumentNullException(nameof(database));
         ArgumentNullException.ThrowIfNull(supportedContracts);
         this.timeProvider = timeProvider ?? TimeProvider.System;
+
+        if (maximumConflictVariantsPerMessage is < 1 or > 1024)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(maximumConflictVariantsPerMessage),
+                maximumConflictVariantsPerMessage,
+                "The retained conflict variant cap must be between 1 and 1024.");
+        }
+
+        this.maximumConflictVariantsPerMessage =
+            maximumConflictVariantsPerMessage;
         contracts = [];
 
         foreach (SqliteInboxContract contract in supportedContracts)
@@ -597,6 +613,120 @@ public sealed class SqliteInboxProcessor
     }
 
     private void RecordConflict(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        ExistingReceipt existing,
+        SqliteInboxMessage message,
+        string payloadHash,
+        string conflictReason,
+        string detectedAt)
+    {
+        (bool variantExists, long variantCount) = ProbeConflictVariants(
+            connection,
+            transaction,
+            message,
+            payloadHash);
+
+        if (!variantExists &&
+            variantCount >= maximumConflictVariantsPerMessage)
+        {
+            FoldConflictOverflow(
+                connection,
+                transaction,
+                message,
+                detectedAt);
+            return;
+        }
+
+        UpsertConflictVariant(
+            connection,
+            transaction,
+            existing,
+            message,
+            payloadHash,
+            conflictReason,
+            detectedAt);
+    }
+
+    private (bool VariantExists, long VariantCount) ProbeConflictVariants(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        SqliteInboxMessage message,
+        string payloadHash)
+    {
+        using SqliteCommand command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = $"""
+            SELECT
+                COALESCE(SUM(CASE
+                    WHEN conflicting_message_type = $conflictingMessageType
+                        AND conflicting_contract_revision = $conflictingContractRevision
+                        AND conflicting_data_classification = $conflictingDataClassification
+                        AND conflicting_payload_sha256 = $conflictingPayloadSha256
+                    THEN 1 ELSE 0 END), 0),
+                COUNT(*)
+              FROM {SqliteInboxSchema.ConflictTableName}
+             WHERE receiver_service_id = $receiverServiceId
+               AND source_service_id = $sourceServiceId
+               AND message_id = $messageId;
+            """;
+        _ = command.Parameters.AddWithValue(
+            "$receiverServiceId",
+            database.Descriptor.OwnerServiceId);
+        _ = command.Parameters.AddWithValue(
+            "$sourceServiceId",
+            message.SourceServiceId);
+        _ = command.Parameters.AddWithValue("$messageId", message.MessageId);
+        _ = command.Parameters.AddWithValue(
+            "$conflictingMessageType",
+            message.MessageType);
+        _ = command.Parameters.AddWithValue(
+            "$conflictingContractRevision",
+            message.ContractRevision);
+        _ = command.Parameters.AddWithValue(
+            "$conflictingDataClassification",
+            message.DataClassification.ToString());
+        _ = command.Parameters.AddWithValue(
+            "$conflictingPayloadSha256",
+            payloadHash);
+        using SqliteDataReader reader = command.ExecuteReader();
+        _ = reader.Read();
+        return (reader.GetInt64(0) > 0, reader.GetInt64(1));
+    }
+
+    private void FoldConflictOverflow(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        SqliteInboxMessage message,
+        string detectedAt)
+    {
+        using SqliteCommand command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = $"""
+            UPDATE {SqliteInboxSchema.ConflictTableName}
+               SET last_detected_at_utc = MAX(last_detected_at_utc, $detectedAtUtc),
+                   observation_count = MIN(observation_count + 1, 2147483647)
+             WHERE rowid = (
+                    SELECT rowid
+                      FROM {SqliteInboxSchema.ConflictTableName}
+                     WHERE receiver_service_id = $receiverServiceId
+                       AND source_service_id = $sourceServiceId
+                       AND message_id = $messageId
+                     ORDER BY last_detected_at_utc DESC, rowid DESC
+                     LIMIT 1);
+            """;
+        _ = command.Parameters.AddWithValue("$detectedAtUtc", detectedAt);
+        _ = command.Parameters.AddWithValue(
+            "$receiverServiceId",
+            database.Descriptor.OwnerServiceId);
+        _ = command.Parameters.AddWithValue(
+            "$sourceServiceId",
+            message.SourceServiceId);
+        _ = command.Parameters.AddWithValue("$messageId", message.MessageId);
+        _ = command.ExecuteNonQuery();
+    }
+
+    private void UpsertConflictVariant(
         SqliteConnection connection,
         SqliteTransaction transaction,
         ExistingReceipt existing,
