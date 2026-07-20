@@ -713,14 +713,14 @@ public sealed class NamedPipeRuntimeHealthTransportTests
             domainSid: null);
         PipeAccessRule[] accessRules = rules.Cast<PipeAccessRule>().ToArray();
 
-        Assert.Equal(2, accessRules.Length);
+        Assert.Single(accessRules);
         Assert.All(
             accessRules,
             rule => Assert.Equal(AccessControlType.Allow, rule.AccessControlType));
         Assert.Contains(
             accessRules,
             rule => Equals(rule.IdentityReference, currentUser));
-        Assert.Contains(
+        Assert.DoesNotContain(
             accessRules,
             rule => Equals(rule.IdentityReference, localSystem));
         Assert.DoesNotContain(

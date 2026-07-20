@@ -243,7 +243,7 @@ public sealed class NamedPipeRuntimeHealthClient : IRuntimeHealthTransportClient
             ".",
             endpoint.PipeName,
             PipeDirection.InOut,
-            PipeOptions.Asynchronous);
+            PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
 
         try
         {
