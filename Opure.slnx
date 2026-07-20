@@ -27,6 +27,7 @@
     <Project Path="tests/Bootstrap/Opure.Bootstrap.Windows.Tests/Opure.Bootstrap.Windows.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Desktop/">
+    <Project Path="tests/Desktop/Opure.Desktop.GatewayClient.Tests/Opure.Desktop.GatewayClient.Tests.csproj" />
     <Project Path="tests/Desktop/Opure.Desktop.Tests/Opure.Desktop.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Ipc/">
