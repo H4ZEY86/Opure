@@ -8,7 +8,8 @@ public enum SqliteOutboxDeliveryState
     Pending = 0,
     Leased = 1,
     Delivered = 2,
-    Blocked = 3
+    Blocked = 3,
+    DeadLettered = 4
 }
 
 public enum SqliteOutboxBacklogState
@@ -25,6 +26,7 @@ public sealed record SqliteOutboxBacklogHealth(
     long LeasedCount,
     long BlockedCount,
     long DeliveredCount,
+    long DeadLetteredCount,
     TimeSpan? OldestUndeliveredAge,
     DateTimeOffset? NextAttemptUtc);
 
@@ -231,6 +233,17 @@ public sealed class SqliteOutboxPublishResult
     }
 }
 
+/// <summary>
+/// Publishes an outbox message to its external destination.
+/// </summary>
+/// <remarks>
+/// Delivery is at-least-once, not exactly-once: a crash or cancellation
+/// after the external effect succeeds but before the delivery state is
+/// committed causes the message to be published again once the lease
+/// expires. Implementations must therefore make publication idempotent at
+/// the destination (for example by carrying the stable message identity so a
+/// receiving inbox can deduplicate).
+/// </remarks>
 public interface ISqliteOutboxPublisher
 {
     SqliteOutboxPublishResult Publish(
@@ -445,6 +458,56 @@ public sealed class SqliteOutboxDispatcher
             nextAttempt);
     }
 
+    /// <summary>
+    /// Retires a permanently blocked message to the terminal dead-letter
+    /// state so an operator can deliberately unblock ordered delivery for the
+    /// remainder of the stream. The immutable message identity is retained;
+    /// only a blocked delivery may be dead-lettered.
+    /// </summary>
+    public void DeadLetter(
+        string messageId,
+        string stableReason,
+        CancellationToken cancellationToken = default)
+    {
+        SqliteOutboxIdentifier.Validate(messageId, nameof(messageId));
+        SqliteOutboxIdentifier.Validate(stableReason, nameof(stableReason));
+
+        int changed = database.ExecuteTransaction((connection, transaction) =>
+        {
+            using SqliteCommand command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = $"""
+                UPDATE {SqliteOutboxSchema.DeliveryTableName}
+                   SET state = 'DeadLettered',
+                       lease_token = NULL,
+                       lease_expires_utc = NULL,
+                       last_error_code = $stableReason
+                 WHERE message_id = $messageId
+                   AND state = 'Blocked'
+                   AND EXISTS (
+                        SELECT 1
+                          FROM {SqliteOutboxSchema.MessageTableName} AS m
+                         WHERE m.message_id = $messageId
+                           AND m.owner_service_id = $ownerServiceId
+                   );
+                """;
+            _ = command.Parameters.AddWithValue("$stableReason", stableReason);
+            _ = command.Parameters.AddWithValue("$messageId", messageId);
+            _ = command.Parameters.AddWithValue(
+                "$ownerServiceId",
+                database.Descriptor.OwnerServiceId);
+            return command.ExecuteNonQuery();
+        }, cancellationToken);
+
+        if (changed != 1)
+        {
+            throw new SqlitePersistenceException(
+                SqlitePersistenceErrorCodes.OutboxNotBlocked,
+                "Only a blocked outbox message owned by this service can be dead-lettered.",
+                recoveryRequired: false);
+        }
+    }
+
     public SqliteOutboxDispatchResult DispatchNext(
         ISqliteOutboxPublisher publisher,
         CancellationToken cancellationToken = default)
@@ -521,7 +584,8 @@ public sealed class SqliteOutboxDispatcher
                     COALESCE(SUM(CASE WHEN d.state = 'Leased' THEN 1 ELSE 0 END), 0),
                     COALESCE(SUM(CASE WHEN d.state = 'Blocked' THEN 1 ELSE 0 END), 0),
                     COALESCE(SUM(CASE WHEN d.state = 'Delivered' THEN 1 ELSE 0 END), 0),
-                    MIN(CASE WHEN d.state <> 'Delivered' THEN m.enqueued_at_utc END),
+                    COALESCE(SUM(CASE WHEN d.state = 'DeadLettered' THEN 1 ELSE 0 END), 0),
+                    MIN(CASE WHEN d.state NOT IN ('Delivered', 'DeadLettered') THEN m.enqueued_at_utc END),
                     MIN(CASE
                         WHEN d.state = 'Pending' THEN d.next_attempt_utc
                         WHEN d.state = 'Leased' THEN d.lease_expires_utc
@@ -541,8 +605,9 @@ public sealed class SqliteOutboxDispatcher
             long leased = reader.GetInt64(1);
             long blocked = reader.GetInt64(2);
             long delivered = reader.GetInt64(3);
-            DateTimeOffset? oldest = ReadNullableTime(reader, 4);
-            DateTimeOffset? next = ReadNullableTime(reader, 5);
+            long deadLettered = reader.GetInt64(4);
+            DateTimeOffset? oldest = ReadNullableTime(reader, 5);
+            DateTimeOffset? next = ReadNullableTime(reader, 6);
             long undelivered = checked(pending + leased + blocked);
             SqliteOutboxBacklogState state = blocked > 0
                 ? SqliteOutboxBacklogState.Blocked
@@ -560,6 +625,7 @@ public sealed class SqliteOutboxDispatcher
                 leased,
                 blocked,
                 delivered,
+                deadLettered,
                 age,
                 next);
         }, cancellationToken);
@@ -608,7 +674,7 @@ public sealed class SqliteOutboxDispatcher
                      WHERE earlier.owner_service_id = m.owner_service_id
                        AND earlier.stream_id = m.stream_id
                        AND earlier.owner_sequence < m.owner_sequence
-                       AND earlier_delivery.state <> 'Delivered'
+                       AND earlier_delivery.state NOT IN ('Delivered', 'DeadLettered')
                )
              ORDER BY m.enqueued_at_utc,
                       m.stream_id,

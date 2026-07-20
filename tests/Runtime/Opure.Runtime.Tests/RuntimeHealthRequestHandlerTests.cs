@@ -76,6 +76,28 @@ public sealed class RuntimeHealthRequestHandlerTests
             RuntimeHealthContractPolicy.ValidateResponse(response).IsValid);
     }
 
+    [Fact]
+    public async Task Generated_time_is_sourced_from_the_injected_time_provider()
+    {
+        DateTimeOffset instant = new(2026, 7, 20, 21, 21, 0, TimeSpan.Zero);
+        RuntimeHealthRequestHandler handler = new(
+            new RuntimeBootSnapshot(
+                "0123456789abcdef0123456789abcdef",
+                Environment.ProcessId,
+                "1.0.0-test",
+                "1"),
+            CreateRegistry(),
+            new FixedTimeProvider(instant));
+
+        GetRuntimeHealthResponse response = await handler.HandleAsync(
+            CreateRequest(),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(
+            instant.ToUnixTimeMilliseconds(),
+            response.Health.GeneratedUnixTimeMilliseconds);
+    }
+
     private static RuntimeHealthRequestHandler CreateHandler(
         RuntimeServiceRegistry registry)
     {
@@ -86,6 +108,11 @@ public sealed class RuntimeHealthRequestHandlerTests
                 "1.0.0-test",
                 "1"),
             registry);
+    }
+
+    private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => utcNow;
     }
 
     private static RuntimeServiceRegistry CreateRegistry()

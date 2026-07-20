@@ -7,8 +7,11 @@ namespace Opure.Runtime;
 
 internal sealed class RuntimeHealthRequestHandler(
     RuntimeBootSnapshot bootSnapshot,
-    RuntimeServiceRegistry serviceRegistry) : IRuntimeHealthRequestHandler
+    RuntimeServiceRegistry serviceRegistry,
+    TimeProvider? timeProvider = null) : IRuntimeHealthRequestHandler
 {
+    private readonly TimeProvider clock = timeProvider ?? TimeProvider.System;
+
     public Task<GetRuntimeHealthResponse> HandleAsync(
         GetRuntimeHealthRequest request,
         CancellationToken cancellationToken)
@@ -39,7 +42,7 @@ internal sealed class RuntimeHealthRequestHandler(
                 Readiness = readiness,
                 OverallHealth = overallHealth,
                 GeneratedUnixTimeMilliseconds =
-                    DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+                    clock.GetUtcNow().ToUnixTimeMilliseconds()
             }
         };
 

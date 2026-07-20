@@ -39,19 +39,25 @@ public sealed class DesktopRuntimeStatusViewModel : INotifyPropertyChanged
     public DesktopRuntimeConnectionState ConnectionState =>
         snapshot.ConnectionState;
 
-    public string StatusTitle => (snapshot.DisplayState, isStale) switch
+    public string StatusTitle
     {
-        (DesktopRuntimeDisplayState.Disconnected, true) =>
-            "Runtime disconnected — snapshot stale",
-        (DesktopRuntimeDisplayState.Disconnected, false) => "Runtime disconnected",
-        (DesktopRuntimeDisplayState.Connected, _) => "Runtime connected",
-        (DesktopRuntimeDisplayState.Starting, _) => "Runtime starting",
-        (DesktopRuntimeDisplayState.Ready, _) => "Runtime ready",
-        (DesktopRuntimeDisplayState.Degraded, _) => "Runtime degraded",
-        (DesktopRuntimeDisplayState.SafeMode, _) => "Safe Mode",
-        _ => throw new InvalidOperationException(
-            "The Runtime display state is unsupported.")
-    };
+        get
+        {
+            string baseTitle = snapshot.DisplayState switch
+            {
+                DesktopRuntimeDisplayState.Disconnected => "Runtime disconnected",
+                DesktopRuntimeDisplayState.Connected => "Runtime connected",
+                DesktopRuntimeDisplayState.Starting => "Runtime starting",
+                DesktopRuntimeDisplayState.Ready => "Runtime ready",
+                DesktopRuntimeDisplayState.Degraded => "Runtime degraded",
+                DesktopRuntimeDisplayState.SafeMode => "Safe Mode",
+                _ => throw new InvalidOperationException(
+                    "The Runtime display state is unsupported.")
+            };
+
+            return isStale ? $"{baseTitle} — snapshot stale" : baseTitle;
+        }
+    }
 
     public string StatusDetail => isStale
         ? "The Runtime connection was lost. The last validated snapshot is retained and clearly marked stale while bounded reconnect continues."

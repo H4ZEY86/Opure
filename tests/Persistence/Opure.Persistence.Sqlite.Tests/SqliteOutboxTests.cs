@@ -560,6 +560,109 @@ public sealed class SqliteOutboxTests
         Assert.NotNull(blocked.OldestUndeliveredAge);
     }
 
+    [Fact]
+    public void Dead_lettering_a_blocked_message_unblocks_the_ordered_stream()
+    {
+        using TestDataRoot testRoot = new();
+        ManualTimeProvider timeProvider = CreateTimeProvider();
+        using SqliteServiceDatabase database = OpenDatabase(
+            testRoot.ChannelRoot,
+            timeProvider);
+        SqliteOutboxWriter writer = new(database.Descriptor, timeProvider);
+        _ = EnqueueOnly(
+            database,
+            writer,
+            "message-001",
+            "stream-alpha",
+            "operation-001",
+            timeProvider);
+        timeProvider.Advance(TimeSpan.FromMilliseconds(1));
+        _ = EnqueueOnly(
+            database,
+            writer,
+            "message-002",
+            "stream-alpha",
+            "operation-002",
+            timeProvider);
+        SqliteOutboxDispatcher dispatcher = new(
+            database,
+            timeProvider: timeProvider);
+
+        SqliteOutboxDeliveryLease poison = Assert.IsType<
+            SqliteOutboxDeliveryLease>(
+            dispatcher.TryAcquireNext(TestContext.Current.CancellationToken));
+        Assert.Equal("message-001", poison.Message.MessageId);
+        _ = dispatcher.MarkFailed(
+            poison,
+            "schema-rejected",
+            retryable: false,
+            TestContext.Current.CancellationToken);
+
+        Assert.Null(
+            dispatcher.TryAcquireNext(TestContext.Current.CancellationToken));
+
+        dispatcher.DeadLetter(
+            "message-001",
+            "operator-discarded",
+            TestContext.Current.CancellationToken);
+
+        RecordingPublisher publisher = new();
+        SqliteOutboxDispatchResult delivered = dispatcher.DispatchNext(
+            publisher,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(SqliteOutboxDispatchOutcome.Delivered, delivered.Outcome);
+        Assert.Equal("message-002", delivered.MessageId);
+        Assert.Equal(["message-002"], publisher.DeliveredMessageIds);
+
+        SqliteOutboxBacklogHealth health = dispatcher.ReadBacklogHealth(
+            TestContext.Current.CancellationToken);
+        Assert.Equal(SqliteOutboxBacklogState.Healthy, health.State);
+        Assert.Equal(0, health.UndeliveredCount);
+        Assert.Equal(0, health.BlockedCount);
+        Assert.Equal(1, health.DeadLetteredCount);
+        Assert.Equal(1, health.DeliveredCount);
+        Assert.Null(health.OldestUndeliveredAge);
+    }
+
+    [Fact]
+    public void Dead_lettering_requires_a_blocked_message_owned_by_the_service()
+    {
+        using TestDataRoot testRoot = new();
+        ManualTimeProvider timeProvider = CreateTimeProvider();
+        using SqliteServiceDatabase database = OpenDatabase(
+            testRoot.ChannelRoot,
+            timeProvider);
+        _ = EnqueueOnly(
+            database,
+            new SqliteOutboxWriter(database.Descriptor, timeProvider),
+            "message-001",
+            "stream-alpha",
+            "operation-001",
+            timeProvider);
+        SqliteOutboxDispatcher dispatcher = new(
+            database,
+            timeProvider: timeProvider);
+
+        SqlitePersistenceException pending = Assert.Throws<
+            SqlitePersistenceException>(() => dispatcher.DeadLetter(
+                "message-001",
+                "operator-discarded",
+                TestContext.Current.CancellationToken));
+        SqlitePersistenceException missing = Assert.Throws<
+            SqlitePersistenceException>(() => dispatcher.DeadLetter(
+                "message-404",
+                "operator-discarded",
+                TestContext.Current.CancellationToken));
+
+        Assert.Equal(
+            SqlitePersistenceErrorCodes.OutboxNotBlocked,
+            pending.ErrorCode);
+        Assert.Equal(
+            SqlitePersistenceErrorCodes.OutboxNotBlocked,
+            missing.ErrorCode);
+    }
+
     private static SqliteMigrationCatalogue CreateCatalogue()
     {
         SqliteMigration domainMigration = new(
