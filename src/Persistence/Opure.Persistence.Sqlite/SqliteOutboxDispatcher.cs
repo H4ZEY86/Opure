@@ -469,8 +469,8 @@ public sealed class SqliteOutboxDispatcher
         string stableReason,
         CancellationToken cancellationToken = default)
     {
-        SqliteOutboxIdentifier.Validate(messageId, nameof(messageId));
-        SqliteOutboxIdentifier.Validate(stableReason, nameof(stableReason));
+        global::Opure.Persistence.Sqlite.SqliteIdentifier.Validate(messageId, nameof(messageId));
+        global::Opure.Persistence.Sqlite.SqliteIdentifier.Validate(stableReason, nameof(stableReason));
 
         int changed = database.ExecuteTransaction((connection, transaction) =>
         {
