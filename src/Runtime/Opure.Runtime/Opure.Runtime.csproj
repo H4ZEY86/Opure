@@ -1,9 +1,11 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\Opure.Runtime.Contracts\Opure.Runtime.Contracts.csproj" />
     <ProjectReference Include="..\..\Ipc\Opure.Ipc.Abstractions\Opure.Ipc.Abstractions.csproj" />
     <ProjectReference Include="..\..\Ipc\Opure.Ipc.NamedPipes.Windows\Opure.Ipc.NamedPipes.Windows.csproj" />
+    <ProjectReference Include="..\..\Observability\Opure.Observability.Abstractions\Opure.Observability.Abstractions.csproj" />
+    <ProjectReference Include="..\..\Observability\Opure.Observability.StructuredLogging\Opure.Observability.StructuredLogging.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

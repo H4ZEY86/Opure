@@ -12,6 +12,10 @@
     <Project Path="src/Ipc/Opure.Ipc.Abstractions/Opure.Ipc.Abstractions.csproj" />
     <Project Path="src/Ipc/Opure.Ipc.NamedPipes.Windows/Opure.Ipc.NamedPipes.Windows.csproj" />
   </Folder>
+  <Folder Name="/src/Observability/">
+    <Project Path="src/Observability/Opure.Observability.Abstractions/Opure.Observability.Abstractions.csproj" />
+    <Project Path="src/Observability/Opure.Observability.StructuredLogging/Opure.Observability.StructuredLogging.csproj" />
+  </Folder>
   <Folder Name="/src/Persistence/">
     <Project Path="src/Persistence/Opure.Persistence.Sqlite/Opure.Persistence.Sqlite.csproj" />
   </Folder>
@@ -32,6 +36,9 @@
   </Folder>
   <Folder Name="/tests/Ipc/">
     <Project Path="tests/Ipc/Opure.Ipc.NamedPipes.Windows.Tests/Opure.Ipc.NamedPipes.Windows.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Observability/">
+    <Project Path="tests/Observability/Opure.Observability.StructuredLogging.Tests/Opure.Observability.StructuredLogging.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Persistence/">
     <Project Path="tests/Persistence/Opure.Persistence.Sqlite.Tests/Opure.Persistence.Sqlite.Tests.csproj" />

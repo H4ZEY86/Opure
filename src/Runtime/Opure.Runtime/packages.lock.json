@@ -44,6 +44,15 @@
           "Opure.Runtime.Contracts": "[1.0.0, )"
         }
       },
+      "opure.observability.abstractions": {
+        "type": "Project"
+      },
+      "opure.observability.structuredlogging": {
+        "type": "Project",
+        "dependencies": {
+          "Opure.Observability.Abstractions": "[1.0.0, )"
+        }
+      },
       "opure.runtime.contracts": {
         "type": "Project",
         "dependencies": {
