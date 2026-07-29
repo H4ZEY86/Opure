@@ -179,35 +179,39 @@ Completed and committed:
 * FND-019 — Add Trace Propagation.
 * FND-020 — Add Redaction and Canary Tests.
 * FND-021 — Add Evidence Type Schema.
+* FND-022 — Add Evidence Record Schema.
 
 Locally implemented, verified and committed; pending reviewed push:
 
-* FND-022 — Add Evidence Record Schema.
+* FND-023 — Add Trust Evidence Database.
 
 Implemented and verified by the current change:
 
-* FND-023 — Add Trust Evidence Database.
+* FND-024 — Add Trust Evidence Ingestion.
 
-FND-023 includes:
+FND-024 includes:
 
-* isolated, channel-owned `trust.db` creation;
-* three reviewed forward migrations for types, records, payload references,
-  relationships, owner sequences, inbox, projections and retention decisions;
-* the persistence library's one-writer WAL and foreign-key profile;
-* duplicate Evidence identity and owner-sequence constraints;
-* safe owner, project and operation query indexes;
-* payload-free rebuildable Trust projection tables;
-* bounded integrity, foreign-key and expected-schema health;
-* projection reset that preserves records and reports incompleteness;
-* schema, migration and query-plan evidence.
+* a framework-neutral versioned ingestion request and stable receipt;
+* transport-authenticated, time-bounded owner session binding;
+* exact Evidence Type revision, owner, Authority Class and definition-hash
+  validation;
+* independent payload and record SHA-256 envelope binding;
+* idempotent matching duplicate acknowledgement across restart;
+* retained conflicting-duplicate and unknown-type quarantine without payload
+  persistence;
+* owner sequence, previous-stream hash and gap handling;
+* atomic inbox, record, payload, sequence, relationship, Verified Service
+  Receipt projection, retention, receipt and gap writes;
+* complete rollback on injected database failure;
+* ingestion contract, authentication and conflict evidence.
 
 The next planned ticket is:
 
 ```text
-FND-024 — Implement Evidence Ingestion
+FND-025 — Add Trust Query Contract
 ```
 
-Do not assume FND-023 is complete until the Trust Evidence database verifier passes and the changes are reviewed, committed and pushed.
+Do not assume FND-024 is complete until the Trust Evidence ingestion verifier passes and the changes are reviewed, committed and pushed.
 
 ## Build policy
 

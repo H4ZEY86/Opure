@@ -82,7 +82,7 @@ if ($schema.schema -ne 'opure.trust-database-schema/1' -or
     $schema.result -ne 'Passed' -or
     $schema.databaseName -ne 'trust' -or
     $schema.ownerServiceId -ne 'opure.trust-evidence' -or
-    $schema.schemaVersion -ne 3 -or
+    $schema.schemaVersion -ne 4 -or
     $schema.journalMode -ne 'WAL' -or
     $schema.foreignKeysEnabled -ne $true -or
     $schema.oneWriter -ne $true -or
@@ -122,9 +122,9 @@ foreach ($index in @(
 if ($migration.schema -ne 'opure.trust-database-migration-report/1' -or
     $migration.result -ne 'Passed' -or
     $migration.StartingVersion -ne 0 -or
-    $migration.CurrentVersion -ne 3 -or
-    $migration.migrations.Count -ne 3 -or
-    $migration.validations.Count -lt 9 -or
+    $migration.CurrentVersion -ne 4 -or
+    $migration.migrations.Count -ne 4 -or
+    $migration.validations.Count -lt 12 -or
     @($migration.validations | Where-Object { -not $_.Passed }).Count -ne 0 -or
     $migration.recoveryMeaning -notmatch 'not proof') {
     throw 'FND-023 migration evidence is incomplete or failed.'

@@ -298,6 +298,12 @@ Run the complete FND-023 Trust Evidence database evidence gate:
 pwsh ./build.ps1 trust-database-policy
 ```
 
+Run the complete FND-024 Trust Evidence ingestion evidence gate:
+
+```powershell
+pwsh ./build.ps1 trust-ingestion-policy
+```
+
 Bootstrap verifies absolute Runtime and Desktop executable paths and companion assembly identities before launch. It starts Runtime first, waits for explicit Runtime readiness, starts Desktop second, and shuts down Desktop before Runtime.
 
 Supervisor verification injects a bounded Runtime crash, a rapid crash loop and an abrupt Bootstrap termination. It verifies restart identity, exponential backoff, visible Safe Mode and Windows Job Object orphan cleanup without recording child environment values.
@@ -352,7 +358,8 @@ and authority binding, project-scope requirements, distinct source and
 observation times, bounded correlation and sequence fields, 64 KiB canonical
 inline JSON, bounded owner and content-addressed references, prohibited fields,
 payload SHA-256 and a framed canonical record-hash vector. Persistence,
-deduplication and quarantine remain deferred.
+deduplication and quarantine are implemented by the dependency-ordered database
+and ingestion gates below.
 
 Trust Evidence database verification exercises isolated `trust.db` creation,
 forward migration, the single-writer WAL and foreign-key profile, duplicate and
@@ -360,6 +367,15 @@ parent constraints, owner-sequence, project and operation query plans,
 payload-free projections, projection reset and bounded corruption health. The
 store is a non-authoritative Trust projection; missing projection data is
 reported as incomplete and never as proof that no activity occurred. Ingestion,
-duplicate acknowledgement and conflict quarantine remain deferred to FND-024.
+duplicate acknowledgement and conflict quarantine are verified separately by
+the FND-024 gate below.
+
+Trust Evidence ingestion verification exercises transport-authenticated owner
+binding, exact Evidence Type and hash validation, matching retry
+acknowledgement, retained conflicting-duplicate quarantine, unknown-type
+quarantine, owner-gap recording, previous-stream validation and injected
+database rollback. Inbox, record, payload, sequence, projection, retention,
+receipt and gap writes share one SQLite transaction. The projection is a
+Verified Service Receipt and does not replace owner-domain authority.
 
 Channel-specific data-root and one-time session material are passed through bounded environment variables. The session secret is not placed on command lines, written to disk or included in diagnostics.

@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using Microsoft.Data.Sqlite;
 using Opure.Persistence.Sqlite;
+using Opure.TrustEvidence.Contracts;
 
 namespace Opure.TrustEvidence.Sqlite;
 
@@ -230,6 +231,17 @@ public sealed class TrustEvidenceDatabase : IDisposable
                     "The rebuildable Trust projection was cleared; durable evidence records were preserved and absence does not mean no activity.");
             },
             cancellationToken);
+    }
+
+    public TrustEvidenceIngestionPipeline CreateIngestionPipeline(
+        EvidenceTypeCatalogue evidenceTypes,
+        TimeProvider? timeProvider = null)
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        return new TrustEvidenceIngestionPipeline(
+            database,
+            evidenceTypes,
+            timeProvider);
     }
 
     public void Dispose()

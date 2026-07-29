@@ -1,0 +1,29 @@
+{
+  "schema": "opure.trust-evidence-ingestion/1",
+  "result": "Passed",
+  "contractRevision": 1,
+  "maximumRelationships": 64,
+  "ownerIdentitySource": "AuthenticatedLocalTransport",
+  "validates": [
+    "OwnerIdentity",
+    "EvidenceTypeRevision",
+    "PayloadSha256",
+    "RecordSha256",
+    "OwnerSequence",
+    "PreviousStreamSha256",
+    "RelationshipEligibility"
+  ],
+  "transactionMembers": [
+    "InboxReceipt",
+    "EvidenceRecord",
+    "PayloadReference",
+    "OwnerSequence",
+    "Relationships",
+    "VerifiedServiceReceiptProjection",
+    "RetentionDecision",
+    "IngestionReceipt",
+    "OwnerGap"
+  ],
+  "stableReceipt": true,
+  "ownerDomainAuthorityPreserved": true
+}

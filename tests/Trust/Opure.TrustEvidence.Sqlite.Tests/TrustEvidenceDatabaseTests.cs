@@ -74,10 +74,81 @@ public sealed class TrustEvidenceDatabaseTests
         Assert.Equal(
             TrustEvidenceDatabaseSchema.CurrentVersion,
             database.MigrationReport.CurrentVersion);
-        Assert.Equal(2, database.MigrationReport.AppliedMigrations.Count);
+        Assert.Equal(3, database.MigrationReport.AppliedMigrations.Count);
         Assert.All(
             database.MigrationReport.SchemaValidations,
             static validation => Assert.True(validation.Passed));
+    }
+
+    [Fact]
+    public void Version_three_projection_is_not_silently_upgraded_to_verified()
+    {
+        using TestDataRoot testRoot = new();
+        ServiceDatabaseAuthority authority = ServiceDatabaseAuthority.Create(
+            testRoot.ChannelRoot,
+            TrustEvidenceDatabase.OwnerServiceId);
+        ServiceDatabaseDescriptor descriptor = authority.Describe(
+            TrustEvidenceDatabase.DatabaseName,
+            TrustEvidenceDatabase.ApplicationId,
+            ServiceDatabaseDurability.Authoritative);
+
+        using (SqliteServiceDatabase versionThree =
+               new SqliteServiceDatabaseConnectionFactory(authority).Open(descriptor))
+        {
+            _ = new SqliteMigrationRunner().Apply(
+                versionThree,
+                TrustEvidenceDatabaseSchema.CreateCatalogue(targetVersion: 3),
+                cancellationToken: TestContext.Current.CancellationToken);
+        }
+
+        using (SqliteConnection connection = OpenDirect(descriptor.DatabasePath))
+        {
+            InsertEvidenceType(connection);
+            InsertEvidenceRecord(connection, EvidenceIdOne, ownerSequence: 1);
+            ExecuteNonQuery(
+                connection,
+                $"""
+                INSERT INTO {TrustEvidenceDatabaseSchema.ProjectionRecordTable} (
+                    evidence_id,
+                    projection_generation,
+                    evidence_type_id,
+                    owner_service_id,
+                    project_id,
+                    operation_id,
+                    action,
+                    outcome,
+                    occurred_at_utc,
+                    projected_at_utc,
+                    completeness_state)
+                VALUES (
+                    '{EvidenceIdOne}',
+                    'generation-before-ingestion',
+                    'opure.runtime.health',
+                    'opure.runtime',
+                    'project-001',
+                    'operation-001',
+                    'RuntimeHealthChecked',
+                    'Succeeded',
+                    '2026-07-29T10:00:00.0000000+00:00',
+                    '2026-07-29T10:00:01.0000000+00:00',
+                    'Complete');
+                """);
+        }
+
+        using (TrustEvidenceDatabase upgraded = TrustEvidenceDatabase.Open(
+                   testRoot.ChannelRoot,
+                   TestContext.Current.CancellationToken))
+        {
+            Assert.Equal(3, upgraded.MigrationReport.StartingVersion);
+            Assert.Equal(4, upgraded.MigrationReport.CurrentVersion);
+        }
+
+        using SqliteConnection verification = OpenDirect(descriptor.DatabasePath);
+        Assert.Equal(
+            "UnverifiedLegacyProjection",
+            ReadText(
+                verification,
+                $"SELECT verification_class FROM {TrustEvidenceDatabaseSchema.ProjectionRecordTable};"));
     }
 
     [Fact]
@@ -633,6 +704,18 @@ public sealed class TrustEvidenceDatabaseTests
         return Convert.ToInt64(
             command.ExecuteScalar(),
             CultureInfo.InvariantCulture);
+    }
+
+    private static string ReadText(
+        SqliteConnection connection,
+        string commandText)
+    {
+        using SqliteCommand command = connection.CreateCommand();
+        command.CommandText = commandText;
+        return Convert.ToString(
+                command.ExecuteScalar(),
+                CultureInfo.InvariantCulture) ??
+            string.Empty;
     }
 
     private static string ReadSchemaSql(

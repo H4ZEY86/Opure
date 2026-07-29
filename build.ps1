@@ -3,7 +3,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('restore', 'build', 'test', 'verify', 'policy', 'version', 'version-policy', 'runtime', 'runtime-policy', 'desktop', 'desktop-policy', 'bootstrap', 'bootstrap-policy', 'supervisor-policy', 'health-contract-policy', 'health-transport-policy', 'health-session-policy', 'service-registry-policy', 'service-lifecycle-policy', 'runtime-health-ui-policy', 'persistence-policy', 'migration-policy', 'outbox-policy', 'inbox-policy', 'structured-logging-policy', 'trace-propagation-policy', 'redaction-policy', 'evidence-type-policy', 'evidence-record-policy', 'trust-database-policy')]
+    [ValidateSet('restore', 'build', 'test', 'verify', 'policy', 'version', 'version-policy', 'runtime', 'runtime-policy', 'desktop', 'desktop-policy', 'bootstrap', 'bootstrap-policy', 'supervisor-policy', 'health-contract-policy', 'health-transport-policy', 'health-session-policy', 'service-registry-policy', 'service-lifecycle-policy', 'runtime-health-ui-policy', 'persistence-policy', 'migration-policy', 'outbox-policy', 'inbox-policy', 'structured-logging-policy', 'trace-propagation-policy', 'redaction-policy', 'evidence-type-policy', 'evidence-record-policy', 'trust-database-policy', 'trust-ingestion-policy')]
     [string] $Target = 'verify',
 
     [Parameter()]
@@ -161,5 +161,9 @@ switch ($Target) {
 
     'trust-database-policy' {
         & (Join-Path $PSScriptRoot 'eng\verify-trust-database.ps1')
+    }
+
+    'trust-ingestion-policy' {
+        & (Join-Path $PSScriptRoot 'eng\verify-trust-ingestion.ps1')
     }
 }

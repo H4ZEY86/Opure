@@ -1,0 +1,11 @@
+{
+  "schema": "opure.trust-ingestion-owner-authentication/1",
+  "result": "Passed",
+  "applied": "Applied",
+  "denied": "Denied",
+  "deniedCode": "TRUST_INGESTION_OWNER_MISMATCH",
+  "recordOwnerTrustedDirectly": false,
+  "authenticationMaterialPersisted": false,
+  "sessionIdPersisted": false,
+  "wrongOwnerWrites": 0
+}

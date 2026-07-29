@@ -1,0 +1,11 @@
+{
+  "schema": "opure.trust-ingestion-duplicate-conflict/1",
+  "result": "Passed",
+  "acceptedDisposition": "Applied",
+  "conflictDisposition": "Quarantined",
+  "conflictCode": "TRUST_INGESTION_CONFLICTING_DUPLICATE",
+  "retainedConflictVariants": 1,
+  "secondDomainEffectApplied": false,
+  "conflictingPayloadPersisted": false,
+  "acceptedRecordReplaced": false
+}

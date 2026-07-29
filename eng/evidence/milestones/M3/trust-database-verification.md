@@ -40,5 +40,6 @@ Evidence files:
 - `trust-database-migration-report.json`;
 - `trust-database-query-plan.json`.
 
-Record ingestion, duplicate acknowledgement, conflict quarantine and owner-gap
-reconciliation remain deliberately deferred to FND-024 and later tickets.
+Record ingestion, duplicate acknowledgement and conflict quarantine are owned
+and verified by FND-024. Owner-gap reconciliation remains deliberately deferred
+to its later dependency-ordered ticket.

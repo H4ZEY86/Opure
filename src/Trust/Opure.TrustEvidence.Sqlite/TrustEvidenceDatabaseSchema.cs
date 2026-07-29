@@ -9,7 +9,7 @@ namespace Opure.TrustEvidence.Sqlite;
 /// </summary>
 public static class TrustEvidenceDatabaseSchema
 {
-    public const int CurrentVersion = 3;
+    public const int CurrentVersion = 4;
     public const string EvidenceTypeDefinitionTable = "evidence_type_definitions";
     public const string EvidenceTypeRevisionTable = "evidence_type_revisions";
     public const string EvidenceRecordTable = "evidence_records";
@@ -19,11 +19,18 @@ public static class TrustEvidenceDatabaseSchema
     public const string ProjectionCheckpointTable = "trust_projection_checkpoints";
     public const string ProjectionRecordTable = "trust_projection_records";
     public const string RetentionDecisionTable = "evidence_retention_decisions";
+    public const string IngestionReceiptTable = "evidence_ingestion_receipts";
+    public const string IngestionQuarantineTable =
+        "evidence_ingestion_quarantine";
+    public const string OwnerGapTable = "evidence_owner_gaps";
     public const string OwnerSequenceIndex = "ix_evidence_records_owner_sequence";
     public const string ProjectQueryIndex = "ix_trust_projection_project_query";
     public const string OperationQueryIndex = "ix_trust_projection_operation_query";
     public const string RelationshipTargetIndex = "ix_evidence_relationships_target";
     public const string RetentionEffectiveIndex = "ix_evidence_retention_effective";
+    public const string QuarantineLatestIndex =
+        "ix_evidence_quarantine_latest";
+    public const string OwnerGapStateIndex = "ix_evidence_owner_gaps_state";
 
     private static readonly ReadOnlyCollection<string> CoreCommands =
         Array.AsReadOnly(
@@ -213,6 +220,98 @@ public static class TrustEvidenceDatabaseSchema
             """
         ]);
 
+    private static readonly ReadOnlyCollection<string> IngestionCommands =
+        Array.AsReadOnly(
+        [
+            $"""
+            CREATE TABLE {IngestionReceiptTable} (
+                receiver_service_id TEXT NOT NULL,
+                source_service_id TEXT NOT NULL,
+                message_id TEXT NOT NULL,
+                receipt_id TEXT NOT NULL UNIQUE CHECK (length(receipt_id) = 64),
+                evidence_id TEXT NOT NULL,
+                record_sha256 TEXT NOT NULL CHECK (length(record_sha256) = 64),
+                disposition TEXT NOT NULL CHECK (disposition IN ('Applied', 'Duplicate', 'Quarantined')),
+                stable_code TEXT NOT NULL,
+                projection_generation TEXT NOT NULL,
+                sequence_gap_detected INTEGER NOT NULL CHECK (sequence_gap_detected IN (0, 1)),
+                domain_effect_applied INTEGER NOT NULL CHECK (domain_effect_applied IN (0, 1)),
+                received_at_utc TEXT NOT NULL,
+                PRIMARY KEY (
+                    receiver_service_id,
+                    source_service_id,
+                    message_id),
+                FOREIGN KEY (
+                    receiver_service_id,
+                    source_service_id,
+                    message_id)
+                    REFERENCES {SqliteInboxSchema.ReceiptTableName} (
+                        receiver_service_id,
+                        source_service_id,
+                        message_id)
+                    ON DELETE RESTRICT
+            ) STRICT
+            """,
+            $"""
+            CREATE TABLE {IngestionQuarantineTable} (
+                source_service_id TEXT NOT NULL,
+                message_id TEXT NOT NULL,
+                evidence_id TEXT NOT NULL,
+                evidence_type_id TEXT NOT NULL,
+                evidence_type_revision INTEGER NOT NULL CHECK (evidence_type_revision > 0),
+                record_sha256 TEXT NOT NULL CHECK (length(record_sha256) = 64),
+                reason_code TEXT NOT NULL,
+                first_detected_at_utc TEXT NOT NULL,
+                last_detected_at_utc TEXT NOT NULL,
+                observation_count INTEGER NOT NULL CHECK (observation_count BETWEEN 1 AND 2147483647),
+                PRIMARY KEY (
+                    source_service_id,
+                    message_id,
+                    record_sha256,
+                    reason_code)
+            ) STRICT
+            """,
+            $"""
+            CREATE TABLE {OwnerGapTable} (
+                owner_service_id TEXT NOT NULL,
+                missing_from_sequence INTEGER NOT NULL CHECK (missing_from_sequence > 0),
+                missing_to_sequence INTEGER NOT NULL CHECK (missing_to_sequence >= missing_from_sequence),
+                detected_by_evidence_id TEXT NOT NULL,
+                detected_at_utc TEXT NOT NULL,
+                state TEXT NOT NULL CHECK (state IN ('Open', 'Resolved')),
+                PRIMARY KEY (
+                    owner_service_id,
+                    missing_from_sequence,
+                    missing_to_sequence),
+                FOREIGN KEY (detected_by_evidence_id)
+                    REFERENCES {EvidenceRecordTable} (evidence_id)
+                    ON DELETE RESTRICT
+            ) STRICT
+            """,
+            $"""
+            ALTER TABLE {ProjectionRecordTable}
+                ADD COLUMN verification_class TEXT NOT NULL
+                DEFAULT 'UnverifiedLegacyProjection'
+                CHECK (verification_class IN (
+                    'UnverifiedLegacyProjection',
+                    'VerifiedServiceReceipt'))
+            """,
+            $"""
+            CREATE INDEX {QuarantineLatestIndex}
+                ON {IngestionQuarantineTable} (
+                    last_detected_at_utc,
+                    source_service_id,
+                    message_id)
+            """,
+            $"""
+            CREATE INDEX {OwnerGapStateIndex}
+                ON {OwnerGapTable} (
+                    state,
+                    owner_service_id,
+                    missing_from_sequence)
+            """
+        ]);
+
     public static SqliteMigrationCatalogue CreateCatalogue(
         int targetVersion = CurrentVersion)
     {
@@ -252,6 +351,16 @@ public static class TrustEvidenceDatabaseSchema
                 ProjectionCommands));
         }
 
+        if (targetVersion >= 4)
+        {
+            migrations.Add(new SqliteMigration(
+                "trust-evidence-ingestion-v4",
+                sourceVersion: 3,
+                targetVersion: 4,
+                "Creates stable ingestion receipts, safe quarantine metadata, owner gaps and verified receipt projection classification.",
+                IngestionCommands));
+        }
+
         return new SqliteMigrationCatalogue(
             migrations,
             CreateValidations(targetVersion));
@@ -272,11 +381,16 @@ public static class TrustEvidenceDatabaseSchema
             ProjectionCheckpointTable,
             ProjectionRecordTable,
             RetentionDecisionTable,
+            IngestionReceiptTable,
+            IngestionQuarantineTable,
+            OwnerGapTable,
             OwnerSequenceIndex,
             ProjectQueryIndex,
             OperationQueryIndex,
             RelationshipTargetIndex,
             RetentionEffectiveIndex,
+            QuarantineLatestIndex,
+            OwnerGapStateIndex,
             "__opure_inbox_conflicts_latest",
             "__opure_inbox_receipts_immutable",
             "__opure_inbox_receipts_retained",
@@ -331,6 +445,33 @@ public static class TrustEvidenceDatabaseSchema
                     minimumSchemaVersion: 3,
                     "SELECT COUNT(*) FROM sqlite_schema WHERE type = 'table' AND upper(sql) LIKE '%VIRTUAL TABLE%' AND lower(name) LIKE '%fts%'",
                     "0")
+            ]);
+        }
+
+        if (targetVersion >= 4)
+        {
+            validations.AddRange(
+            [
+                new SqliteSchemaValidation(
+                    "trust-ingestion-tables-present",
+                    minimumSchemaVersion: 4,
+                    $"SELECT COUNT(*) FROM sqlite_schema WHERE type = 'table' AND name IN ('{IngestionReceiptTable}', '{IngestionQuarantineTable}', '{OwnerGapTable}')",
+                    "3"),
+                new SqliteSchemaValidation(
+                    "trust-ingestion-indexes-present",
+                    minimumSchemaVersion: 4,
+                    $"SELECT COUNT(*) FROM sqlite_schema WHERE type = 'index' AND name IN ('{QuarantineLatestIndex}', '{OwnerGapStateIndex}')",
+                    "2"),
+                new SqliteSchemaValidation(
+                    "trust-ingestion-receipt-inbox-foreign-key",
+                    minimumSchemaVersion: 4,
+                    $"SELECT COUNT(*) FROM pragma_foreign_key_list('{IngestionReceiptTable}') WHERE \"table\" = '{SqliteInboxSchema.ReceiptTableName}'",
+                    "3"),
+                new SqliteSchemaValidation(
+                    "trust-verified-receipt-projection-present",
+                    minimumSchemaVersion: 4,
+                    $"SELECT COUNT(*) FROM pragma_table_info('{ProjectionRecordTable}') WHERE name = 'verification_class' AND \"notnull\" = 1",
+                    "1")
             ]);
         }
 
