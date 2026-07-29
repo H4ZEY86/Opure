@@ -1,0 +1,414 @@
+{
+  "schema": "opure.foundation-evidence-type-catalogue/1",
+  "result": "Passed",
+  "typeCount": 9,
+  "types": [
+    {
+      "evidenceTypeId": "backup.recovery-point-created",
+      "revision": 1,
+      "ownerServiceId": "opure.backup",
+      "authorityClass": "VerifiedServiceReceipt",
+      "payloadLocation": "Inline",
+      "payloadFields": [
+        {
+          "name": "manifest_sha256",
+          "fieldType": "Sha256",
+          "classification": "Safe",
+          "isRequired": true
+        },
+        {
+          "name": "recovery_point_id",
+          "fieldType": "Identifier",
+          "classification": "Pseudonymous",
+          "isRequired": true
+        },
+        {
+          "name": "scope_class",
+          "fieldType": "String",
+          "classification": "Safe",
+          "isRequired": true
+        },
+        {
+          "name": "verification_state",
+          "fieldType": "String",
+          "classification": "Safe",
+          "isRequired": true
+        }
+      ],
+      "safeIndexFields": [
+        "recovery_point_id",
+        "verification_state"
+      ],
+      "relationshipEligibility": [
+        "CausedBy",
+        "Produces",
+        "CorrelatesWith"
+      ],
+      "retention": {
+        "retentionClass": "AuthoritativeTrustEvidence",
+        "defaultRetentionDays": 180,
+        "dependencyExtensionAllowed": true
+      },
+      "supportExportEligibility": "EligibleAfterRedaction",
+      "redactionProfileId": "opure.trust-evidence-redaction.1",
+      "canonicalSha256": "0ae3391985246d6c1efb063de390c42c9d25d680f3ebf3613eea387dbf8250b4"
+    },
+    {
+      "evidenceTypeId": "configuration.snapshot-committed",
+      "revision": 1,
+      "ownerServiceId": "opure.configuration",
+      "authorityClass": "AuthoritativeDomainStateTransition",
+      "payloadLocation": "Inline",
+      "payloadFields": [
+        {
+          "name": "snapshot_id",
+          "fieldType": "Identifier",
+          "classification": "Pseudonymous",
+          "isRequired": true
+        },
+        {
+          "name": "snapshot_sha256",
+          "fieldType": "Sha256",
+          "classification": "Safe",
+          "isRequired": true
+        },
+        {
+          "name": "source_count",
+          "fieldType": "Integer",
+          "classification": "Safe",
+          "isRequired": true
+        }
+      ],
+      "safeIndexFields": [
+        "snapshot_id",
+        "snapshot_sha256"
+      ],
+      "relationshipEligibility": [
+        "Implements",
+        "Supersedes",
+        "CorrelatesWith"
+      ],
+      "retention": {
+        "retentionClass": "AuthoritativeTrustEvidence",
+        "defaultRetentionDays": 180,
+        "dependencyExtensionAllowed": true
+      },
+      "supportExportEligibility": "EligibleAfterRedaction",
+      "redactionProfileId": "opure.trust-evidence-redaction.1",
+      "canonicalSha256": "50a742de0632114afba4d83772af635248060da476658fc97664808b3b3bbe4b"
+    },
+    {
+      "evidenceTypeId": "project.closed",
+      "revision": 1,
+      "ownerServiceId": "opure.project",
+      "authorityClass": "AuthoritativeDomainEffect",
+      "payloadLocation": "Inline",
+      "payloadFields": [
+        {
+          "name": "outcome",
+          "fieldType": "String",
+          "classification": "Safe",
+          "isRequired": true
+        },
+        {
+          "name": "project_id",
+          "fieldType": "Identifier",
+          "classification": "Pseudonymous",
+          "isRequired": true
+        }
+      ],
+      "safeIndexFields": [
+        "outcome",
+        "project_id"
+      ],
+      "relationshipEligibility": [
+        "CausedBy",
+        "CorrelatesWith"
+      ],
+      "retention": {
+        "retentionClass": "AuthoritativeTrustEvidence",
+        "defaultRetentionDays": 180,
+        "dependencyExtensionAllowed": true
+      },
+      "supportExportEligibility": "EligibleAfterRedaction",
+      "redactionProfileId": "opure.trust-evidence-redaction.1",
+      "canonicalSha256": "3688aab688dc64890d8438d093ab839170c463441edee31c94365ef2f5205363"
+    },
+    {
+      "evidenceTypeId": "project.opened",
+      "revision": 1,
+      "ownerServiceId": "opure.project",
+      "authorityClass": "AuthoritativeDomainEffect",
+      "payloadLocation": "Inline",
+      "payloadFields": [
+        {
+          "name": "access_mode",
+          "fieldType": "String",
+          "classification": "Safe",
+          "isRequired": true
+        },
+        {
+          "name": "project_id",
+          "fieldType": "Identifier",
+          "classification": "Pseudonymous",
+          "isRequired": true
+        },
+        {
+          "name": "registration_revision",
+          "fieldType": "Integer",
+          "classification": "Safe",
+          "isRequired": true
+        }
+      ],
+      "safeIndexFields": [
+        "access_mode",
+        "project_id"
+      ],
+      "relationshipEligibility": [
+        "AuthorisedBy",
+        "Produces",
+        "CorrelatesWith"
+      ],
+      "retention": {
+        "retentionClass": "AuthoritativeTrustEvidence",
+        "defaultRetentionDays": 180,
+        "dependencyExtensionAllowed": true
+      },
+      "supportExportEligibility": "EligibleAfterRedaction",
+      "redactionProfileId": "opure.trust-evidence-redaction.1",
+      "canonicalSha256": "a3f8d537b211d1db6e5deb528235c535f7d42edb22bcb7582dc4abec16815c2b"
+    },
+    {
+      "evidenceTypeId": "runtime.started",
+      "revision": 1,
+      "ownerServiceId": "opure.runtime",
+      "authorityClass": "AuthoritativeDomainStateTransition",
+      "payloadLocation": "Inline",
+      "payloadFields": [
+        {
+          "name": "runtime_boot_id",
+          "fieldType": "Identifier",
+          "classification": "Pseudonymous",
+          "isRequired": true
+        },
+        {
+          "name": "startup_mode",
+          "fieldType": "String",
+          "classification": "Safe",
+          "isRequired": true
+        }
+      ],
+      "safeIndexFields": [
+        "runtime_boot_id",
+        "startup_mode"
+      ],
+      "relationshipEligibility": [
+        "Causes",
+        "CorrelatesWith"
+      ],
+      "retention": {
+        "retentionClass": "AuthoritativeTrustEvidence",
+        "defaultRetentionDays": 180,
+        "dependencyExtensionAllowed": true
+      },
+      "supportExportEligibility": "EligibleAfterRedaction",
+      "redactionProfileId": "opure.trust-evidence-redaction.1",
+      "canonicalSha256": "96930467539bd476af4c6410e16fa197436e1fce7063b247da2e666259246eff"
+    },
+    {
+      "evidenceTypeId": "runtime.stopped",
+      "revision": 1,
+      "ownerServiceId": "opure.runtime",
+      "authorityClass": "AuthoritativeDomainStateTransition",
+      "payloadLocation": "Inline",
+      "payloadFields": [
+        {
+          "name": "outcome",
+          "fieldType": "String",
+          "classification": "Safe",
+          "isRequired": true
+        },
+        {
+          "name": "reason_code",
+          "fieldType": "String",
+          "classification": "Safe",
+          "isRequired": false
+        },
+        {
+          "name": "runtime_boot_id",
+          "fieldType": "Identifier",
+          "classification": "Pseudonymous",
+          "isRequired": true
+        }
+      ],
+      "safeIndexFields": [
+        "outcome",
+        "runtime_boot_id"
+      ],
+      "relationshipEligibility": [
+        "CausedBy",
+        "CorrelatesWith"
+      ],
+      "retention": {
+        "retentionClass": "AuthoritativeTrustEvidence",
+        "defaultRetentionDays": 180,
+        "dependencyExtensionAllowed": true
+      },
+      "supportExportEligibility": "EligibleAfterRedaction",
+      "redactionProfileId": "opure.trust-evidence-redaction.1",
+      "canonicalSha256": "34823687818c07a650d04f78ccc6dfd4bbb1a1b3161fd47a5b4971b28200d375"
+    },
+    {
+      "evidenceTypeId": "security.policy-denied",
+      "revision": 1,
+      "ownerServiceId": "opure.product-policy",
+      "authorityClass": "AuthoritativeDomainDecision",
+      "payloadLocation": "Inline",
+      "payloadFields": [
+        {
+          "name": "decision_id",
+          "fieldType": "Identifier",
+          "classification": "Pseudonymous",
+          "isRequired": true
+        },
+        {
+          "name": "policy_id",
+          "fieldType": "Identifier",
+          "classification": "Safe",
+          "isRequired": true
+        },
+        {
+          "name": "reason_code",
+          "fieldType": "String",
+          "classification": "Safe",
+          "isRequired": true
+        },
+        {
+          "name": "target_class",
+          "fieldType": "String",
+          "classification": "Safe",
+          "isRequired": true
+        }
+      ],
+      "safeIndexFields": [
+        "decision_id",
+        "policy_id",
+        "reason_code"
+      ],
+      "relationshipEligibility": [
+        "Authorises",
+        "Violates",
+        "CorrelatesWith"
+      ],
+      "retention": {
+        "retentionClass": "SecurityCriticalTrustEvidence",
+        "defaultRetentionDays": 365,
+        "dependencyExtensionAllowed": true
+      },
+      "supportExportEligibility": "MetadataOnly",
+      "redactionProfileId": "opure.trust-evidence-redaction.1",
+      "canonicalSha256": "aac41b5c0e897b78d6d6f903f24a9b6e512f2c971bcd8514c19b4f9ce56540ee"
+    },
+    {
+      "evidenceTypeId": "service.state-changed",
+      "revision": 1,
+      "ownerServiceId": "opure.service-registry",
+      "authorityClass": "AuthoritativeDomainStateTransition",
+      "payloadLocation": "Inline",
+      "payloadFields": [
+        {
+          "name": "current_state",
+          "fieldType": "String",
+          "classification": "Safe",
+          "isRequired": true
+        },
+        {
+          "name": "previous_state",
+          "fieldType": "String",
+          "classification": "Safe",
+          "isRequired": true
+        },
+        {
+          "name": "reason_code",
+          "fieldType": "String",
+          "classification": "Safe",
+          "isRequired": false
+        },
+        {
+          "name": "service_id",
+          "fieldType": "Identifier",
+          "classification": "Safe",
+          "isRequired": true
+        }
+      ],
+      "safeIndexFields": [
+        "current_state",
+        "service_id"
+      ],
+      "relationshipEligibility": [
+        "CausedBy",
+        "Produces",
+        "CorrelatesWith"
+      ],
+      "retention": {
+        "retentionClass": "AuthoritativeTrustEvidence",
+        "defaultRetentionDays": 180,
+        "dependencyExtensionAllowed": true
+      },
+      "supportExportEligibility": "EligibleAfterRedaction",
+      "redactionProfileId": "opure.trust-evidence-redaction.1",
+      "canonicalSha256": "a541b2dc786fc025b3e5be3c19a7e19411577c5a2ec9e76d6f1e138a1895b5ad"
+    },
+    {
+      "evidenceTypeId": "workspace.snapshot-created",
+      "revision": 1,
+      "ownerServiceId": "opure.workspace",
+      "authorityClass": "VerifiedServiceReceipt",
+      "payloadLocation": "Inline",
+      "payloadFields": [
+        {
+          "name": "file_count",
+          "fieldType": "Integer",
+          "classification": "Safe",
+          "isRequired": true
+        },
+        {
+          "name": "manifest_sha256",
+          "fieldType": "Sha256",
+          "classification": "Safe",
+          "isRequired": true
+        },
+        {
+          "name": "project_id",
+          "fieldType": "Identifier",
+          "classification": "Pseudonymous",
+          "isRequired": true
+        },
+        {
+          "name": "workspace_generation_id",
+          "fieldType": "Identifier",
+          "classification": "Pseudonymous",
+          "isRequired": true
+        }
+      ],
+      "safeIndexFields": [
+        "project_id",
+        "workspace_generation_id"
+      ],
+      "relationshipEligibility": [
+        "CausedBy",
+        "DerivesFrom",
+        "BelongsTo"
+      ],
+      "retention": {
+        "retentionClass": "AuthoritativeTrustEvidence",
+        "defaultRetentionDays": 180,
+        "dependencyExtensionAllowed": true
+      },
+      "supportExportEligibility": "EligibleAfterRedaction",
+      "redactionProfileId": "opure.trust-evidence-redaction.1",
+      "canonicalSha256": "e8b0d47f76b35640190acc40110f35fb788ac0e0c0f681f484a00f6b971e9faf"
+    }
+  ],
+  "authoritative": false
+}

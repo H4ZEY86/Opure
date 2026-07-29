@@ -1,0 +1,23 @@
+{
+  "schema": "opure.trust-evidence-type/1",
+  "result": "Passed",
+  "requiredProperties": [
+    "evidenceTypeId",
+    "revision",
+    "ownerServiceId",
+    "authorityClass",
+    "payloadLocation",
+    "payloadFields",
+    "safeIndexFields",
+    "relationshipEligibility",
+    "retention",
+    "supportExportEligibility",
+    "redactionProfileId",
+    "canonicalSha256"
+  ],
+  "unknownTypeTrusted": false,
+  "revisionImmutable": true,
+  "ownerAndAuthorityStableAcrossRevisions": true,
+  "secretPayloadFieldsAllowed": false,
+  "authoritative": false
+}

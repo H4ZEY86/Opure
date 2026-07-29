@@ -23,6 +23,9 @@
     <Project Path="src/Runtime/Opure.Runtime.Contracts/Opure.Runtime.Contracts.csproj" />
     <Project Path="src/Runtime/Opure.Runtime/Opure.Runtime.csproj" />
   </Folder>
+  <Folder Name="/src/Trust/">
+    <Project Path="src/Trust/Opure.TrustEvidence.Contracts/Opure.TrustEvidence.Contracts.csproj" />
+  </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/Architecture/">
     <Project Path="tests/Architecture/Opure.ArchitectureTests/Opure.ArchitectureTests.csproj" />
@@ -45,5 +48,8 @@
   </Folder>
   <Folder Name="/tests/Runtime/">
     <Project Path="tests/Runtime/Opure.Runtime.Tests/Opure.Runtime.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Trust/">
+    <Project Path="tests/Trust/Opure.TrustEvidence.Contracts.Tests/Opure.TrustEvidence.Contracts.Tests.csproj" />
   </Folder>
 </Solution>

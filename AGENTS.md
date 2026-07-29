@@ -178,29 +178,35 @@ Completed and committed:
 * FND-018 — Add Structured Logging.
 * FND-019 — Add Trace Propagation.
 
-Implemented and verified by the current change:
+Locally implemented, verified and committed; pending reviewed push:
 
 * FND-020 — Add Redaction and Canary Tests.
 
-FND-020 includes:
+Implemented and verified by the current change:
 
-* a central, versioned local-diagnostics redaction profile;
-* allowlist-first field admission and prohibited-class rejection;
-* exact and pattern-based credential canaries;
-* percent-encoded and base64-encoded canary detection;
-* project-text, authentication-header and exception-metadata exclusion;
-* safe absolute-path categorisation before queue admission;
-* trace-tag value constraints;
-* fail-closed processor behaviour with a fixed safe finding;
-* deterministic profile, canary-coverage and persistence-scan evidence.
+* FND-021 — Add Evidence Type Schema.
+
+FND-021 includes:
+
+* the framework-neutral `opure.trust-evidence-type/1` contract;
+* stable type identifiers and immutable revisions;
+* required owner-service and Authority Class binding;
+* typed payload fields with explicit data classification;
+* safe index and relationship eligibility validation;
+* explicit retention, support-export and redaction metadata;
+* deterministic canonical SHA-256 definition identities;
+* exact trusted-catalogue resolution and unknown-type refusal;
+* readable historical revisions without silent owner or authority drift;
+* a reviewed nine-type foundation catalogue;
+* schema, catalogue and authority-review evidence.
 
 The next planned ticket is:
 
 ```text
-FND-021 — Add Evidence Type Schema
+FND-022 — Add Evidence Record Schema
 ```
 
-Do not assume FND-020 is complete until the redaction verifier passes and the changes are reviewed, committed and pushed.
+Do not assume FND-021 is complete until the Evidence Type verifier passes and the changes are reviewed, committed and pushed.
 
 ## Build policy
 

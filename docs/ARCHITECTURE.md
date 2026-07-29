@@ -1859,6 +1859,21 @@ It should correlate:
 
 Secret values must never be recorded.
 
+The provisional FND-021 boundary is a framework-neutral Trust Evidence contract
+and catalogue. `opure.trust-evidence-type/1` binds each exact type revision to
+one owner service, Authority Class, typed payload schema, safe indexes,
+relationship eligibility, retention class and duration, support-export
+eligibility and redaction profile. Definitions have a deterministic SHA-256
+identity over their canonical fields.
+
+Catalogue lookup must match the type, revision, owner, authority and definition
+hash before later ingestion may treat a record as trusted. Unknown types and
+historical gaps are not trusted. Registered historical revisions remain
+readable, while owner or authority drift under the same stable type identifier
+is rejected. The initial nine entries are contracts only; Evidence Record
+envelopes, persistence, ingestion, query and reconciliation remain deferred to
+FND-022 through FND-025.
+
 ---
 
 ## 67. Trust Record Detail

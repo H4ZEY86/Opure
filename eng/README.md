@@ -280,6 +280,12 @@ Run the complete FND-020 redaction and canary evidence gate:
 pwsh ./build.ps1 redaction-policy
 ```
 
+Run the complete FND-021 Evidence Type schema evidence gate:
+
+```powershell
+pwsh ./build.ps1 evidence-type-policy
+```
+
 Bootstrap verifies absolute Runtime and Desktop executable paths and companion assembly identities before launch. It starts Runtime first, waits for explicit Runtime readiness, starts Desktop second, and shuts down Desktop before Runtime.
 
 Supervisor verification injects a bounded Runtime crash, a rapid crash loop and an abrupt Bootstrap termination. It verifies restart identity, exponential backoff, visible Safe Mode and Windows Job Object orphan cleanup without recording child environment values.
@@ -319,5 +325,13 @@ allowlist-first field admission, exact and pattern canaries, percent and base64
 encoding, safe absolute-path categorisation, exception-metadata exclusion,
 trace-tag admission and fail-closed processor behaviour. It scans the generated
 reports and retained trace evidence without reproducing rejected values.
+
+Evidence Type verification exercises the framework-neutral
+`opure.trust-evidence-type/1` contract, immutable revision and canonical-hash
+rules, owner and Authority Class binding, safe payload indexes, explicit
+retention, support-export and redaction metadata, unknown-type refusal,
+historical revision lookup and the reviewed nine-type foundation catalogue.
+Record persistence and ingestion remain deferred to their dependency-ordered
+tickets.
 
 Channel-specific data-root and one-time session material are passed through bounded environment variables. The session secret is not placed on command lines, written to disk or included in diagnostics.
