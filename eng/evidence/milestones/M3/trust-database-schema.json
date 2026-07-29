@@ -1,0 +1,42 @@
+{
+  "schema": "opure.trust-database-schema/1",
+  "result": "Passed",
+  "databaseName": "trust",
+  "ownerServiceId": "opure.trust-evidence",
+  "schemaVersion": 3,
+  "journalMode": "WAL",
+  "foreignKeysEnabled": true,
+  "oneWriter": true,
+  "separateFromOperationalLogs": true,
+  "tables": [
+    "__opure_inbox_conflicts",
+    "__opure_inbox_receipts",
+    "__opure_migration_history",
+    "evidence_owner_sequences",
+    "evidence_payload_references",
+    "evidence_records",
+    "evidence_relationships",
+    "evidence_retention_decisions",
+    "evidence_type_definitions",
+    "evidence_type_revisions",
+    "trust_projection_checkpoints",
+    "trust_projection_records"
+  ],
+  "indexes": [
+    "__opure_inbox_conflicts_latest",
+    "ix_evidence_records_owner_sequence",
+    "ix_evidence_relationships_target",
+    "ix_evidence_retention_effective",
+    "ix_trust_projection_operation_query",
+    "ix_trust_projection_project_query"
+  ],
+  "triggers": [
+    "__opure_inbox_conflict_identity_immutable",
+    "__opure_inbox_conflicts_retained",
+    "__opure_inbox_receipts_immutable",
+    "__opure_inbox_receipts_retained"
+  ],
+  "fullTextTables": [],
+  "payloadCopiedToProjection": false,
+  "authoritativeForOwnerDomain": false
+}

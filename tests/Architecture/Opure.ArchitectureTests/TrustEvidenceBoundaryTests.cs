@@ -55,6 +55,53 @@ public sealed class TrustEvidenceBoundaryTests
         Assert.DoesNotContain("Microsoft.Data.Sqlite", source, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Trust_evidence_storage_has_only_contract_and_persistence_dependencies()
+    {
+        string projectPath = Path.Combine(
+            RepositoryRoot,
+            "src",
+            "Trust",
+            "Opure.TrustEvidence.Sqlite",
+            "Opure.TrustEvidence.Sqlite.csproj");
+        string project = File.ReadAllText(projectPath);
+
+        Assert.Contains(
+            "Opure.TrustEvidence.Contracts.csproj",
+            project,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Opure.Persistence.Sqlite.csproj",
+            project,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("PackageReference", project, StringComparison.Ordinal);
+        Assert.DoesNotContain("Opure.Observability", project, StringComparison.Ordinal);
+        Assert.DoesNotContain("Opure.Desktop", project, StringComparison.Ordinal);
+        Assert.DoesNotContain("Opure.Runtime", project, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Trust_evidence_storage_does_not_gain_network_or_log_authority()
+    {
+        string sourceRoot = Path.Combine(
+            RepositoryRoot,
+            "src",
+            "Trust",
+            "Opure.TrustEvidence.Sqlite");
+        string source = string.Join(
+            Environment.NewLine,
+            Directory.EnumerateFiles(
+                    sourceRoot,
+                    "*.cs",
+                    SearchOption.AllDirectories)
+                .Select(File.ReadAllText));
+
+        Assert.DoesNotContain("System.Net", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("JsonLinesOperationalLogSink", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("HttpClient", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("Socket", source, StringComparison.Ordinal);
+    }
+
     private static string FindRepositoryRoot()
     {
         DirectoryInfo? directory = new(AppContext.BaseDirectory);

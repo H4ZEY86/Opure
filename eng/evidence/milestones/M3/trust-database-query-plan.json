@@ -1,0 +1,18 @@
+{
+  "schema": "opure.trust-database-query-plan/1",
+  "result": "Passed",
+  "boundedPageSize": 50,
+  "ownerSequence": {
+    "index": "ix_evidence_records_owner_sequence",
+    "plan": "SEARCH evidence_records USING COVERING INDEX ix_evidence_records_owner_sequence (owner_service_id=? AND owner_sequence\u003E?)"
+  },
+  "project": {
+    "index": "ix_trust_projection_project_query",
+    "plan": "SEARCH trust_projection_records USING COVERING INDEX ix_trust_projection_project_query (project_id=?)"
+  },
+  "operation": {
+    "index": "ix_trust_projection_operation_query",
+    "plan": "SEARCH trust_projection_records USING COVERING INDEX ix_trust_projection_operation_query (operation_id=?)"
+  },
+  "payloadIndexed": false
+}

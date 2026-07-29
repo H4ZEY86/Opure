@@ -178,36 +178,36 @@ Completed and committed:
 * FND-018 — Add Structured Logging.
 * FND-019 — Add Trace Propagation.
 * FND-020 — Add Redaction and Canary Tests.
+* FND-021 — Add Evidence Type Schema.
 
 Locally implemented, verified and committed; pending reviewed push:
 
-* FND-021 — Add Evidence Type Schema.
+* FND-022 — Add Evidence Record Schema.
 
 Implemented and verified by the current change:
 
-* FND-022 — Add Evidence Record Schema.
+* FND-023 — Add Trust Evidence Database.
 
-FND-022 includes:
+FND-023 includes:
 
-* the framework-neutral `opure.trust-evidence-record/1` envelope;
-* opaque Evidence, owner, subject and correlation identities;
-* exact Evidence Type definition, owner and Authority Class binding;
-* project-scope identity enforcement;
-* distinct UTC-normalised occurrence and observation times;
-* owner sequence, stream hash, retention and preservation metadata;
-* 64 KiB canonical inline JSON payloads;
-* bounded owner and content-addressed payload references;
-* declared-field, type, classification and prohibited-name validation;
-* payload and framed canonical record SHA-256 identities;
-* schema, canonicalisation-vector and safe example evidence.
+* isolated, channel-owned `trust.db` creation;
+* three reviewed forward migrations for types, records, payload references,
+  relationships, owner sequences, inbox, projections and retention decisions;
+* the persistence library's one-writer WAL and foreign-key profile;
+* duplicate Evidence identity and owner-sequence constraints;
+* safe owner, project and operation query indexes;
+* payload-free rebuildable Trust projection tables;
+* bounded integrity, foreign-key and expected-schema health;
+* projection reset that preserves records and reports incompleteness;
+* schema, migration and query-plan evidence.
 
 The next planned ticket is:
 
 ```text
-FND-023 — Add Trust Evidence Database
+FND-024 — Implement Evidence Ingestion
 ```
 
-Do not assume FND-022 is complete until the Evidence Record verifier passes and the changes are reviewed, committed and pushed.
+Do not assume FND-023 is complete until the Trust Evidence database verifier passes and the changes are reviewed, committed and pushed.
 
 ## Build policy
 

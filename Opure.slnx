@@ -25,6 +25,7 @@
   </Folder>
   <Folder Name="/src/Trust/">
     <Project Path="src/Trust/Opure.TrustEvidence.Contracts/Opure.TrustEvidence.Contracts.csproj" />
+    <Project Path="src/Trust/Opure.TrustEvidence.Sqlite/Opure.TrustEvidence.Sqlite.csproj" />
   </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/Architecture/">
@@ -51,5 +52,6 @@
   </Folder>
   <Folder Name="/tests/Trust/">
     <Project Path="tests/Trust/Opure.TrustEvidence.Contracts.Tests/Opure.TrustEvidence.Contracts.Tests.csproj" />
+    <Project Path="tests/Trust/Opure.TrustEvidence.Sqlite.Tests/Opure.TrustEvidence.Sqlite.Tests.csproj" />
   </Folder>
 </Solution>
