@@ -187,32 +187,32 @@ Locally implemented, verified and committed; pending reviewed pushes:
 * FND-024 — Add Trust Evidence Ingestion.
 * FND-025 — Add Trust Query Contract.
 * FND-026 — Add Windows Path-Reference Library.
+* FND-027 — Add Trusted Folder Picker Adapter.
 
 Implemented and verified by the current change:
 
-* FND-027 — Add Trusted Folder Picker Adapter.
+* FND-028 — Add Project Service Database.
 
-FND-027 includes:
+FND-028 includes:
 
-* a framework-neutral folder-selection projection and view model;
-* one-shot Avalonia folder acquisition through a platform adapter;
-* immediate handoff to the Windows path-reference boundary;
-* an opaque verified-root receiver port with no Desktop authority retention;
-* cancellation without capability transfer or state mutation;
-* visible fixed-local, removable, network, unsupported and failure
-  classifications;
-* reparse, network and deletion-after-selection refusal;
-* an honest unavailable Project Service state pending FND-028;
-* keyboard focus, access-key and stable automation metadata;
-* reviewed picker-flow, capability-transfer and accessibility evidence.
+* framework-neutral Project identity, lifecycle, root and repository metadata;
+* the channel-isolated authoritative `projects.db` owner store;
+* random 128-bit lower-case hexadecimal Project IDs;
+* verified-root identity revalidation held through registration commit;
+* exact-identity idempotency and explicit same-path identity conflicts;
+* create, read, channel-list and lifecycle-transition repository methods;
+* persistent repository identity and missing-root `Unavailable` state;
+* lifecycle history and immutable outbox receipts in the same transaction;
+* v1-to-v2 migration and bounded integrity/schema health;
+* schema, identity and ownership-conformance evidence.
 
 The next planned ticket is:
 
 ```text
-FND-028 — Add Project Service Database
+FND-029 — Add Open Project Flow
 ```
 
-Do not assume FND-027 is complete until the Trusted Folder Picker verifier
+Do not assume FND-028 is complete until the Project Service database verifier
 passes and the changes are reviewed, committed and pushed.
 
 ## Build policy

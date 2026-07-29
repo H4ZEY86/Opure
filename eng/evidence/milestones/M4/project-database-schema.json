@@ -1,0 +1,25 @@
+{
+  "schema": "opure.project-database-schema/1",
+  "result": "Passed",
+  "databaseName": "projects.db",
+  "schemaVersion": 2,
+  "ownerServiceId": "opure.project",
+  "authoritative": true,
+  "wal": true,
+  "foreignKeys": true,
+  "tables": [
+    "projects",
+    "project_root_references",
+    "project_repository_identities",
+    "project_lifecycle_history",
+    "__opure_outbox_streams",
+    "__opure_outbox_messages",
+    "__opure_outbox_delivery"
+  ],
+  "outboxSameTransaction": true,
+  "integrityChecks": [
+    "quick_check",
+    "foreign_key_check",
+    "expected_schema_objects"
+  ]
+}

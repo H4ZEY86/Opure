@@ -2837,6 +2837,14 @@ through a receiver port; it neither opens project files nor persists
 authority. Until the Project Service is implemented, transfer is refused
 visibly and the reference is discarded.
 
+FND-028 introduces the Project Service-owned authoritative `projects.db`.
+Project registration requires an opaque verified Windows root reference and
+revalidates its handle-derived identity while the database transaction commits.
+The same transaction writes project identity, root metadata, lifecycle history,
+optional repository identity and the immutable lifecycle outbox receipt.
+Desktop and other services cannot write this database. Missing roots transition
+to `Unavailable`; their durable project identity is not silently deleted.
+
 The following rules should be enforced as architectural invariants:
 
 1. AI providers are accessed only through the AI Router.

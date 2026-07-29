@@ -1,0 +1,12 @@
+{
+  "schema": "opure.project-ownership/1",
+  "result": "Passed",
+  "ownerServiceId": "opure.project",
+  "database": "projects.db",
+  "otherServiceWriters": 0,
+  "desktopDatabaseAuthority": false,
+  "verifiedRootRequired": true,
+  "rootRevalidatedAtCommit": true,
+  "outboxOwnerBound": true,
+  "recoveryDisposition": "RecoveryRequired"
+}

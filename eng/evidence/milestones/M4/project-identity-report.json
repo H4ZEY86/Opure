@@ -1,0 +1,14 @@
+{
+  "schema": "opure.project-identity-report/1",
+  "result": "Passed",
+  "projectIdBytes": 16,
+  "projectIdEncoding": "lowercase-hex",
+  "exactDuplicate": "Existing",
+  "duplicateDomainEffects": 0,
+  "pathIdentityConflict": "Rejected",
+  "channelIsolation": true,
+  "migration": "v1-to-v2",
+  "restartSafe": true,
+  "lifecyclePersistent": true,
+  "missingRootPolicy": "UnavailableNotDeleted"
+}

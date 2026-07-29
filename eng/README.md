@@ -322,6 +322,12 @@ Run the complete FND-027 Trusted Folder Picker evidence gate:
 pwsh ./build.ps1 folder-picker-policy
 ```
 
+Run the complete FND-028 Project Service database evidence gate:
+
+```powershell
+pwsh ./build.ps1 project-database-policy
+```
+
 Bootstrap verifies absolute Runtime and Desktop executable paths and companion assembly identities before launch. It starts Runtime first, waits for explicit Runtime readiness, starts Desktop second, and shuts down Desktop before Runtime.
 
 Supervisor verification injects a bounded Runtime crash, a rapid crash loop and an abrupt Bootstrap termination. It verifies restart identity, exponential backoff, visible Safe Mode and Windows Job Object orphan cleanup without recording child environment values.
@@ -418,5 +424,12 @@ network and reparse refusal, deletion-after-selection recovery, an opaque
 capability receiver port and keyboard/automation metadata. Desktop retains
 only display classification; the Project Service receiver remains honestly
 unavailable until its dependency-ordered implementation.
+
+Project Service database verification exercises the channel-isolated
+authoritative `projects.db`, random stable Project IDs, verified root identity
+binding, exact-duplicate idempotency, display-path identity conflicts,
+repository metadata, durable lifecycle history, migration, integrity health,
+restart recovery and lifecycle outbox receipts committed in the owner
+transaction. Desktop and other services have no database authority.
 
 Channel-specific data-root and one-time session material are passed through bounded environment variables. The session secret is not placed on command lines, written to disk or included in diagnostics.

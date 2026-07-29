@@ -68,6 +68,8 @@ public sealed class VerifiedWorkspaceRootReference
 
     public string DisplayPath => Root.DisplayPath;
 
+    public FileObjectIdentity RootIdentity => Root.Identity;
+
     internal WindowsRegisteredWorkspaceRoot Root { get; }
 }
 
