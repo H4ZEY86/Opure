@@ -175,33 +175,32 @@ Completed and committed:
 * FND-015 — Add Migration Runner.
 * FND-016 — Add Transactional Outbox.
 * FND-017 — Add Transactional Inbox.
+* FND-018 — Add Structured Logging.
+* FND-019 — Add Trace Propagation.
 
 Implemented and verified by the current change:
 
-* FND-018 — Add Structured Logging.
+* FND-020 — Add Redaction and Canary Tests.
 
-FND-018 includes:
+FND-020 includes:
 
-* reviewed event definitions with fixed safe messages and exact attribute allowlists;
-* a framework-neutral structured operational logging contract;
-* a bounded, severity-aware process queue with explicit drop accounting;
-* a local JSON Lines sink beneath the channel data root;
-* size rotation plus bounded age and count retention;
-* synchronous sanitisation before enqueue and persistence;
-* Runtime service, version, boot, trace and safe operation identities;
-* sink and queue failure isolation with safe Runtime Health degradation;
-* partial-line and mid-write quarantine recovery;
-* Windows directory pinning and validated-handle rotation and retention;
-* explicit separation from authoritative Trust Evidence;
-* schema, rotation, queue and injection evidence reports.
+* a central, versioned local-diagnostics redaction profile;
+* allowlist-first field admission and prohibited-class rejection;
+* exact and pattern-based credential canaries;
+* percent-encoded and base64-encoded canary detection;
+* project-text, authentication-header and exception-metadata exclusion;
+* safe absolute-path categorisation before queue admission;
+* trace-tag value constraints;
+* fail-closed processor behaviour with a fixed safe finding;
+* deterministic profile, canary-coverage and persistence-scan evidence.
 
 The next planned ticket is:
 
 ```text
-FND-019 — Add Trace Propagation
+FND-021 — Add Evidence Type Schema
 ```
 
-Do not assume FND-018 is complete until the structured logging verifier passes and the changes are reviewed, committed and pushed.
+Do not assume FND-020 is complete until the redaction verifier passes and the changes are reviewed, committed and pushed.
 
 ## Build policy
 

@@ -1,0 +1,12 @@
+﻿schema=opure.redaction-profile/1
+result=Passed
+profileId=opure.local-diagnostics-redaction/1
+fieldAdmission=AllowlistFirst
+classifiedUnsafeFields=Rejected
+absolutePathOutcome=path.absolute
+percentEncodingInspection=Enabled
+base64EncodingInspection=Enabled
+maximumDecodedValueBytes=4096
+failureAction=DropUnsafeFieldsAndEmitWarning
+findingValuesIncluded=False
+authoritative=False

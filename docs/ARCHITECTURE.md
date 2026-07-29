@@ -2419,6 +2419,20 @@ until their retention and export policy is reviewed. Trace loss or disabled
 sampling cannot change authority, request outcome or recovery. External export
 and resource metrics remain deferred to their own policy-gated tickets.
 
+FND-020 centralises the versioned local-diagnostics redaction profile beneath
+Observability. Field admission remains allowlist-first. Secret and prohibited
+field classes are rejected; direct, pattern-based, percent-encoded and
+base64-encoded credential or project-text values are removed before enqueue.
+Standalone absolute paths are replaced by the non-identifying
+`path.absolute` category. Embedded paths, authentication headers and exception
+metadata are rejected.
+
+Redaction fails closed. A processor failure drops the candidate event, records
+bounded degraded diagnostics health and emits only a fixed warning with a
+stable finding code. The rejected value is not included. The FND-020 gate
+injects canaries through operational logs and trace admission, scans persisted
+diagnostic evidence and produces only bounded non-authoritative findings.
+
 ---
 
 ## 86. Logging Rules

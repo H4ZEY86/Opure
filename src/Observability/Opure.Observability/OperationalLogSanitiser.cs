@@ -9,63 +9,19 @@ internal static partial class OperationalLogSanitiser
 {
     private const string OmittedText = "Unsafe diagnostic content was omitted.";
 
-    private static readonly string[] ProhibitedAttributeNameParts =
-    [
-        "authorization",
-        "authenticationheader",
-        "cookie",
-        "credential",
-        "exceptiondata",
-        "password",
-        "payload",
-        "privatekey",
-        "prompt",
-        "requestbody",
-        "responsebody",
-        "secret",
-        "sourcecontent",
-        "token"
-    ];
-
-    private static readonly string[] ProhibitedValueParts =
-    [
-        "api key",
-        "api-key",
-        "api_key",
-        "apikey",
-        "authorization:",
-        "bearer ",
-        "basic ",
-        "client secret",
-        "client-secret",
-        "client_secret",
-        "connection string",
-        "connectionstring",
-        "credential=",
-        "ghp_",
-        "github_pat_",
-        "password",
-        "password=",
-        "private key",
-        "secret=",
-        "secret canary",
-        "secret-canary",
-        "secret_canary",
-        "sessionsecret",
-        "token="
-    ];
-
     internal static SanitisedOperationalLogEvent Sanitise(
         OperationalLogEvent logEvent,
         OperationalLogPolicy policy)
     {
         ArgumentNullException.ThrowIfNull(logEvent);
         ArgumentNullException.ThrowIfNull(policy);
+        OperationalRedactionProfile profile = policy.RedactionProfile;
 
         string message = MinimiseSensitive(
             NormaliseAndBound(
                 logEvent.Definition.Message,
-                policy.MaximumMessageCharacters));
+                policy.MaximumMessageCharacters),
+            profile);
         List<OperationalLogAttribute> attributes = [];
         HashSet<string> names = new(StringComparer.Ordinal);
 
@@ -73,7 +29,7 @@ internal static partial class OperationalLogSanitiser
         {
             if (attributes.Count >= policy.MaximumAttributeCount ||
                 attribute.Name.Length > policy.MaximumAttributeNameCharacters ||
-                IsProhibitedAttributeName(attribute.Name) ||
+                IsProhibitedAttributeName(attribute.Name, profile) ||
                 !logEvent.Definition.AllowedAttributes.TryGetValue(
                     attribute.Name,
                     out OperationalLogAttributeDefinition? definition) ||
@@ -93,16 +49,27 @@ internal static partial class OperationalLogSanitiser
                     rawValue,
                     policy.MaximumAttributeValueCharacters);
 
-                if (IsProhibitedValue(rawValue) ||
+                if (TryNormaliseAbsolutePath(
+                        rawValue,
+                        profile,
+                        out string? normalisedPath))
+                {
+                    attributes.Add(OperationalLogAttribute.String(
+                        attribute.Name,
+                        normalisedPath));
+                }
+                else if (IsProhibitedValue(rawValue, profile) ||
                     RequiresSafeScalarValue(definition.Classification) &&
                     !SafeScalarValuePattern().IsMatch(value))
                 {
                     continue;
                 }
-
-                attributes.Add(OperationalLogAttribute.String(
-                    attribute.Name,
-                    value));
+                else
+                {
+                    attributes.Add(OperationalLogAttribute.String(
+                        attribute.Name,
+                        value));
+                }
             }
             else
             {
@@ -156,18 +123,22 @@ internal static partial class OperationalLogSanitiser
         return builder.ToString();
     }
 
-    private static bool IsProhibitedAttributeName(string name)
+    private static bool IsProhibitedAttributeName(
+        string name,
+        OperationalRedactionProfile profile)
     {
         string compact = name.Replace(".", string.Empty, StringComparison.Ordinal)
             .Replace("-", string.Empty, StringComparison.Ordinal);
 
-        return ProhibitedAttributeNameParts.Any(part =>
+        return profile.ProhibitedAttributeNameParts.Any(part =>
             compact.Contains(part, StringComparison.OrdinalIgnoreCase));
     }
 
-    private static string MinimiseSensitive(string value)
+    private static string MinimiseSensitive(
+        string value,
+        OperationalRedactionProfile profile)
     {
-        if (IsProhibitedValue(value))
+        if (IsProhibitedValue(value, profile))
         {
             return OmittedText;
         }
@@ -175,14 +146,36 @@ internal static partial class OperationalLogSanitiser
         return value;
     }
 
-    private static bool IsProhibitedValue(string value)
+    private static bool IsProhibitedValue(
+        string value,
+        OperationalRedactionProfile profile,
+        bool inspectEncodedValues = true)
     {
-        return ProhibitedValueParts.Any(part =>
+        bool prohibited = profile.ProhibitedValueParts.Any(part =>
                    value.Contains(part, StringComparison.OrdinalIgnoreCase)) ||
+               AwsAccessKeyPattern().IsMatch(value) ||
+               JwtPattern().IsMatch(value) ||
                AbsoluteWindowsPathPattern().IsMatch(value) ||
                UncPathPattern().IsMatch(value) ||
+               UnixAbsolutePathPattern().IsMatch(value) ||
                SourceContentPattern().IsMatch(value) ||
                IsFullyQualifiedPath(value);
+
+        if (prohibited || !inspectEncodedValues)
+        {
+            return prohibited;
+        }
+
+        return TryDecodePercentEncoded(value, profile, out string? percentDecoded) &&
+                IsProhibitedValue(
+                    percentDecoded,
+                    profile,
+                    inspectEncodedValues: false) ||
+            TryDecodeBase64(value, profile, out string? base64Decoded) &&
+                IsProhibitedValue(
+                    base64Decoded,
+                    profile,
+                    inspectEncodedValues: false);
     }
 
     private static bool RequiresSafeScalarValue(
@@ -205,14 +198,118 @@ internal static partial class OperationalLogSanitiser
         }
     }
 
+    private static bool TryNormaliseAbsolutePath(
+        string value,
+        OperationalRedactionProfile profile,
+        out string normalised)
+    {
+        normalised = profile.AbsolutePathReplacement;
+
+        return AbsoluteWindowsPathValuePattern().IsMatch(value) ||
+            UncPathValuePattern().IsMatch(value) ||
+            UnixAbsolutePathValuePattern().IsMatch(value) ||
+            IsFullyQualifiedPath(value);
+    }
+
+    private static bool TryDecodePercentEncoded(
+        string value,
+        OperationalRedactionProfile profile,
+        out string decoded)
+    {
+        decoded = string.Empty;
+
+        if (!profile.PercentEncodedSecretDetectionEnabled ||
+            value.Length > profile.MaximumDecodedValueBytes * 3 ||
+            !value.Contains('%', StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        try
+        {
+            decoded = Uri.UnescapeDataString(value);
+            return decoded.Length <= profile.MaximumDecodedValueBytes &&
+                !string.Equals(decoded, value, StringComparison.Ordinal);
+        }
+        catch (UriFormatException)
+        {
+            return false;
+        }
+    }
+
+    private static bool TryDecodeBase64(
+        string value,
+        OperationalRedactionProfile profile,
+        out string decoded)
+    {
+        decoded = string.Empty;
+
+        if (!profile.Base64EncodedSecretDetectionEnabled ||
+            value.Length < 8 ||
+            value.Length > profile.MaximumDecodedValueBytes * 2 ||
+            value.Length % 4 != 0 ||
+            !Base64ValuePattern().IsMatch(value))
+        {
+            return false;
+        }
+
+        byte[] bytes = new byte[value.Length];
+
+        if (!Convert.TryFromBase64String(
+                value,
+                bytes,
+                out int bytesWritten) ||
+            bytesWritten > profile.MaximumDecodedValueBytes)
+        {
+            return false;
+        }
+
+        try
+        {
+            decoded = new UTF8Encoding(
+                encoderShouldEmitUTF8Identifier: false,
+                throwOnInvalidBytes: true).GetString(bytes, 0, bytesWritten);
+            return true;
+        }
+        catch (DecoderFallbackException)
+        {
+            return false;
+        }
+    }
+
     [GeneratedRegex("[A-Za-z]:[\\\\/]", RegexOptions.CultureInvariant)]
     private static partial Regex AbsoluteWindowsPathPattern();
+
+    [GeneratedRegex("^[A-Za-z]:[\\\\/].+$", RegexOptions.CultureInvariant)]
+    private static partial Regex AbsoluteWindowsPathValuePattern();
 
     [GeneratedRegex("(?:^|[\\s\\\"'=])\\\\\\\\[^\\\\/\\s]+[\\\\/][^\\\\/\\s]+", RegexOptions.CultureInvariant)]
     private static partial Regex UncPathPattern();
 
+    [GeneratedRegex("^\\\\\\\\[^\\\\/\\s]+[\\\\/].+$", RegexOptions.CultureInvariant)]
+    private static partial Regex UncPathValuePattern();
+
+    [GeneratedRegex("(?:^|[\\s\\\"'=])/(?:Users|home|var|tmp|etc)/[^\\s]+", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex UnixAbsolutePathPattern();
+
+    [GeneratedRegex("^/(?:Users|home|var|tmp|etc)/.+$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex UnixAbsolutePathValuePattern();
+
     [GeneratedRegex("(?:^|[\\r\\n])\\s*(?:#include|class|def|function|import|interface|namespace|package|private|protected|public|record|struct|using)\\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex SourceContentPattern();
+
+    [GeneratedRegex("^[A-Za-z0-9+/]+={0,2}$", RegexOptions.CultureInvariant)]
+    private static partial Regex Base64ValuePattern();
+
+    [GeneratedRegex(
+        "(?:^|[^A-Z0-9])AKIA[0-9A-Z]{16}(?:$|[^A-Z0-9])",
+        RegexOptions.CultureInvariant)]
+    private static partial Regex AwsAccessKeyPattern();
+
+    [GeneratedRegex(
+        "(?:^|[^A-Za-z0-9_-])eyJ[A-Za-z0-9_-]{2,}\\.[A-Za-z0-9_-]{2,}\\.[A-Za-z0-9_-]{2,}(?:$|[^A-Za-z0-9_-])",
+        RegexOptions.CultureInvariant)]
+    private static partial Regex JwtPattern();
 
     [GeneratedRegex("^[A-Za-z0-9][A-Za-z0-9._:+-]*$", RegexOptions.CultureInvariant)]
     private static partial Regex SafeScalarValuePattern();

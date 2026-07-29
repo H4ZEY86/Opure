@@ -1,0 +1,10 @@
+﻿schema=opure.persisted-diagnostics-scan/1
+result=Passed
+operationalLogFilesScanned=1
+traceAdmissionScanned=Passed
+rawCanaryOccurrences=0
+encodedCanaryOccurrences=0
+absolutePathOccurrences=0
+safePathCategoryOccurrences=1
+findingValuesIncluded=False
+authoritative=False

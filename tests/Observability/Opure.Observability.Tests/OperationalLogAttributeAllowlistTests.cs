@@ -213,10 +213,23 @@ public sealed class OperationalLogAttributeAllowlistTests
             ActivePath(root.Root),
             TestContext.Current.CancellationToken);
         using JsonDocument document = JsonDocument.Parse(text);
-        JsonElement attribute = Assert.Single(
-            document.RootElement.GetProperty("attributes").EnumerateArray());
-
-        Assert.Equal("retry.count", attribute.GetProperty("name").GetString());
+        JsonElement[] attributes = document.RootElement
+            .GetProperty("attributes")
+            .EnumerateArray()
+            .ToArray();
+        Assert.Equal(2, attributes.Length);
+        Assert.Contains(
+            attributes,
+            attribute =>
+                attribute.GetProperty("name").GetString() ==
+                    "retry.count");
+        Assert.Contains(
+            attributes,
+            attribute =>
+                attribute.GetProperty("name").GetString() ==
+                    "support.location" &&
+                attribute.GetProperty("value").GetString() ==
+                    "path.absolute");
         Assert.DoesNotContain(rawCredential, text, StringComparison.Ordinal);
         Assert.DoesNotContain(rawSource, text, StringComparison.Ordinal);
         Assert.DoesNotContain(rawUncPath, text, StringComparison.Ordinal);

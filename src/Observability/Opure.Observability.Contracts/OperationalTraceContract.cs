@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace Opure.Observability.Contracts;
 
@@ -7,7 +8,7 @@ namespace Opure.Observability.Contracts;
 /// boundaries. Trace context is diagnostic context only and never grants
 /// authority.
 /// </summary>
-public static class OperationalTraceContract
+public static partial class OperationalTraceContract
 {
     public const string GatewaySourceName = "Opure.Gateway";
     public const string RuntimeSourceName = "Opure.Runtime";
@@ -41,6 +42,20 @@ public static class OperationalTraceContract
         DurationMillisecondsTag
     ];
 
+    private static readonly string[] ProhibitedStringValueParts =
+    [
+        "authorization",
+        "bearer",
+        "cookie",
+        "credential",
+        "ghp_",
+        "github_pat_",
+        "password",
+        "privatekey",
+        "secret",
+        "token"
+    ];
+
     public static ActivitySource GatewaySource { get; } =
         new(GatewaySourceName);
 
@@ -67,6 +82,19 @@ public static class OperationalTraceContract
                 nameof(name));
         }
 
+        if (value is string text &&
+            (text.Length > 128 ||
+             !SafeStringValuePattern().IsMatch(text) ||
+             ProhibitedStringValueParts.Any(part =>
+                 text.Contains(
+                     part,
+                     StringComparison.OrdinalIgnoreCase))))
+        {
+            throw new ArgumentException(
+                "The trace attribute value is not a bounded safe scalar.",
+                nameof(value));
+        }
+
         return activity?.SetTag(name, value);
     }
 
@@ -75,4 +103,9 @@ public static class OperationalTraceContract
         Activity.DefaultIdFormat = ActivityIdFormat.W3C;
         Activity.ForceDefaultIdFormat = true;
     }
+
+    [GeneratedRegex(
+        "^[A-Za-z0-9][A-Za-z0-9._:+_-]*$",
+        RegexOptions.CultureInvariant)]
+    private static partial Regex SafeStringValuePattern();
 }

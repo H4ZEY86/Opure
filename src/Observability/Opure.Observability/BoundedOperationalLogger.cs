@@ -11,6 +11,7 @@ public sealed class BoundedOperationalLogger :
     private readonly OperationalLogPolicy sanitisationPolicy;
     private readonly OperationalLogQueuePolicy queuePolicy;
     private readonly TimeProvider timeProvider;
+    private readonly IOperationalLogRedactor redactor;
     private readonly object gate = new();
     private readonly object disposalGate = new();
     private readonly LinkedList<OperationalLogEvent> queue = new();
@@ -36,6 +37,23 @@ public sealed class BoundedOperationalLogger :
         OperationalLogPolicy? sanitisationPolicy = null,
         OperationalLogQueuePolicy? queuePolicy = null,
         TimeProvider? timeProvider = null)
+        : this(
+            sink,
+            context,
+            sanitisationPolicy,
+            queuePolicy,
+            timeProvider,
+            new OperationalLogRedactor())
+    {
+    }
+
+    internal BoundedOperationalLogger(
+        IOperationalLogSink sink,
+        OperationalLogContext context,
+        OperationalLogPolicy? sanitisationPolicy,
+        OperationalLogQueuePolicy? queuePolicy,
+        TimeProvider? timeProvider,
+        IOperationalLogRedactor redactor)
     {
         this.sink = sink ?? throw new ArgumentNullException(nameof(sink));
         this.context = context ?? throw new ArgumentNullException(nameof(context));
@@ -43,6 +61,8 @@ public sealed class BoundedOperationalLogger :
             sanitisationPolicy ?? new OperationalLogPolicy();
         this.queuePolicy = queuePolicy ?? new OperationalLogQueuePolicy();
         this.timeProvider = timeProvider ?? TimeProvider.System;
+        this.redactor =
+            redactor ?? throw new ArgumentNullException(nameof(redactor));
         workerTask = Task.Run(ConsumeAsync);
     }
 
@@ -58,20 +78,17 @@ public sealed class BoundedOperationalLogger :
             return ValueTask.FromResult(OperationalLogWriteResult.Cancelled);
         }
 
-        OperationalLogEvent logEvent;
+        OperationalLogEvent candidate;
 
         try
         {
-            OperationalLogEvent candidate = new(
+            candidate = new OperationalLogEvent(
                 timeProvider.GetUtcNow(),
                 definition,
                 context,
                 attributes,
                 traceId,
                 operationId);
-            logEvent = OperationalLogSanitiser.SanitiseForEnqueue(
-                candidate,
-                sanitisationPolicy);
         }
         catch (Exception)
         {
@@ -80,6 +97,25 @@ public sealed class BoundedOperationalLogger :
                 new OperationalLogWriteResult(
                     OperationalLogWriteState.Failed,
                     "LOG_EVENT_PREPARATION_FAILED"));
+        }
+
+        OperationalLogEvent logEvent;
+        string? preparationSignalCode = null;
+
+        try
+        {
+            logEvent = redactor.RedactForEnqueue(
+                candidate,
+                sanitisationPolicy);
+        }
+        catch (Exception)
+        {
+            RecordQueueFailure("LOG_REDACTION_FAILED");
+            logEvent = OperationalRedactionEvents.CreateFailureWarning(
+                context,
+                timeProvider.GetUtcNow(),
+                definition.EventName);
+            preparationSignalCode = "LOG_REDACTION_FAILED";
         }
 
         bool releaseSignal = false;
@@ -100,7 +136,11 @@ public sealed class BoundedOperationalLogger :
             {
                 queue.AddLast(logEvent);
                 releaseSignal = true;
-                result = OperationalLogWriteResult.Enqueued;
+                result = preparationSignalCode is null
+                    ? OperationalLogWriteResult.Enqueued
+                    : new OperationalLogWriteResult(
+                        OperationalLogWriteState.Enqueued,
+                        preparationSignalCode);
             }
             else
             {

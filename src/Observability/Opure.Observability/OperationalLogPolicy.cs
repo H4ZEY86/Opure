@@ -11,7 +11,8 @@ public sealed class OperationalLogPolicy
         int maximumAttributeNameCharacters = 64,
         int maximumAttributeValueCharacters = 512,
         int maximumEventBytes = 16 * 1024,
-        int maximumCleanupFileCount = 256)
+        int maximumCleanupFileCount = 256,
+        OperationalRedactionProfile? redactionProfile = null)
     {
         MaximumActiveFileBytes = ValidateRange(
             maximumActiveFileBytes,
@@ -54,6 +55,8 @@ public sealed class OperationalLogPolicy
             MaximumRetainedFileCount,
             4096,
             nameof(maximumCleanupFileCount));
+        RedactionProfile =
+            redactionProfile ?? OperationalRedactionProfile.LocalDiagnostics;
 
         if (MaximumRetainedAge <= TimeSpan.Zero ||
             MaximumRetainedAge > TimeSpan.FromDays(366))
@@ -88,6 +91,8 @@ public sealed class OperationalLogPolicy
     public int MaximumEventBytes { get; }
 
     public int MaximumCleanupFileCount { get; }
+
+    public OperationalRedactionProfile RedactionProfile { get; }
 
     private static int ValidateRange(
         int value,

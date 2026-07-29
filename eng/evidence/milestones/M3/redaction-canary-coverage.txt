@@ -1,0 +1,17 @@
+﻿schema=opure.redaction-canary-coverage/1
+result=Passed
+exactCredentialCanary=Passed
+patternCredentialCanary=Passed
+headerFieldCanary=Passed
+projectTextCanary=Passed
+windowsPathCanary=Passed
+uncPathCanary=Passed
+unixPathCanary=Passed
+exceptionMetadataCanary=Passed
+percentEncodedCanary=Passed
+base64EncodedCanary=Passed
+traceTagCanary=Passed
+processorFailureInjection=Passed
+findingCodesStable=Passed
+findingValuesIncluded=False
+authoritative=False

@@ -3,7 +3,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('restore', 'build', 'test', 'verify', 'policy', 'version', 'version-policy', 'runtime', 'runtime-policy', 'desktop', 'desktop-policy', 'bootstrap', 'bootstrap-policy', 'supervisor-policy', 'health-contract-policy', 'health-transport-policy', 'health-session-policy', 'service-registry-policy', 'service-lifecycle-policy', 'runtime-health-ui-policy', 'persistence-policy', 'migration-policy', 'outbox-policy', 'inbox-policy', 'structured-logging-policy', 'trace-propagation-policy')]
+    [ValidateSet('restore', 'build', 'test', 'verify', 'policy', 'version', 'version-policy', 'runtime', 'runtime-policy', 'desktop', 'desktop-policy', 'bootstrap', 'bootstrap-policy', 'supervisor-policy', 'health-contract-policy', 'health-transport-policy', 'health-session-policy', 'service-registry-policy', 'service-lifecycle-policy', 'runtime-health-ui-policy', 'persistence-policy', 'migration-policy', 'outbox-policy', 'inbox-policy', 'structured-logging-policy', 'trace-propagation-policy', 'redaction-policy')]
     [string] $Target = 'verify',
 
     [Parameter()]
@@ -145,5 +145,9 @@ switch ($Target) {
 
     'trace-propagation-policy' {
         & (Join-Path $PSScriptRoot 'eng\verify-trace-propagation.ps1')
+    }
+
+    'redaction-policy' {
+        & (Join-Path $PSScriptRoot 'eng\verify-redaction.ps1')
     }
 }
