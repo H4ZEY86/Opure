@@ -1,0 +1,29 @@
+{
+  "schema": "opure.windows-path-reference-adversarial/1",
+  "result": "Passed",
+  "platform": "Windows",
+  "scenarios": [
+    "valid-local-directory",
+    "valid-existing-file",
+    "drive-relative-denied",
+    "root-relative-denied",
+    "device-namespace-denied",
+    "nt-namespace-denied",
+    "unc-namespace-denied",
+    "logical-traversal-denied",
+    "reserved-device-denied",
+    "trailing-dot-space-denied",
+    "alternate-stream-syntax-denied",
+    "alternate-stream-detected",
+    "symbolic-link-denied",
+    "case-insensitive-resolution",
+    "leaf-replacement-detected",
+    "root-replacement-detected",
+    "volume-identity-bound"
+  ],
+  "handleHeld": true,
+  "fileId128": true,
+  "volumeBound": true,
+  "reparseTraversalAllowed": false,
+  "rawConcatenationContract": false
+}

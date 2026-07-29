@@ -2816,6 +2816,20 @@ C:\Opure\ARCHITECTURE.md
 
 ## 101. Architectural Invariants
 
+### Windows path references
+
+Windows path text is untrusted until it is parsed into a bounded logical path
+or registered through the Windows filesystem adapter. The adapter opens the
+root and every component without following reparse points, derives final paths,
+128-bit file identities and volume identity from handles, and retains the final
+handle in the verified reference. String-prefix comparison is never the sole
+containment control. Desktop and framework-neutral contracts do not gain
+filesystem authority through these value types.
+
+FND-026 is inspection-only. Folder-picker capability transfer, mutation,
+journalling, recovery and Project Service registration remain owned by later
+tickets.
+
 The following rules should be enforced as architectural invariants:
 
 1. AI providers are accessed only through the AI Router.

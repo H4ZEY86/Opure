@@ -185,33 +185,33 @@ Locally implemented, verified and committed; pending reviewed pushes:
 
 * FND-023 — Add Trust Evidence Database.
 * FND-024 — Add Trust Evidence Ingestion.
+* FND-025 — Add Trust Query Contract.
 
 Implemented and verified by the current change:
 
-* FND-025 — Add Trust Query Contract.
+* FND-026 — Add Windows Path-Reference Library.
 
-FND-025 includes:
+FND-026 includes:
 
-* the framework-neutral `opure.trust-query/1` typed request and snapshot;
-* transport-authenticated, time-bounded project and release-channel scope;
-* operation, Evidence Type, Authority Class, outcome and bounded UTC filters;
-* a maximum 31-day range and 100-result page;
-* fixed parameterised SQLite queries with no raw SQL, regex or expression
-  surface;
-* keyset cursors bound to exact filters, snapshot row anchor and database-owned
-  projection generation;
-* stable concurrent-ingestion pagination and refresh after projection rebuild;
-* Verified Service Receipt metadata only, with payloads and references omitted;
-* explicit freshness, owner availability, completeness and redaction metadata;
-* query schema, cross-project and query-plan/latency evidence.
+* framework-neutral untrusted text, logical path and file-identity contracts;
+* bounded relative path parsing with traversal, stream, reserved-name and
+  trailing-dot-or-space refusal;
+* ordinary local-drive root registration with direct-directory verification;
+* no-follow handle walking for every component and explicit reparse denial;
+* handle-derived final paths, 128-bit file identity and volume binding;
+* fixed, removable, network and unsupported volume classification;
+* alternate-data-stream detection followed by identity revalidation;
+* held-handle leaf and root replacement-race detection;
+* a reviewed threat model, adversarial report and typed API review.
 
 The next planned ticket is:
 
 ```text
-FND-026 — Add Windows Path-Reference Library
+FND-027 — Add Trusted Folder Picker Adapter
 ```
 
-Do not assume FND-025 is complete until the Trust Evidence query verifier passes and the changes are reviewed, committed and pushed.
+Do not assume FND-026 is complete until the Windows Path-Reference verifier
+passes and the changes are reviewed, committed and pushed.
 
 ## Build policy
 

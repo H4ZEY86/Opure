@@ -8,6 +8,10 @@
     <Project Path="src/Desktop/Opure.Desktop.GatewayClient/Opure.Desktop.GatewayClient.csproj" />
     <Project Path="src/Desktop/Opure.Desktop/Opure.Desktop.csproj" />
   </Folder>
+  <Folder Name="/src/Filesystem/">
+    <Project Path="src/Filesystem/Opure.Filesystem.Contracts/Opure.Filesystem.Contracts.csproj" />
+    <Project Path="src/Filesystem/Opure.Filesystem.Windows/Opure.Filesystem.Windows.csproj" />
+  </Folder>
   <Folder Name="/src/Ipc/">
     <Project Path="src/Ipc/Opure.Ipc.Abstractions/Opure.Ipc.Abstractions.csproj" />
     <Project Path="src/Ipc/Opure.Ipc.NamedPipes.Windows/Opure.Ipc.NamedPipes.Windows.csproj" />
@@ -37,6 +41,9 @@
   <Folder Name="/tests/Desktop/">
     <Project Path="tests/Desktop/Opure.Desktop.GatewayClient.Tests/Opure.Desktop.GatewayClient.Tests.csproj" />
     <Project Path="tests/Desktop/Opure.Desktop.Tests/Opure.Desktop.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Filesystem/">
+    <Project Path="tests/Filesystem/Opure.Filesystem.Windows.Tests/Opure.Filesystem.Windows.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Ipc/">
     <Project Path="tests/Ipc/Opure.Ipc.NamedPipes.Windows.Tests/Opure.Ipc.NamedPipes.Windows.Tests.csproj" />
