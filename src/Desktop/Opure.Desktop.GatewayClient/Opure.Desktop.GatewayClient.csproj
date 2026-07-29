@@ -7,9 +7,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Opure.Desktop.Contracts\Opure.Desktop.Contracts.csproj" />
+    <ProjectReference Include="..\..\Filesystem\Opure.Filesystem.Windows\Opure.Filesystem.Windows.csproj" />
     <ProjectReference Include="..\..\Ipc\Opure.Ipc.Abstractions\Opure.Ipc.Abstractions.csproj" />
     <ProjectReference Include="..\..\Ipc\Opure.Ipc.NamedPipes.Windows\Opure.Ipc.NamedPipes.Windows.csproj" />
     <ProjectReference Include="..\..\Observability\Opure.Observability\Opure.Observability.csproj" />
+    <ProjectReference Include="..\..\Project\Opure.Project.Protocol\Opure.Project.Protocol.csproj" />
     <ProjectReference Include="..\..\Runtime\Opure.Runtime.Contracts\Opure.Runtime.Contracts.csproj" />
   </ItemGroup>
 

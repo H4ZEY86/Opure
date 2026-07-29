@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Opure.Desktop.Contracts;
+using Opure.Desktop.GatewayClient;
 
 namespace Opure.Desktop;
 
@@ -32,7 +33,8 @@ public partial class MainWindow : Window
             viewModel.ProjectFolderPicker.SetCoordinator(
                 new ProjectFolderSelectionCoordinator(
                     new AvaloniaFolderPickerAdapter(this),
-                    new UnavailableProjectRootReceiver()));
+                    RuntimeHealthGatewayClient.CreateProjectRootReceiver(
+                        DesktopLaunchContext.ReleaseChannel)));
         }
         Opened += OnWindowOpened;
         Closed += OnWindowClosed;

@@ -20,7 +20,10 @@ public sealed class RuntimeHealthRequestHandlerTests
 
         Assert.Equal(RuntimeReadiness.Starting, response.Health.Readiness);
         Assert.Equal(RuntimeHealthState.Unavailable, response.Health.OverallHealth);
-        ServiceHealthSummary service = Assert.Single(response.Health.Services);
+        ServiceHealthSummary service = Assert.Single(
+            response.Health.Services,
+            static candidate =>
+                candidate.ServiceId == "runtime.health");
         Assert.Equal("runtime.health", service.ServiceId);
         Assert.Equal(ServiceHealthState.Registered, service.State);
         Assert.True(service.RequiredForReadiness);
@@ -31,11 +34,7 @@ public sealed class RuntimeHealthRequestHandlerTests
     public async Task Ready_registry_lifecycle_reports_healthy_projection()
     {
         RuntimeServiceRegistry registry = CreateRegistry();
-        registry.UpdateLifecycle(
-            "runtime.health",
-            RuntimeServiceLifecycleState.Ready,
-            sequence: 1,
-            failure: null);
+        MarkReady(registry);
         RuntimeHealthRequestHandler handler = CreateHandler(registry);
 
         GetRuntimeHealthResponse response = await handler.HandleAsync(
@@ -46,7 +45,10 @@ public sealed class RuntimeHealthRequestHandlerTests
         Assert.Equal(RuntimeHealthState.Healthy, response.Health.OverallHealth);
         Assert.Equal(
             ServiceHealthState.Ready,
-            Assert.Single(response.Health.Services).State);
+            Assert.Single(
+                response.Health.Services,
+                static service =>
+                    service.ServiceId == "runtime.health").State);
         Assert.True(
             RuntimeHealthContractPolicy.ValidateResponse(response).IsValid);
     }
@@ -66,7 +68,10 @@ public sealed class RuntimeHealthRequestHandlerTests
             CreateRequest(),
             TestContext.Current.CancellationToken);
 
-        ServiceHealthSummary service = Assert.Single(response.Health.Services);
+        ServiceHealthSummary service = Assert.Single(
+            response.Health.Services,
+            static candidate =>
+                candidate.ServiceId == "runtime.health");
         Assert.Equal(RuntimeReadiness.NotReady, response.Health.Readiness);
         Assert.Equal(RuntimeHealthState.Unavailable, response.Health.OverallHealth);
         Assert.Equal(ServiceHealthState.Failed, service.State);
@@ -103,11 +108,7 @@ public sealed class RuntimeHealthRequestHandlerTests
     public async Task Operational_log_failure_is_visible_as_safe_degraded_health()
     {
         RuntimeServiceRegistry registry = CreateRegistry();
-        registry.UpdateLifecycle(
-            "runtime.health",
-            RuntimeServiceLifecycleState.Ready,
-            sequence: 1,
-            failure: null);
+        MarkReady(registry);
         RuntimeHealthRequestHandler handler = new(
             CreateBootSnapshot(),
             registry,
@@ -126,7 +127,10 @@ public sealed class RuntimeHealthRequestHandlerTests
 
         Assert.Equal(RuntimeReadiness.Degraded, response.Health.Readiness);
         Assert.Equal(RuntimeHealthState.Degraded, response.Health.OverallHealth);
-        ServiceHealthSummary service = Assert.Single(response.Health.Services);
+        ServiceHealthSummary service = Assert.Single(
+            response.Health.Services,
+            static candidate =>
+                candidate.ServiceId == "runtime.health");
         Assert.Equal(ServiceHealthState.Degraded, service.State);
         Assert.Equal("LOG_DIAGNOSTICS_DEGRADED", service.RecentFailureCode);
         Assert.Equal(
@@ -144,11 +148,7 @@ public sealed class RuntimeHealthRequestHandlerTests
     public async Task Operational_log_health_provider_failure_is_contained()
     {
         RuntimeServiceRegistry registry = CreateRegistry();
-        registry.UpdateLifecycle(
-            "runtime.health",
-            RuntimeServiceLifecycleState.Ready,
-            sequence: 1,
-            failure: null);
+        MarkReady(registry);
         RuntimeHealthRequestHandler handler = new(
             CreateBootSnapshot(),
             registry,
@@ -159,7 +159,10 @@ public sealed class RuntimeHealthRequestHandlerTests
             CreateRequest(),
             TestContext.Current.CancellationToken);
 
-        ServiceHealthSummary service = Assert.Single(response.Health.Services);
+        ServiceHealthSummary service = Assert.Single(
+            response.Health.Services,
+            static candidate =>
+                candidate.ServiceId == "runtime.health");
         Assert.Equal(ServiceHealthState.Degraded, service.State);
         Assert.Equal("LOG_DIAGNOSTICS_DEGRADED", service.RecentFailureCode);
         Assert.DoesNotContain(
@@ -195,6 +198,20 @@ public sealed class RuntimeHealthRequestHandlerTests
         RuntimeServiceRegistry registry = new();
         registry.Register(RuntimeServiceCatalogue.CreateInitial());
         return registry;
+    }
+
+    private static void MarkReady(RuntimeServiceRegistry registry)
+    {
+        registry.UpdateLifecycle(
+            "runtime.health",
+            RuntimeServiceLifecycleState.Ready,
+            sequence: 1,
+            failure: null);
+        registry.UpdateLifecycle(
+            "project.service",
+            RuntimeServiceLifecycleState.Ready,
+            sequence: 1,
+            failure: null);
     }
 
     private static GetRuntimeHealthRequest CreateRequest()

@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Platform.Storage;
 using System.Runtime.Versioning;
 using Opure.Desktop.Contracts;
+using Opure.Desktop.GatewayClient;
 using Opure.Filesystem.Contracts;
 using Opure.Filesystem.Windows;
 
@@ -79,12 +80,17 @@ internal sealed class ProjectFolderSelectionCoordinator :
             VerifiedWorkspaceRootReference reference =
                 WindowsPathReferenceResolver.AcquireRoot(
                     new UntrustedPathText(selectedPath));
-            await receiver.ReceiveAsync(reference, cancellationToken);
+            VerifiedWorkspaceRootTransferReceipt receipt =
+                await receiver.ReceiveAsync(reference, cancellationToken);
             return new ProjectFolderSelectionResult(
                 ProjectFolderSelectionDisposition.Transferred,
                 reference.DisplayPath,
-                Describe(reference.VolumeClass),
-                "The verified root reference was transferred. This path display grants no authority.");
+                string.Concat(
+                    Describe(reference.VolumeClass),
+                    " Project state: ",
+                    receipt.AuthoritativeState,
+                    "."),
+                receipt.SafeDetail);
         }
         catch (WindowsPathReferenceException exception)
         {
@@ -94,12 +100,14 @@ internal sealed class ProjectFolderSelectionCoordinator :
                 "Folder not accepted.",
                 Describe(exception.Failure));
         }
-        catch (ProjectRootTransferUnavailableException exception)
+        catch (ProjectOpenGatewayException exception)
         {
             return new ProjectFolderSelectionResult(
                 ProjectFolderSelectionDisposition.Rejected,
                 selectedPath,
-                "Folder verified; Project Service unavailable.",
+                exception.ReviewRequired
+                    ? "Folder identity requires review."
+                    : "Folder verified; Project Service unavailable.",
                 exception.Message);
         }
     }
@@ -136,16 +144,17 @@ internal sealed class ProjectFolderSelectionCoordinator :
 internal sealed class UnavailableProjectRootReceiver :
     IVerifiedWorkspaceRootReceiver
 {
-    public ValueTask ReceiveAsync(
+    public ValueTask<VerifiedWorkspaceRootTransferReceipt> ReceiveAsync(
         VerifiedWorkspaceRootReference reference,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(reference);
         cancellationToken.ThrowIfCancellationRequested();
-        throw new ProjectRootTransferUnavailableException(
-            "The Project Service is unavailable; Desktop did not retain the verified reference.");
+        throw new ProjectOpenGatewayException(
+            "PROJECT_TRANSPORT_UNAVAILABLE",
+            "The Project Service is unavailable; Desktop did not retain the verified reference.",
+            retryable: true,
+            reviewRequired: false,
+            recoveryRequired: false);
     }
 }
-
-internal sealed class ProjectRootTransferUnavailableException(string message) :
-    InvalidOperationException(message);

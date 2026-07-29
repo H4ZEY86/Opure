@@ -1,0 +1,34 @@
+{
+  "schema": "opure.open-project-contract-fixtures/1",
+  "result": "Passed",
+  "contractRevision": 1,
+  "method": "ProjectOpenService.OpenProject",
+  "transport": "grpc-over-windows-named-pipe",
+  "sessionAuthenticated": true,
+  "maximumRequestBytes": 8192,
+  "maximumResponseBytes": 8192,
+  "requestIdentityClaim": true,
+  "runtimeIdentityRevalidation": true,
+  "requestFields": [
+    "operationId",
+    "correlationId",
+    "releaseChannel",
+    "displayName",
+    "root.displayPath",
+    "root.volumeClass",
+    "root.volumeSerialNumber",
+    "root.fileId",
+    "root.identityCapability"
+  ],
+  "successFields": [
+    "projectId",
+    "disposition",
+    "lifecycleState",
+    "rootVolumeClass",
+    "initialSnapshotState",
+    "safeDetail"
+  ],
+  "responseDatabaseObject": false,
+  "unknownEnumRejected": true,
+  "operationIdentityBound": true
+}

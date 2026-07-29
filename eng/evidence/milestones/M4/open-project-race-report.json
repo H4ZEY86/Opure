@@ -1,0 +1,14 @@
+{
+  "schema": "opure.open-project-races/1",
+  "result": "Passed",
+  "preCommitCancellation": "NoProject",
+  "rootDeletion": "RejectedNoProject",
+  "identitySubstitution": "ReviewRequired",
+  "samePathChangedIdentity": "ReviewRequired",
+  "postCommitCancellation": "RecoveryRequired",
+  "runtimeRestart": "OpeningReconciledToOpen",
+  "policyDenial": "RejectedNoProject",
+  "duplicateExactIdentity": "ExistingProjectReopened",
+  "rootHandleHeldThroughCommit": true,
+  "blindReplay": false
+}

@@ -59,8 +59,12 @@ public sealed class TrustedFolderPickerAdapterTests : IDisposable
             FilesystemVolumeClass.FixedLocal,
             receiver.Reference.VolumeClass);
         Assert.Contains(
-            "grants no authority",
+            "Workspace Snapshot",
             result.SafeDetail,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Project state: Open",
+            result.Classification,
             StringComparison.Ordinal);
     }
 
@@ -221,14 +225,18 @@ public sealed class TrustedFolderPickerAdapterTests : IDisposable
 
         public VerifiedWorkspaceRootReference? Reference { get; private set; }
 
-        public ValueTask ReceiveAsync(
+        public ValueTask<VerifiedWorkspaceRootTransferReceipt> ReceiveAsync(
             VerifiedWorkspaceRootReference reference,
             CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
             Reference = reference;
             ReceiveCount++;
-            return ValueTask.CompletedTask;
+            return ValueTask.FromResult(
+                new VerifiedWorkspaceRootTransferReceipt(
+                    "PROJECT_OPEN",
+                    "Open",
+                    "The initial Workspace Snapshot was requested."));
         }
     }
 }

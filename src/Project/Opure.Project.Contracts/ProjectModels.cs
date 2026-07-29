@@ -15,7 +15,9 @@ public enum ProjectLifecycleState
     Open = 1,
     Unavailable = 2,
     Closed = 3,
-    Archived = 4
+    Archived = 4,
+    Opening = 5,
+    RecoveryRequired = 6
 }
 
 public enum ProjectRegistrationDisposition

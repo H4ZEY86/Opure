@@ -225,8 +225,10 @@ public sealed class ProjectDatabaseTests : IDisposable
             TestContext.Current.CancellationToken);
 
         Assert.Equal(1, upgraded.MigrationReport.StartingVersion);
-        Assert.Equal(2, upgraded.MigrationReport.CurrentVersion);
-        Assert.Single(upgraded.MigrationReport.AppliedMigrations);
+        Assert.Equal(
+            ProjectDatabaseSchema.CurrentVersion,
+            upgraded.MigrationReport.CurrentVersion);
+        Assert.Equal(2, upgraded.MigrationReport.AppliedMigrations.Count);
         Assert.All(
             upgraded.MigrationReport.SchemaValidations,
             static validation => Assert.True(validation.Passed));

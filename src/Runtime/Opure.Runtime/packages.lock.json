@@ -16,6 +16,14 @@
           "Grpc.Core.Api": "2.80.0"
         }
       },
+      "Microsoft.Data.Sqlite.Core": {
+        "type": "Transitive",
+        "resolved": "10.0.10",
+        "contentHash": "TPCs0ldm7AWqcKmp6f/Xr+14sat7hx4rHfRlS4RgCURBH2thEWbAKEyX7cCWr63zVJVOJIJZTg2cBiUXa8ys6g==",
+        "dependencies": {
+          "SQLitePCLRaw.core": "2.1.11"
+        }
+      },
       "Microsoft.Extensions.DependencyInjection.Abstractions": {
         "type": "Transitive",
         "resolved": "8.0.0",
@@ -27,6 +35,33 @@
         "contentHash": "arDBqTgFCyS0EvRV7O3MZturChstm50OJ0y9bDJvAcmEPJm0FFpFyjU/JLYyStNGGey081DvnQYlncNX5SJJGA==",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.0"
+        }
+      },
+      "SQLitePCLRaw.core": {
+        "type": "Transitive",
+        "resolved": "2.1.12",
+        "contentHash": "ETpNw9DY3ckWLgRRAeCHj+GKOuPi61aeczkXhgHexUvqoZBAYg8RYESE2J7O1M7+o6QbdSEZwrw9bfqztUVWXg=="
+      },
+      "SQLitePCLRaw.lib.e_sqlite3": {
+        "type": "Transitive",
+        "resolved": "2.1.12",
+        "contentHash": "fWi8Dbknuhgg72fWinIdjXVaqO1hHL4YBBwVLnr7e1c9TAZwJ0QE38j9syW1hwx6HaqEVTwI+O07WPdZn8Rp0w=="
+      },
+      "SQLitePCLRaw.provider.e_sqlite3": {
+        "type": "Transitive",
+        "resolved": "2.1.12",
+        "contentHash": "W3oH4XIfCzFrgUSDKHhN6N+dgzA5YHOR2VxX8GB6Qy7CyrJJgxPEG8NirgYWlPQC5P2jz2knSsexWu4tDUL33g==",
+        "dependencies": {
+          "SQLitePCLRaw.core": "2.1.12"
+        }
+      },
+      "opure.filesystem.contracts": {
+        "type": "Project"
+      },
+      "opure.filesystem.windows": {
+        "type": "Project",
+        "dependencies": {
+          "Opure.Filesystem.Contracts": "[1.0.0, )"
         }
       },
       "opure.ipc.abstractions": {
@@ -42,6 +77,7 @@
           "Grpc.Net.Client": "[2.80.0, )",
           "Opure.Ipc.Abstractions": "[1.0.0, )",
           "Opure.Observability.Contracts": "[1.0.0, )",
+          "Opure.Project.Protocol": "[1.0.0, )",
           "Opure.Runtime.Contracts": "[1.0.0, )"
         }
       },
@@ -53,6 +89,43 @@
       },
       "opure.observability.contracts": {
         "type": "Project"
+      },
+      "opure.persistence.sqlite": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Data.Sqlite": "[10.0.10, )",
+          "SQLitePCLRaw.bundle_e_sqlite3": "[2.1.12, )"
+        }
+      },
+      "opure.project.contracts": {
+        "type": "Project",
+        "dependencies": {
+          "Opure.Filesystem.Contracts": "[1.0.0, )"
+        }
+      },
+      "opure.project.protocol": {
+        "type": "Project",
+        "dependencies": {
+          "Google.Protobuf": "[3.35.1, )",
+          "Grpc.Core.Api": "[2.80.0, )"
+        }
+      },
+      "opure.project.service": {
+        "type": "Project",
+        "dependencies": {
+          "Opure.Project.Contracts": "[1.0.0, )",
+          "Opure.Project.Protocol": "[1.0.0, )",
+          "Opure.Project.Sqlite": "[1.0.0, )"
+        }
+      },
+      "opure.project.sqlite": {
+        "type": "Project",
+        "dependencies": {
+          "Opure.Filesystem.Windows": "[1.0.0, )",
+          "Opure.Persistence.Sqlite": "[1.0.0, )",
+          "Opure.Project.Contracts": "[1.0.0, )",
+          "Opure.Project.Protocol": "[1.0.0, )"
+        }
       },
       "opure.runtime.contracts": {
         "type": "Project",
@@ -90,6 +163,27 @@
         "dependencies": {
           "Grpc.Net.Common": "2.80.0",
           "Microsoft.Extensions.Logging.Abstractions": "8.0.0"
+        }
+      },
+      "Microsoft.Data.Sqlite": {
+        "type": "CentralTransitive",
+        "requested": "[10.0.10, )",
+        "resolved": "10.0.10",
+        "contentHash": "58JwZ39lCvRXHfV5O6RQfbHEDu8ZsXI7weRoVRR4jrGRxxkS+qyeuGrN2xD+9VYEICApYr0iTSL6PuU+DdsvPg==",
+        "dependencies": {
+          "Microsoft.Data.Sqlite.Core": "10.0.10",
+          "SQLitePCLRaw.bundle_e_sqlite3": "2.1.11",
+          "SQLitePCLRaw.core": "2.1.11"
+        }
+      },
+      "SQLitePCLRaw.bundle_e_sqlite3": {
+        "type": "CentralTransitive",
+        "requested": "[2.1.12, )",
+        "resolved": "2.1.12",
+        "contentHash": "mAgscpQMLw5/nfA1Q5oJVAT29yROUo1ifZGbbTpx/lwZpSxMUGoYbKfmvdm8oXER+RzxqBmmQzeBEVKfeHv2nw==",
+        "dependencies": {
+          "SQLitePCLRaw.lib.e_sqlite3": "2.1.12",
+          "SQLitePCLRaw.provider.e_sqlite3": "2.1.12"
         }
       }
     }

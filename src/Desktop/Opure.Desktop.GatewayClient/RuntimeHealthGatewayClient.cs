@@ -1,4 +1,5 @@
 using Opure.Desktop.Contracts;
+using Opure.Filesystem.Windows;
 using Opure.Ipc.Abstractions;
 using Opure.Observability;
 
@@ -6,6 +7,23 @@ namespace Opure.Desktop.GatewayClient;
 
 public static class RuntimeHealthGatewayClient
 {
+    public static IVerifiedWorkspaceRootReceiver CreateProjectRootReceiver(
+        string releaseChannel)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(releaseChannel);
+        RuntimeHealthEndpoint? endpoint =
+            RuntimeHealthEndpointEnvironment.ReadCurrent();
+        RuntimeHealthSessionMaterial? sessionMaterial =
+            RuntimeHealthSessionEnvironment.ReadCurrent();
+
+        return endpoint is not null && sessionMaterial is not null
+            ? new ProjectOpenGatewayReceiver(
+                endpoint,
+                sessionMaterial,
+                releaseChannel)
+            : new UnavailableProjectOpenGatewayReceiver();
+    }
+
     public static IDisposable CreateTraceSession(string releaseChannel)
     {
         return new OperationalTraceSession(

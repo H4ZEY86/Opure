@@ -29,7 +29,31 @@ internal static class RuntimeServiceCatalogue
             SafeSummary = "Provides a bounded Runtime and service health projection."
         });
 
-        return [health];
+        RuntimeServiceDescriptor project = new()
+        {
+            ServiceId = "project.service",
+            ServiceRevision = 1,
+            ContractRevision = 1,
+            DisplayName = "Project Service",
+            OwnerId = "opure.project",
+            Classification = RuntimeServiceClassification.CriticalCore,
+            LifecycleState = RuntimeServiceLifecycleState.Registered,
+            ProcessPlacement = RuntimeServiceProcessPlacement.RuntimeProcess,
+            HealthReference = new RuntimeServiceHealthReference
+            {
+                HealthServiceId = "runtime.health",
+                ContractRevision = 1
+            }
+        };
+        project.Capabilities.Add(new RuntimeCapabilitySummary
+        {
+            CapabilityId = "project.open",
+            ContractRevision = 1,
+            SafeSummary =
+                "Validates, registers and opens a verified local project root."
+        });
+
+        return [health, project];
     }
 
     internal static IReadOnlyList<RuntimeManagedServiceDefinition>

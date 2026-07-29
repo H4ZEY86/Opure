@@ -2834,8 +2834,8 @@ The FND-027 Desktop folder-picker adapter acquires one developer selection and
 passes it directly to the Windows filesystem boundary. Desktop receives only
 display classification and transfers the opaque verified-root reference
 through a receiver port; it neither opens project files nor persists
-authority. Until the Project Service is implemented, transfer is refused
-visibly and the reference is discarded.
+authority. FND-029 supplies the receiver through Desktop Gateway; failed or
+cancelled transfers remain visible and the reference is discarded.
 
 FND-028 introduces the Project Service-owned authoritative `projects.db`.
 Project registration requires an opaque verified Windows root reference and
@@ -2844,6 +2844,23 @@ The same transaction writes project identity, root metadata, lifecycle history,
 optional repository identity and the immutable lifecycle outbox receipt.
 Desktop and other services cannot write this database. Missing roots transition
 to `Unavailable`; their durable project identity is not silently deleted.
+
+FND-029 adds the bounded Open Project command. Desktop Gateway sends a
+handle-observed root identity claim over the existing authenticated named-pipe
+session. Runtime reacquires the path, compares its volume and 128-bit file
+identity, applies the Project root policy, and asks the Project Service owner to
+register it. Registration and the durable `Opening` lifecycle transition commit
+atomically. Only then may the service request the initial Workspace Snapshot
+through its explicit interface and transition the Project to `Open`.
+
+Cancellation before the owner transaction commits creates no Project.
+Cancellation or failure after that commit records `RecoveryRequired`. Runtime
+startup reconciles interrupted `Opening` records by reacquiring their roots and
+either completing the deferred snapshot boundary or recording recovery. An
+exact root identity reopens the existing Project; the same display path with a
+different identity requires explicit review. Contract sizes, deadlines,
+authentication and safe error projection are bounded. This flow does not grant
+Desktop filesystem or Project database authority.
 
 The following rules should be enforced as architectural invariants:
 

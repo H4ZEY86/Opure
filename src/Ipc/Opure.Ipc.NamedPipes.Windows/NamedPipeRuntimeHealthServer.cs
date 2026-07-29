@@ -11,6 +11,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Opure.Ipc.Abstractions;
 using Opure.Observability.Contracts;
+using Opure.Project.Protocol;
+using Opure.Project.Protocol.Open.V1;
 using Opure.Runtime.Contracts;
 using Opure.Runtime.Contracts.Health.V1;
 using Opure.Runtime.Contracts.Registry.V1;
@@ -39,7 +41,8 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
         TimeProvider? timeProvider = null,
         Func<RuntimeHealthAuthenticationEvent, ValueTask>? eventSink = null,
         IRuntimeServiceRegistryRequestHandler? registryRequestHandler = null,
-        Func<RuntimeHealthTraceCompletion, ValueTask>? traceEventSink = null)
+        Func<RuntimeHealthTraceCompletion, ValueTask>? traceEventSink = null,
+        IProjectOpenRequestHandler? projectOpenRequestHandler = null)
     {
         ArgumentNullException.ThrowIfNull(endpoint);
         ArgumentNullException.ThrowIfNull(requestHandler);
@@ -71,11 +74,15 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
             options.CurrentUserOnly = false;
             options.PipeSecurity = pipeSecurity;
             options.MaxReadBufferSize = Math.Max(
-                RuntimeHealthContractPolicy.MaximumRequestBytes,
-                RuntimeServiceRegistryContractPolicy.MaximumRequestBytes);
+                Math.Max(
+                    RuntimeHealthContractPolicy.MaximumRequestBytes,
+                    RuntimeServiceRegistryContractPolicy.MaximumRequestBytes),
+                ProjectOpenContractPolicy.MaximumRequestBytes);
             options.MaxWriteBufferSize = Math.Max(
-                RuntimeHealthContractPolicy.MaximumResponseBytes,
-                RuntimeServiceRegistryContractPolicy.MaximumResponseBytes);
+                Math.Max(
+                    RuntimeHealthContractPolicy.MaximumResponseBytes,
+                    RuntimeServiceRegistryContractPolicy.MaximumResponseBytes),
+                ProjectOpenContractPolicy.MaximumResponseBytes);
         });
         builder.WebHost.UseKestrel(options =>
         {
@@ -89,6 +96,11 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
         {
             builder.Services.AddSingleton(registryRequestHandler);
         }
+
+        if (projectOpenRequestHandler is not null)
+        {
+            builder.Services.AddSingleton(projectOpenRequestHandler);
+        }
         builder.Services.AddSingleton(new RuntimeHealthSessionAuthenticator(
             endpoint,
             sessionPolicy,
@@ -99,11 +111,15 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
         builder.Services.AddGrpc(options =>
         {
             options.MaxReceiveMessageSize = Math.Max(
-                RuntimeHealthContractPolicy.MaximumRequestBytes,
-                RuntimeServiceRegistryContractPolicy.MaximumRequestBytes);
+                Math.Max(
+                    RuntimeHealthContractPolicy.MaximumRequestBytes,
+                    RuntimeServiceRegistryContractPolicy.MaximumRequestBytes),
+                ProjectOpenContractPolicy.MaximumRequestBytes);
             options.MaxSendMessageSize = Math.Max(
-                RuntimeHealthContractPolicy.MaximumResponseBytes,
-                RuntimeServiceRegistryContractPolicy.MaximumResponseBytes);
+                Math.Max(
+                    RuntimeHealthContractPolicy.MaximumResponseBytes,
+                    RuntimeServiceRegistryContractPolicy.MaximumResponseBytes),
+                ProjectOpenContractPolicy.MaximumResponseBytes);
             options.Interceptors.Add<RuntimeHealthAuthenticationInterceptor>();
         });
 
@@ -113,6 +129,11 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
         if (registryRequestHandler is not null)
         {
             application.MapGrpcService<RuntimeServiceRegistryGrpcService>();
+        }
+
+        if (projectOpenRequestHandler is not null)
+        {
+            application.MapGrpcService<ProjectOpenGrpcService>();
         }
 
         try
@@ -173,7 +194,7 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
             OperationalTraceContract.SetSafeTag(
                 activity,
                 OperationalTraceContract.OperationKindTag,
-                "query");
+                IsProjectOpenMethod(context.Method) ? "command" : "query");
             OperationalTraceContract.SetSafeTag(
                 activity,
                 OperationalTraceContract.IpcMethodTag,
@@ -248,31 +269,46 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
 
         private static string ResolveServerSpanName(string method)
         {
-            return string.Equals(
+            if (string.Equals(
                 method,
                 OperationalTraceContract.RuntimeHealthMethod,
-                StringComparison.Ordinal)
-                ? OperationalTraceContract.RuntimeHealthServerSpanName
+                StringComparison.Ordinal))
+            {
+                return OperationalTraceContract.RuntimeHealthServerSpanName;
+            }
+
+            return IsProjectOpenMethod(method)
+                ? "runtime.ipc.project.open"
                 : "runtime.ipc.service-registry.query";
         }
 
         private static string ResolveService(string method)
         {
-            return string.Equals(
+            if (string.Equals(
                 method,
                 OperationalTraceContract.RuntimeHealthMethod,
-                StringComparison.Ordinal)
-                ? "runtime.health"
+                StringComparison.Ordinal))
+            {
+                return "runtime.health";
+            }
+
+            return IsProjectOpenMethod(method)
+                ? "opure.project"
                 : "runtime.service-registry";
         }
 
         private static string ResolveMethod(string method)
         {
-            return string.Equals(
+            if (string.Equals(
                 method,
                 OperationalTraceContract.RuntimeHealthMethod,
-                StringComparison.Ordinal)
-                ? "runtime-health.get"
+                StringComparison.Ordinal))
+            {
+                return "runtime-health.get";
+            }
+
+            return IsProjectOpenMethod(method)
+                ? "project.open"
                 : "service-registry.query";
         }
 
@@ -297,6 +333,14 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
                 _ => "ipc.internal"
             };
         }
+    }
+
+    private static bool IsProjectOpenMethod(string method)
+    {
+        return string.Equals(
+            method,
+            ProjectOpenContractPolicy.Method,
+            StringComparison.Ordinal);
     }
 
     public async ValueTask DisposeAsync()
@@ -420,6 +464,29 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
                 throw new RpcException(new Status(
                     StatusCode.ResourceExhausted,
                     "The Service Registry request exceeded its transport limit."));
+            }
+
+            return requestHandler.HandleAsync(
+                request,
+                context.CancellationToken);
+        }
+    }
+
+    private sealed class ProjectOpenGrpcService(
+        IProjectOpenRequestHandler requestHandler)
+        : Project.Protocol.Open.V1.ProjectOpenService
+            .ProjectOpenServiceBase
+    {
+        public override Task<OpenProjectResponse> OpenProject(
+            OpenProjectRequest request,
+            ServerCallContext context)
+        {
+            if (request.CalculateSize() >
+                ProjectOpenContractPolicy.MaximumRequestBytes)
+            {
+                throw new RpcException(new Status(
+                    StatusCode.ResourceExhausted,
+                    "The Open Project request exceeded its transport limit."));
             }
 
             return requestHandler.HandleAsync(

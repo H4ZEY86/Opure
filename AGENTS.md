@@ -180,39 +180,46 @@ Completed and committed:
 * FND-020 — Add Redaction and Canary Tests.
 * FND-021 — Add Evidence Type Schema.
 * FND-022 — Add Evidence Record Schema.
+* FND-023 — Add Trust Evidence Database.
 
 Locally implemented, verified and committed; pending reviewed pushes:
 
-* FND-023 — Add Trust Evidence Database.
 * FND-024 — Add Trust Evidence Ingestion.
 * FND-025 — Add Trust Query Contract.
 * FND-026 — Add Windows Path-Reference Library.
 * FND-027 — Add Trusted Folder Picker Adapter.
+* FND-028 — Add Project Service Database.
 
 Implemented and verified by the current change:
 
-* FND-028 — Add Project Service Database.
+* FND-029 — Add Open Project Flow.
 
-FND-028 includes:
+FND-029 includes:
 
-* framework-neutral Project identity, lifecycle, root and repository metadata;
-* the channel-isolated authoritative `projects.db` owner store;
-* random 128-bit lower-case hexadecimal Project IDs;
-* verified-root identity revalidation held through registration commit;
-* exact-identity idempotency and explicit same-path identity conflicts;
-* create, read, channel-list and lifecycle-transition repository methods;
-* persistent repository identity and missing-root `Unavailable` state;
-* lifecycle history and immutable outbox receipts in the same transaction;
-* v1-to-v2 migration and bounded integrity/schema health;
-* schema, identity and ownership-conformance evidence.
+* a bounded, revisioned Open Project protobuf contract in its own protocol
+  assembly;
+* authenticated named-pipe command transport using the existing Runtime
+  endpoint and session proof;
+* Desktop Gateway transfer of an opaque verified-root identity claim without
+  Project database authority;
+* Runtime-side root reacquisition, identity revalidation and fixed-local-root
+  policy enforcement;
+* atomic registration and durable `Opening` lifecycle state before the initial
+  Workspace Snapshot boundary;
+* exact-identity idempotency and explicit changed-identity review;
+* cancellation before commit without Project creation and post-commit
+  `RecoveryRequired` state;
+* startup reconciliation of interrupted `Opening` records;
+* bounded contract, race and sequence evidence without paths, payloads or
+  session material.
 
 The next planned ticket is:
 
 ```text
-FND-029 — Add Open Project Flow
+FND-030 — Add Project Open Trust Receipt
 ```
 
-Do not assume FND-028 is complete until the Project Service database verifier
+Do not assume FND-029 is complete until the Open Project verifier
 passes and the changes are reviewed, committed and pushed.
 
 ## Build policy

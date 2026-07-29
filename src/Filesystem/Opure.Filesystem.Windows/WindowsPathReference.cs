@@ -75,10 +75,15 @@ public sealed class VerifiedWorkspaceRootReference
 
 public interface IVerifiedWorkspaceRootReceiver
 {
-    ValueTask ReceiveAsync(
+    ValueTask<VerifiedWorkspaceRootTransferReceipt> ReceiveAsync(
         VerifiedWorkspaceRootReference reference,
         CancellationToken cancellationToken);
 }
+
+public sealed record VerifiedWorkspaceRootTransferReceipt(
+    string StableCode,
+    string AuthoritativeState,
+    string SafeDetail);
 
 [SupportedOSPlatform("windows")]
 public sealed class VerifiedWindowsPathReference : IDisposable

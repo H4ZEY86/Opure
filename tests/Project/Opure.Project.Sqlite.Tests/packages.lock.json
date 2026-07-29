@@ -211,13 +211,33 @@
           "Opure.Filesystem.Contracts": "[1.0.0, )"
         }
       },
+      "opure.project.protocol": {
+        "type": "Project",
+        "dependencies": {
+          "Google.Protobuf": "[3.35.1, )",
+          "Grpc.Core.Api": "[2.80.0, )"
+        }
+      },
       "opure.project.sqlite": {
         "type": "Project",
         "dependencies": {
           "Opure.Filesystem.Windows": "[1.0.0, )",
           "Opure.Persistence.Sqlite": "[1.0.0, )",
-          "Opure.Project.Contracts": "[1.0.0, )"
+          "Opure.Project.Contracts": "[1.0.0, )",
+          "Opure.Project.Protocol": "[1.0.0, )"
         }
+      },
+      "Google.Protobuf": {
+        "type": "CentralTransitive",
+        "requested": "[3.35.1, )",
+        "resolved": "3.35.1",
+        "contentHash": "pxtkuXhR8svkvDTQrYew9GZQt6eWhblz/V/WKUFrQgkHYlQPsumJTeF6ppHRJpe6j9ffukkd5lQULiiKaek4xA=="
+      },
+      "Grpc.Core.Api": {
+        "type": "CentralTransitive",
+        "requested": "[2.80.0, )",
+        "resolved": "2.80.0",
+        "contentHash": "i/8s+MOrYa6n7BmZ5bilcbHk+EMJDQHm2MKLhwGAT+urQqlZ6cpjvSivYvuULjebuX+UKieLYZbLRCmVQxFRkw=="
       },
       "Microsoft.Data.Sqlite": {
         "type": "CentralTransitive",

@@ -7,7 +7,7 @@
   "duplicateDomainEffects": 0,
   "pathIdentityConflict": "Rejected",
   "channelIsolation": true,
-  "migration": "v1-to-v2",
+  "migration": "v1-to-v3",
   "restartSafe": true,
   "lifecyclePersistent": true,
   "missingRootPolicy": "UnavailableNotDeleted"

@@ -1,0 +1,108 @@
+syntax = "proto3";
+
+package opure.project.open.v1;
+
+option csharp_namespace = "Opure.Project.Protocol.Open.V1";
+
+service ProjectOpenService {
+  rpc OpenProject(OpenProjectRequest) returns (OpenProjectResponse);
+}
+
+message OpenProjectRequest {
+  uint32 minimum_contract_revision = 1;
+  uint32 maximum_contract_revision = 2;
+  string operation_id = 3;
+  string correlation_id = 4;
+  ProjectReleaseChannel release_channel = 5;
+  string display_name = 6;
+  ProjectRootIdentityClaim root = 7;
+}
+
+message ProjectRootIdentityClaim {
+  string display_path = 1;
+  FilesystemVolumeClass volume_class = 2;
+  uint64 volume_serial_number = 3;
+  string file_id = 4;
+  FileIdentityCapability identity_capability = 5;
+}
+
+enum ProjectReleaseChannel {
+  PROJECT_RELEASE_CHANNEL_UNSPECIFIED = 0;
+  PROJECT_RELEASE_CHANNEL_DEVELOPMENT = 1;
+  PROJECT_RELEASE_CHANNEL_PREVIEW = 2;
+  PROJECT_RELEASE_CHANNEL_STABLE = 3;
+}
+
+enum FilesystemVolumeClass {
+  FILESYSTEM_VOLUME_CLASS_UNSPECIFIED = 0;
+  FILESYSTEM_VOLUME_CLASS_FIXED_LOCAL = 1;
+  FILESYSTEM_VOLUME_CLASS_REMOVABLE = 2;
+  FILESYSTEM_VOLUME_CLASS_NETWORK = 3;
+  FILESYSTEM_VOLUME_CLASS_UNSUPPORTED = 4;
+}
+
+enum FileIdentityCapability {
+  FILE_IDENTITY_CAPABILITY_UNSPECIFIED = 0;
+  FILE_IDENTITY_CAPABILITY_WINDOWS_FILE_ID_128 = 1;
+  FILE_IDENTITY_CAPABILITY_UNAVAILABLE = 2;
+}
+
+message OpenProjectResponse {
+  uint32 contract_revision = 1;
+
+  oneof outcome {
+    OpenProjectSummary project = 2;
+    OpenProjectError error = 3;
+  }
+}
+
+message OpenProjectSummary {
+  string operation_id = 1;
+  string project_id = 2;
+  string display_name = 3;
+  ProjectReleaseChannel release_channel = 4;
+  ProjectOpenDisposition disposition = 5;
+  ProjectLifecycleState lifecycle_state = 6;
+  FilesystemVolumeClass root_volume_class = 7;
+  InitialWorkspaceSnapshotState initial_snapshot_state = 8;
+  string safe_detail = 9;
+}
+
+enum ProjectOpenDisposition {
+  PROJECT_OPEN_DISPOSITION_UNSPECIFIED = 0;
+  PROJECT_OPEN_DISPOSITION_CREATED = 1;
+  PROJECT_OPEN_DISPOSITION_REOPENED = 2;
+}
+
+enum ProjectLifecycleState {
+  PROJECT_LIFECYCLE_STATE_UNSPECIFIED = 0;
+  PROJECT_LIFECYCLE_STATE_OPENING = 1;
+  PROJECT_LIFECYCLE_STATE_OPEN = 2;
+  PROJECT_LIFECYCLE_STATE_RECOVERY_REQUIRED = 3;
+}
+
+enum InitialWorkspaceSnapshotState {
+  INITIAL_WORKSPACE_SNAPSHOT_STATE_UNSPECIFIED = 0;
+  INITIAL_WORKSPACE_SNAPSHOT_STATE_REQUESTED = 1;
+  INITIAL_WORKSPACE_SNAPSHOT_STATE_READY = 2;
+}
+
+message OpenProjectError {
+  OpenProjectErrorCategory category = 1;
+  string code = 2;
+  string safe_message = 3;
+  bool retryable = 4;
+  bool review_required = 5;
+  bool recovery_required = 6;
+}
+
+enum OpenProjectErrorCategory {
+  OPEN_PROJECT_ERROR_CATEGORY_UNSPECIFIED = 0;
+  OPEN_PROJECT_ERROR_CATEGORY_INVALID_REQUEST = 1;
+  OPEN_PROJECT_ERROR_CATEGORY_INCOMPATIBLE_CONTRACT = 2;
+  OPEN_PROJECT_ERROR_CATEGORY_PATH_DENIED = 3;
+  OPEN_PROJECT_ERROR_CATEGORY_IDENTITY_CONFLICT = 4;
+  OPEN_PROJECT_ERROR_CATEGORY_CANCELLED = 5;
+  OPEN_PROJECT_ERROR_CATEGORY_RECOVERY_REQUIRED = 6;
+  OPEN_PROJECT_ERROR_CATEGORY_INTERNAL = 7;
+}

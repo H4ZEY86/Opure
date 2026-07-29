@@ -6,10 +6,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Persistence\Opure.Persistence.Sqlite\Opure.Persistence.Sqlite.csproj" />
-    <ProjectReference Include="..\..\Filesystem\Opure.Filesystem.Windows\Opure.Filesystem.Windows.csproj" />
     <ProjectReference Include="..\Opure.Project.Contracts\Opure.Project.Contracts.csproj" />
     <ProjectReference Include="..\Opure.Project.Protocol\Opure.Project.Protocol.csproj" />
+    <ProjectReference Include="..\Opure.Project.Sqlite\Opure.Project.Sqlite.csproj" />
   </ItemGroup>
 
 </Project>

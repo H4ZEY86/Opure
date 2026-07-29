@@ -27,6 +27,10 @@ internal static class DesktopLaunchContext
     internal static DesktopRuntimeHealthSnapshot InitialRuntimeHealth =>
         initialRuntimeHealth;
 
+    internal static string ReleaseChannel =>
+        Environment.GetEnvironmentVariable("OPURE_CHANNEL") ??
+        "Development";
+
     internal static IDesktopRuntimeHealthSource RuntimeHealthSource =>
         runtimeHealthSource;
 

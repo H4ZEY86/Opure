@@ -3,6 +3,7 @@ using Opure.Ipc.Abstractions;
 using Opure.Ipc.NamedPipes.Windows;
 using Opure.Observability;
 using Opure.Observability.Contracts;
+using Opure.Project.Service;
 
 namespace Opure.Runtime;
 
@@ -37,10 +38,17 @@ public sealed class RuntimeApplication
         JsonLinesOperationalLogSink? operationalSink = null;
         BoundedOperationalLogger? operationalLogger = null;
         OperationalTraceSession? traceSession = null;
+        ProjectServiceHost? projectService = null;
         int sequence = 0;
 
         try
         {
+            if (!OperatingSystem.IsWindows())
+            {
+                throw new PlatformNotSupportedException(
+                    "The Windows Runtime requires Windows.");
+            }
+
             dataRoot = RuntimeDataRootResolver.Resolve(
                 options.ExplicitDataRoot,
                 allowTestOverride: options.ExplicitDataRoot is not null,
@@ -95,6 +103,10 @@ public sealed class RuntimeApplication
                 DateTimeOffset.UtcNow.Add(
                     RuntimeHealthTransportPolicy.SessionLifetime));
             RuntimeServiceRegistry serviceRegistry = new();
+            projectService = await ProjectServiceHost.StartAsync(
+                dataRoot.FullPath,
+                releaseChannel,
+                shutdownSignal.Token).ConfigureAwait(false);
             serviceLifecycle = new RuntimeServiceLifecycleCoordinator(
                 serviceRegistry,
                 RuntimeServiceCatalogue.CreateInitialManagedServices());
@@ -125,7 +137,9 @@ public sealed class RuntimeApplication
                 traceEventSink: completion =>
                     RuntimeEventWriter.WriteTraceCompletionAsync(
                         completion,
-                        operationalLogger)).ConfigureAwait(false);
+                        operationalLogger),
+                projectOpenRequestHandler: projectService.OpenHandler)
+                .ConfigureAwait(false);
 
             lifecycle.TransitionTo(RuntimeLifecycleState.Ready);
 
@@ -245,6 +259,7 @@ public sealed class RuntimeApplication
             }
 
             serviceLifecycle?.Dispose();
+            projectService?.Dispose();
             traceSession?.Dispose();
 
             if (operationalLogger is not null)
@@ -283,4 +298,5 @@ public sealed class RuntimeApplication
         cancellationToken.ThrowIfCancellationRequested();
         return Task.CompletedTask;
     }
+
 }

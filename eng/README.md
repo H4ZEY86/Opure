@@ -328,6 +328,12 @@ Run the complete FND-028 Project Service database evidence gate:
 pwsh ./build.ps1 project-database-policy
 ```
 
+Run the complete FND-029 Open Project flow evidence gate:
+
+```powershell
+pwsh ./build.ps1 open-project-policy
+```
+
 Bootstrap verifies absolute Runtime and Desktop executable paths and companion assembly identities before launch. It starts Runtime first, waits for explicit Runtime readiness, starts Desktop second, and shuts down Desktop before Runtime.
 
 Supervisor verification injects a bounded Runtime crash, a rapid crash loop and an abrupt Bootstrap termination. It verifies restart identity, exponential backoff, visible Safe Mode and Windows Job Object orphan cleanup without recording child environment values.
@@ -422,8 +428,9 @@ Trusted Folder Picker verification exercises one-shot Avalonia folder
 selection, cancellation without transfer, local-root handle verification,
 network and reparse refusal, deletion-after-selection recovery, an opaque
 capability receiver port and keyboard/automation metadata. Desktop retains
-only display classification; the Project Service receiver remains honestly
-unavailable until its dependency-ordered implementation.
+only display classification; the FND-029 Desktop Gateway receiver transfers a
+bounded identity claim to the authoritative Project Service without retaining
+filesystem or database authority.
 
 Project Service database verification exercises the channel-isolated
 authoritative `projects.db`, random stable Project IDs, verified root identity
@@ -431,5 +438,14 @@ binding, exact-duplicate idempotency, display-path identity conflicts,
 repository metadata, durable lifecycle history, migration, integrity health,
 restart recovery and lifecycle outbox receipts committed in the owner
 transaction. Desktop and other services have no database authority.
+
+Open Project verification exercises the revisioned bounded contract,
+authenticated named-pipe command, Runtime-side root reacquisition and identity
+comparison, fixed-local-root policy, atomic `Opening` registration, exact
+duplicate reopening, changed-identity review, pre-commit cancellation,
+post-commit recovery and restart reconciliation. The initial Workspace Snapshot
+is an explicit deferred service boundary. Evidence records only safe result
+codes, lifecycle states and fixture metadata; project paths, payloads and
+session material are excluded.
 
 Channel-specific data-root and one-time session material are passed through bounded environment variables. The session secret is not placed on command lines, written to disk or included in diagnostics.

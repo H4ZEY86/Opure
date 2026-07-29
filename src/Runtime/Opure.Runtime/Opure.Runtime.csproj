@@ -6,6 +6,7 @@
     <ProjectReference Include="..\..\Ipc\Opure.Ipc.NamedPipes.Windows\Opure.Ipc.NamedPipes.Windows.csproj" />
     <ProjectReference Include="..\..\Observability\Opure.Observability.Contracts\Opure.Observability.Contracts.csproj" />
     <ProjectReference Include="..\..\Observability\Opure.Observability\Opure.Observability.csproj" />
+    <ProjectReference Include="..\..\Project\Opure.Project.Service\Opure.Project.Service.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

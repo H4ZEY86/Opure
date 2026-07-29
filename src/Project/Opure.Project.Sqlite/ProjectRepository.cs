@@ -63,6 +63,93 @@ public sealed class ProjectRepository
             cancellationToken);
     }
 
+    [SupportedOSPlatform("windows")]
+    public ProjectRegistrationResult BeginOpen(
+        ProjectReleaseChannel releaseChannel,
+        string displayName,
+        VerifiedWorkspaceRootReference root,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateRegistration(
+            releaseChannel,
+            displayName,
+            root,
+            repositoryKind: null,
+            repositoryIdentity: null);
+
+        using VerifiedWindowsPathReference heldRoot =
+            WindowsPathReferenceResolver.ResolveExisting(
+                root,
+                LogicalWorkspacePath.Parse(
+                    new UntrustedPathText(string.Empty),
+                    allowWorkspaceRoot: true));
+
+        return database.ExecuteTransaction(
+            (connection, transaction) =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                ProjectRegistrationResult registration = RegisterCore(
+                    connection,
+                    transaction,
+                    releaseChannel,
+                    displayName,
+                    root,
+                    repositoryKind: null,
+                    repositoryIdentity: null);
+
+                if (registration.Disposition ==
+                    ProjectRegistrationDisposition.DisplayPathIdentityConflict)
+                {
+                    return registration;
+                }
+
+                ProjectSnapshot project = registration.Project ??
+                    throw new InvalidOperationException(
+                        "A successful project registration returned no project.");
+
+                if (project.LifecycleState != ProjectLifecycleState.Opening)
+                {
+                    DateTimeOffset now = timeProvider.GetUtcNow();
+                    long revision = ReadNextRevision(
+                        connection,
+                        transaction,
+                        project.ProjectId);
+                    UpdateLifecycle(
+                        connection,
+                        transaction,
+                        project.ProjectId,
+                        ProjectLifecycleState.Opening,
+                        now);
+                    InsertLifecycle(
+                        connection,
+                        transaction,
+                        project.ProjectId,
+                        revision,
+                        ProjectLifecycleState.Opening,
+                        "project-open-started",
+                        now);
+                    EnqueueLifecycle(
+                        connection,
+                        transaction,
+                        project.ProjectId,
+                        project.ReleaseChannel,
+                        ProjectLifecycleState.Opening,
+                        "project-open-started",
+                        revision,
+                        now);
+                }
+
+                ProjectSnapshot opening = ReadByProjectId(
+                    connection,
+                    transaction,
+                    project.ProjectId) ??
+                    throw new InvalidOperationException(
+                        "The opening project could not be read.");
+                return registration with { Project = opening };
+            },
+            cancellationToken);
+    }
+
     public ProjectSnapshot? Read(
         string projectId,
         CancellationToken cancellationToken = default)

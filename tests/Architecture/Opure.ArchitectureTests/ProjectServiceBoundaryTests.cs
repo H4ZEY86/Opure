@@ -48,6 +48,10 @@ public sealed class ProjectServiceBoundaryTests
             project,
             StringComparison.Ordinal);
         Assert.Contains(
+            "Opure.Project.Protocol.csproj",
+            project,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "Opure.Filesystem.Windows.csproj",
             project,
             StringComparison.Ordinal);
@@ -55,6 +59,25 @@ public sealed class ProjectServiceBoundaryTests
         Assert.DoesNotContain("Opure.Desktop", project, StringComparison.Ordinal);
         Assert.DoesNotContain("Opure.Runtime", project, StringComparison.Ordinal);
         Assert.DoesNotContain("Opure.TrustEvidence", project, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ProjectProtocolOwnsOnlyBoundedWireTypes()
+    {
+        string root = Path.Combine(
+            RepositoryRoot,
+            "src",
+            "Project",
+            "Opure.Project.Protocol");
+        string project = File.ReadAllText(
+            Path.Combine(root, "Opure.Project.Protocol.csproj"));
+        string source = ReadSources(root);
+
+        Assert.Contains("Grpc.Tools", project, StringComparison.Ordinal);
+        Assert.DoesNotContain("Microsoft.Data.Sqlite", project, StringComparison.Ordinal);
+        Assert.DoesNotContain("Opure.Filesystem.Windows", project, StringComparison.Ordinal);
+        Assert.DoesNotContain("ProjectDatabase", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("ProjectRepository", source, StringComparison.Ordinal);
     }
 
     [Fact]

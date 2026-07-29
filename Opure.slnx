@@ -25,6 +25,8 @@
   </Folder>
   <Folder Name="/src/Project/">
     <Project Path="src/Project/Opure.Project.Contracts/Opure.Project.Contracts.csproj" />
+    <Project Path="src/Project/Opure.Project.Protocol/Opure.Project.Protocol.csproj" />
+    <Project Path="src/Project/Opure.Project.Service/Opure.Project.Service.csproj" />
     <Project Path="src/Project/Opure.Project.Sqlite/Opure.Project.Sqlite.csproj" />
   </Folder>
   <Folder Name="/src/Runtime/">

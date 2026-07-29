@@ -4,7 +4,7 @@ namespace Opure.Project.Sqlite;
 
 public static class ProjectDatabaseSchema
 {
-    public const int CurrentVersion = 2;
+    public const int CurrentVersion = 3;
     public const string ProjectTable = "projects";
     public const string RootTable = "project_root_references";
     public const string RepositoryTable = "project_repository_identities";
@@ -41,6 +41,16 @@ public static class ProjectDatabaseSchema
                 targetVersion: 2));
         }
 
+        if (targetVersion >= 3)
+        {
+            migrations.Add(new SqliteMigration(
+                "project-open-lifecycle-v3",
+                sourceVersion: 2,
+                targetVersion: 3,
+                "Adds durable Opening and RecoveryRequired project lifecycle states.",
+                CreateLifecycleV3Commands()));
+        }
+
         List<SqliteSchemaValidation> validations =
         [
             new SqliteSchemaValidation(
@@ -65,6 +75,15 @@ public static class ProjectDatabaseSchema
             validations.AddRange(
                 SqliteOutboxSchema.CreateSchemaValidations(
                     minimumSchemaVersion: 2));
+        }
+
+        if (targetVersion >= 3)
+        {
+            validations.Add(new SqliteSchemaValidation(
+                "project-open-lifecycle-states-present",
+                minimumSchemaVersion: 3,
+                $"SELECT COUNT(*) FROM sqlite_schema WHERE type = 'table' AND name IN ('{ProjectTable}', '{LifecycleTable}') AND sql LIKE '%Opening%' AND sql LIKE '%RecoveryRequired%'",
+                "2"));
         }
 
         return new SqliteMigrationCatalogue(migrations, validations);
@@ -144,6 +163,91 @@ public static class ProjectDatabaseSchema
                     ON DELETE RESTRICT
             ) STRICT
             """,
+            $"""
+            CREATE UNIQUE INDEX {RootIdentityIndex}
+                ON {RootTable} (
+                    release_channel,
+                    volume_serial_number,
+                    file_id,
+                    identity_capability)
+            """,
+            $"""
+            CREATE INDEX {DisplayPathIndex}
+                ON {RootTable} (
+                    release_channel,
+                    display_path COLLATE NOCASE,
+                    project_id)
+            """
+        ];
+    }
+
+    private static string[] CreateLifecycleV3Commands()
+    {
+        return
+        [
+            $"""
+            CREATE TABLE projects_v3 (
+                project_id TEXT PRIMARY KEY CHECK (length(project_id) = 32),
+                release_channel TEXT NOT NULL CHECK (release_channel IN ('Development', 'Preview', 'Stable')),
+                display_name TEXT NOT NULL CHECK (length(display_name) BETWEEN 1 AND 200),
+                lifecycle_state TEXT NOT NULL CHECK (lifecycle_state IN ('Registered', 'Opening', 'Open', 'RecoveryRequired', 'Unavailable', 'Closed', 'Archived')),
+                created_at_utc TEXT NOT NULL,
+                updated_at_utc TEXT NOT NULL
+            ) STRICT
+            """,
+            $"""
+            CREATE TABLE project_root_references_v3 (
+                root_reference_id TEXT PRIMARY KEY CHECK (length(root_reference_id) = 32),
+                project_id TEXT NOT NULL UNIQUE,
+                release_channel TEXT NOT NULL CHECK (release_channel IN ('Development', 'Preview', 'Stable')),
+                display_path TEXT NOT NULL,
+                volume_class TEXT NOT NULL CHECK (volume_class IN ('FixedLocal', 'Removable', 'Network', 'Unsupported')),
+                volume_serial_number TEXT NOT NULL,
+                file_id TEXT NOT NULL CHECK (length(file_id) = 32),
+                identity_capability TEXT NOT NULL CHECK (identity_capability = 'WindowsFileId128'),
+                availability_state TEXT NOT NULL CHECK (availability_state IN ('Available', 'Unavailable')),
+                registered_at_utc TEXT NOT NULL,
+                FOREIGN KEY (project_id)
+                    REFERENCES projects_v3 (project_id)
+                    ON DELETE RESTRICT
+            ) STRICT
+            """,
+            $"""
+            CREATE TABLE project_repository_identities_v3 (
+                project_id TEXT PRIMARY KEY,
+                repository_kind TEXT NOT NULL,
+                repository_identity TEXT NOT NULL,
+                observed_at_utc TEXT NOT NULL,
+                FOREIGN KEY (project_id)
+                    REFERENCES projects_v3 (project_id)
+                    ON DELETE RESTRICT
+            ) STRICT
+            """,
+            $"""
+            CREATE TABLE project_lifecycle_history_v3 (
+                project_id TEXT NOT NULL,
+                revision INTEGER NOT NULL CHECK (revision > 0),
+                lifecycle_state TEXT NOT NULL CHECK (lifecycle_state IN ('Registered', 'Opening', 'Open', 'RecoveryRequired', 'Unavailable', 'Closed', 'Archived')),
+                reason_code TEXT NOT NULL,
+                occurred_at_utc TEXT NOT NULL,
+                PRIMARY KEY (project_id, revision),
+                FOREIGN KEY (project_id)
+                    REFERENCES projects_v3 (project_id)
+                    ON DELETE RESTRICT
+            ) STRICT
+            """,
+            $"INSERT INTO projects_v3 SELECT * FROM {ProjectTable}",
+            $"INSERT INTO project_root_references_v3 SELECT * FROM {RootTable}",
+            $"INSERT INTO project_repository_identities_v3 SELECT * FROM {RepositoryTable}",
+            $"INSERT INTO project_lifecycle_history_v3 SELECT * FROM {LifecycleTable}",
+            $"DROP TABLE {LifecycleTable}",
+            $"DROP TABLE {RepositoryTable}",
+            $"DROP TABLE {RootTable}",
+            $"DROP TABLE {ProjectTable}",
+            $"ALTER TABLE projects_v3 RENAME TO {ProjectTable}",
+            $"ALTER TABLE project_root_references_v3 RENAME TO {RootTable}",
+            $"ALTER TABLE project_repository_identities_v3 RENAME TO {RepositoryTable}",
+            $"ALTER TABLE project_lifecycle_history_v3 RENAME TO {LifecycleTable}",
             $"""
             CREATE UNIQUE INDEX {RootIdentityIndex}
                 ON {RootTable} (

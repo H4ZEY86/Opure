@@ -63,6 +63,15 @@
           "Grpc.Core.Api": "[2.80.0, )"
         }
       },
+      "opure.project.sqlite": {
+        "type": "Project",
+        "dependencies": {
+          "Opure.Filesystem.Windows": "[1.0.0, )",
+          "Opure.Persistence.Sqlite": "[1.0.0, )",
+          "Opure.Project.Contracts": "[1.0.0, )",
+          "Opure.Project.Protocol": "[1.0.0, )"
+        }
+      },
       "Google.Protobuf": {
         "type": "CentralTransitive",
         "requested": "[3.35.1, )",

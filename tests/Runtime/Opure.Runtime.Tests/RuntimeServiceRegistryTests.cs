@@ -142,7 +142,7 @@ public sealed class RuntimeServiceRegistryTests
     }
 
     [Fact]
-    public async Task Initial_catalogue_is_safe_without_domain_service_implementations()
+    public async Task Initial_catalogue_exposes_only_safe_runtime_owned_services()
     {
         RuntimeServiceRegistry registry = new();
         registry.Register(RuntimeServiceCatalogue.CreateInitial());
@@ -151,10 +151,24 @@ public sealed class RuntimeServiceRegistryTests
             TestContext.Current.CancellationToken);
         string contractJson = JsonFormatter.Default.Format(response);
 
-        RuntimeServiceDescriptor service = Assert.Single(response.Registry.Services);
-        Assert.Equal("runtime.health", service.ServiceId);
-        Assert.Equal("runtime.kernel", service.OwnerId);
-        Assert.Equal(RuntimeServiceLifecycleState.Registered, service.LifecycleState);
+        Assert.Equal(2, response.Registry.Services.Count);
+        RuntimeServiceDescriptor health = Assert.Single(
+            response.Registry.Services,
+            static service =>
+                service.ServiceId == "runtime.health");
+        Assert.Equal("runtime.kernel", health.OwnerId);
+        Assert.Equal(
+            RuntimeServiceLifecycleState.Registered,
+            health.LifecycleState);
+        RuntimeServiceDescriptor project = Assert.Single(
+            response.Registry.Services,
+            static service =>
+                service.ServiceId == "project.service");
+        Assert.Equal("opure.project", project.OwnerId);
+        Assert.Contains(
+            project.Capabilities,
+            static capability =>
+                capability.CapabilityId == "project.open");
         Assert.DoesNotContain(
             nameof(RuntimeServiceRegistry),
             contractJson,
