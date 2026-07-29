@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Opure.Ipc.Abstractions\Opure.Ipc.Abstractions.csproj" />
+    <ProjectReference Include="..\..\Observability\Opure.Observability.Contracts\Opure.Observability.Contracts.csproj" />
     <ProjectReference Include="..\..\Runtime\Opure.Runtime.Contracts\Opure.Runtime.Contracts.csproj" />
   </ItemGroup>
 

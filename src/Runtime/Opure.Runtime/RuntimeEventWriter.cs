@@ -4,6 +4,7 @@ using System.Diagnostics;
 using Opure.Observability.Contracts;
 using Opure.Runtime.Contracts;
 using Opure.Ipc.Abstractions;
+using Opure.Ipc.NamedPipes.Windows;
 
 namespace Opure.Runtime;
 
@@ -175,5 +176,39 @@ public static class RuntimeEventWriter
                 traceId: Activity.Current?.TraceId.ToHexString())
                 .ConfigureAwait(false);
         }
+    }
+
+    public static async ValueTask WriteTraceCompletionAsync(
+        RuntimeHealthTraceCompletion completion,
+        IOperationalLogger? operationalLogger)
+    {
+        ArgumentNullException.ThrowIfNull(completion);
+
+        if (operationalLogger is null)
+        {
+            return;
+        }
+
+        OperationalLogAttribute[] attributes =
+        [
+            OperationalLogAttribute.String(
+                "span.name",
+                completion.SpanName),
+            OperationalLogAttribute.String(
+                "result.class",
+                completion.ResultClass),
+            OperationalLogAttribute.String(
+                "failure.class",
+                completion.FailureClass),
+            OperationalLogAttribute.FloatingPoint(
+                "duration.ms",
+                completion.DurationMilliseconds)
+        ];
+
+        _ = await operationalLogger.WriteAsync(
+            RuntimeOperationalEvents.TraceCompleted,
+            attributes,
+            traceId: completion.TraceId,
+            operationId: completion.SpanId).ConfigureAwait(false);
     }
 }

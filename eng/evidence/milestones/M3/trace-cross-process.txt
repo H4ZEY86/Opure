@@ -1,0 +1,8 @@
+schema=opure.trace-cross-process/1
+result=Passed
+bootstrapDesktopRuntimeBoundary=Passed
+w3cTraceIdentityInRuntimeLog=Passed
+spanIdentityInRuntimeLog=Passed
+sessionMaterialIncluded=False
+payloadIncluded=False
+authoritative=False

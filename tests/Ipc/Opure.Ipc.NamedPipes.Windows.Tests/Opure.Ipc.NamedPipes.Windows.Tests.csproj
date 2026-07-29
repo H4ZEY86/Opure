@@ -20,6 +20,8 @@
     <ProjectReference Include="..\..\..\src\Desktop\Opure.Desktop.GatewayClient\Opure.Desktop.GatewayClient.csproj" />
     <ProjectReference Include="..\..\..\src\Ipc\Opure.Ipc.Abstractions\Opure.Ipc.Abstractions.csproj" />
     <ProjectReference Include="..\..\..\src\Ipc\Opure.Ipc.NamedPipes.Windows\Opure.Ipc.NamedPipes.Windows.csproj" />
+    <ProjectReference Include="..\..\..\src\Observability\Opure.Observability.Contracts\Opure.Observability.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\src\Observability\Opure.Observability\Opure.Observability.csproj" />
     <ProjectReference Include="..\..\..\src\Runtime\Opure.Runtime.Contracts\Opure.Runtime.Contracts.csproj" />
   </ItemGroup>
 

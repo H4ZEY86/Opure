@@ -393,6 +393,7 @@
           "Opure.Desktop.Contracts": "[1.0.0, )",
           "Opure.Ipc.Abstractions": "[1.0.0, )",
           "Opure.Ipc.NamedPipes.Windows": "[1.0.0, )",
+          "Opure.Observability": "[1.0.0, )",
           "Opure.Runtime.Contracts": "[1.0.0, )"
         }
       },
@@ -408,8 +409,18 @@
           "Grpc.AspNetCore.Server": "[2.80.0, )",
           "Grpc.Net.Client": "[2.80.0, )",
           "Opure.Ipc.Abstractions": "[1.0.0, )",
+          "Opure.Observability.Contracts": "[1.0.0, )",
           "Opure.Runtime.Contracts": "[1.0.0, )"
         }
+      },
+      "opure.observability": {
+        "type": "Project",
+        "dependencies": {
+          "Opure.Observability.Contracts": "[1.0.0, )"
+        }
+      },
+      "opure.observability.contracts": {
+        "type": "Project"
       },
       "opure.runtime.contracts": {
         "type": "Project",

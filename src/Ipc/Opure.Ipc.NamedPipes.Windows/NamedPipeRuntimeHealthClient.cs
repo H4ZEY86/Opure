@@ -1,7 +1,9 @@
+using System.Diagnostics;
 using System.IO.Pipes;
 using Grpc.Core;
 using Grpc.Net.Client;
 using Opure.Ipc.Abstractions;
+using Opure.Observability.Contracts;
 using Opure.Runtime.Contracts;
 using Opure.Runtime.Contracts.Health.V1;
 
@@ -101,10 +103,16 @@ public sealed class NamedPipeRuntimeHealthClient : IRuntimeHealthTransportClient
                 retryable: false);
         }
 
+        long started = Stopwatch.GetTimestamp();
+        using Activity? activity =
+            OperationalTraceContract.GatewaySource.StartActivity(
+                OperationalTraceContract.GatewayHealthSpanName,
+                ActivityKind.Client);
+        SetBaseTags(activity);
+
         try
         {
-            const string method =
-                "/opure.runtime.health.v1.RuntimeHealthService/GetRuntimeHealth";
+            const string method = OperationalTraceContract.RuntimeHealthMethod;
             Metadata? headers = null;
             string? nonce = null;
             string? clientProof = null;
@@ -121,6 +129,9 @@ public sealed class NamedPipeRuntimeHealthClient : IRuntimeHealthTransportClient
                     out clientProof,
                     nonceFactory?.Invoke());
             }
+
+            headers ??= [];
+            TraceContextMetadata.Inject(activity, headers);
 
             using AsyncUnaryCall<GetRuntimeHealthResponse> call =
                 client.GetRuntimeHealthAsync(
@@ -140,6 +151,11 @@ public sealed class NamedPipeRuntimeHealthClient : IRuntimeHealthTransportClient
                     clientProof,
                     responseHeaders))
             {
+                CompleteActivity(
+                    activity,
+                    started,
+                    "failure",
+                    RuntimeHealthTransportErrorCodes.ServerIdentityInvalid);
                 throw new RuntimeHealthTransportException(
                     RuntimeHealthTransportErrorCodes.ServerIdentityInvalid,
                     "The Runtime session proof is invalid.",
@@ -151,6 +167,11 @@ public sealed class NamedPipeRuntimeHealthClient : IRuntimeHealthTransportClient
 
             if (!responseValidation.IsValid)
             {
+                CompleteActivity(
+                    activity,
+                    started,
+                    "failure",
+                    responseValidation.ErrorCode);
                 throw new RuntimeHealthTransportException(
                     responseValidation.ErrorCode,
                     responseValidation.SafeMessage,
@@ -163,17 +184,28 @@ public sealed class NamedPipeRuntimeHealthClient : IRuntimeHealthTransportClient
                     endpoint.RuntimeBootId,
                     StringComparison.Ordinal))
             {
+                CompleteActivity(
+                    activity,
+                    started,
+                    "failure",
+                    RuntimeHealthTransportErrorCodes.RuntimeBootChanged);
                 throw new RuntimeHealthTransportException(
                     RuntimeHealthTransportErrorCodes.RuntimeBootChanged,
                     "The Runtime boot identity changed; reconnect using the latest endpoint.",
                     retryable: true);
             }
 
+            CompleteActivity(activity, started, "success", "none");
             return response;
         }
         catch (RpcException exception) when (
             exception.StatusCode == StatusCode.DeadlineExceeded)
         {
+            CompleteActivity(
+                activity,
+                started,
+                "failure",
+                RuntimeHealthTransportErrorCodes.DeadlineExceeded);
             throw new RuntimeHealthTransportException(
                 RuntimeHealthTransportErrorCodes.DeadlineExceeded,
                 "The Runtime Health deadline expired.",
@@ -183,6 +215,11 @@ public sealed class NamedPipeRuntimeHealthClient : IRuntimeHealthTransportClient
         catch (RpcException exception) when (
             exception.StatusCode == StatusCode.ResourceExhausted)
         {
+            CompleteActivity(
+                activity,
+                started,
+                "failure",
+                RuntimeHealthTransportErrorCodes.MessageTooLarge);
             throw new RuntimeHealthTransportException(
                 RuntimeHealthTransportErrorCodes.MessageTooLarge,
                 "The Runtime Health message exceeded its transport limit.",
@@ -192,6 +229,11 @@ public sealed class NamedPipeRuntimeHealthClient : IRuntimeHealthTransportClient
         catch (RpcException exception) when (
             exception.StatusCode == StatusCode.Unauthenticated)
         {
+            CompleteActivity(
+                activity,
+                started,
+                "failure",
+                RuntimeHealthTransportErrorCodes.SessionDenied);
             throw new RuntimeHealthTransportException(
                 RuntimeHealthTransportErrorCodes.SessionDenied,
                 "The Runtime denied the local IPC session.",
@@ -202,6 +244,11 @@ public sealed class NamedPipeRuntimeHealthClient : IRuntimeHealthTransportClient
             exception.StatusCode == StatusCode.Cancelled &&
             cancellationToken.IsCancellationRequested)
         {
+            CompleteActivity(
+                activity,
+                started,
+                "cancelled",
+                "operation.cancelled");
             throw new OperationCanceledException(
                 "The Runtime Health call was cancelled.",
                 exception,
@@ -211,6 +258,11 @@ public sealed class NamedPipeRuntimeHealthClient : IRuntimeHealthTransportClient
             exception.StatusCode == StatusCode.Unavailable ||
             exception.StatusCode == StatusCode.Cancelled)
         {
+            CompleteActivity(
+                activity,
+                started,
+                "failure",
+                RuntimeHealthTransportErrorCodes.Unavailable);
             throw new RuntimeHealthTransportException(
                 RuntimeHealthTransportErrorCodes.Unavailable,
                 "The Runtime Health pipe is unavailable; reconnect using the latest endpoint.",
@@ -219,12 +271,62 @@ public sealed class NamedPipeRuntimeHealthClient : IRuntimeHealthTransportClient
         }
         catch (RpcException exception)
         {
+            CompleteActivity(
+                activity,
+                started,
+                "failure",
+                RuntimeHealthTransportErrorCodes.Unavailable);
             throw new RuntimeHealthTransportException(
                 RuntimeHealthTransportErrorCodes.Unavailable,
                 "The Runtime Health call failed with an unexpected transport status.",
                 retryable: true,
                 exception);
         }
+    }
+
+    private static void SetBaseTags(Activity? activity)
+    {
+        OperationalTraceContract.SetSafeTag(
+            activity,
+            OperationalTraceContract.ServiceTag,
+            "runtime.health");
+        OperationalTraceContract.SetSafeTag(
+            activity,
+            OperationalTraceContract.OperationKindTag,
+            "query");
+        OperationalTraceContract.SetSafeTag(
+            activity,
+            OperationalTraceContract.IpcMethodTag,
+            "runtime-health.get");
+    }
+
+    private static void CompleteActivity(
+        Activity? activity,
+        long started,
+        string resultClass,
+        string failureClass)
+    {
+        if (activity is null)
+        {
+            return;
+        }
+
+        OperationalTraceContract.SetSafeTag(
+            activity,
+            OperationalTraceContract.ResultClassTag,
+            resultClass);
+        OperationalTraceContract.SetSafeTag(
+            activity,
+            OperationalTraceContract.FailureClassTag,
+            failureClass);
+        OperationalTraceContract.SetSafeTag(
+            activity,
+            OperationalTraceContract.DurationMillisecondsTag,
+            Stopwatch.GetElapsedTime(started).TotalMilliseconds);
+        activity.SetStatus(
+            string.Equals(resultClass, "success", StringComparison.Ordinal)
+                ? ActivityStatusCode.Ok
+                : ActivityStatusCode.Error);
     }
 
     public ValueTask DisposeAsync()

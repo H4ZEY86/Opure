@@ -1,10 +1,17 @@
 using Opure.Desktop.Contracts;
 using Opure.Ipc.Abstractions;
+using Opure.Observability;
 
 namespace Opure.Desktop.GatewayClient;
 
 public static class RuntimeHealthGatewayClient
 {
+    public static IDisposable CreateTraceSession(string releaseChannel)
+    {
+        return new OperationalTraceSession(
+            OperationalTracePolicy.ForReleaseChannel(releaseChannel));
+    }
+
     public static IDesktopRuntimeHealthSource CreateProjectionSource(
         string productVersion,
         DesktopSupervisorProjection supervisorProjection)

@@ -1,0 +1,49 @@
+{
+  "schema": "opure.operational-trace-example/1",
+  "result": "Passed",
+  "propagation": "W3C trace context through gRPC metadata",
+  "traceIdentityNormalised": true,
+  "authoritative": false,
+  "spans": [
+    {
+      "name": "gateway.runtime-health.get",
+      "source": "Opure.Gateway",
+      "traceIdentity": "shared-w3c-trace-id",
+      "parent": "none",
+      "attributes": {
+        "opure.duration.ms": "measured-locally",
+        "opure.failure.class": "none",
+        "opure.ipc.method": "runtime-health.get",
+        "opure.operation.kind": "query",
+        "opure.result.class": "success",
+        "opure.service": "runtime.health"
+      }
+    },
+    {
+      "name": "runtime.health.evaluate",
+      "source": "Opure.Runtime",
+      "traceIdentity": "shared-w3c-trace-id",
+      "parent": "runtime.ipc.runtime-health.get",
+      "attributes": {
+        "opure.failure.class": "none",
+        "opure.operation.kind": "evaluate",
+        "opure.result.class": "success",
+        "opure.service": "runtime.health"
+      }
+    },
+    {
+      "name": "runtime.ipc.runtime-health.get",
+      "source": "Opure.Runtime",
+      "traceIdentity": "shared-w3c-trace-id",
+      "parent": "gateway.runtime-health.get",
+      "attributes": {
+        "opure.duration.ms": "measured-locally",
+        "opure.failure.class": "none",
+        "opure.ipc.method": "runtime-health.get",
+        "opure.operation.kind": "query",
+        "opure.result.class": "success",
+        "opure.service": "runtime.health"
+      }
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "schema": "opure.trace-latency/1",
+  "result": "Passed",
+  "transport": "grpc-over-windows-named-pipe",
+  "measuredCallsPerMode": 20,
+  "disabledMedianMilliseconds": 0.323,
+  "enabledMedianMilliseconds": 0.335,
+  "enabledP95Milliseconds": 0.526,
+  "medianOverheadMilliseconds": 0.012,
+  "requiredEnabledP95Milliseconds": 250,
+  "requiredMedianOverheadMilliseconds": 20,
+  "payloadAttributes": false
+}

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 using System.IO.Pipes;
@@ -9,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Opure.Ipc.Abstractions;
+using Opure.Observability.Contracts;
 using Opure.Runtime.Contracts;
 using Opure.Runtime.Contracts.Health.V1;
 using Opure.Runtime.Contracts.Registry.V1;
@@ -36,7 +38,8 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
         CancellationToken cancellationToken,
         TimeProvider? timeProvider = null,
         Func<RuntimeHealthAuthenticationEvent, ValueTask>? eventSink = null,
-        IRuntimeServiceRegistryRequestHandler? registryRequestHandler = null)
+        IRuntimeServiceRegistryRequestHandler? registryRequestHandler = null,
+        Func<RuntimeHealthTraceCompletion, ValueTask>? traceEventSink = null)
     {
         ArgumentNullException.ThrowIfNull(endpoint);
         ArgumentNullException.ThrowIfNull(requestHandler);
@@ -91,6 +94,7 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
             sessionPolicy,
             timeProvider ?? TimeProvider.System,
             eventSink));
+        builder.Services.AddSingleton(new TraceCompletionSink(traceEventSink));
         builder.Services.AddSingleton<RuntimeHealthAuthenticationInterceptor>();
         builder.Services.AddGrpc(options =>
         {
@@ -124,7 +128,8 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
     }
 
     private sealed class RuntimeHealthAuthenticationInterceptor(
-        RuntimeHealthSessionAuthenticator authenticator) : Interceptor
+        RuntimeHealthSessionAuthenticator authenticator,
+        TraceCompletionSink traceCompletionSink) : Interceptor
     {
         public override async Task<TResponse> UnaryServerHandler<TRequest, TResponse>(
             TRequest request,
@@ -132,7 +137,8 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
             UnaryServerMethod<TRequest, TResponse> continuation)
         {
             RuntimeHealthAuthenticationResult authentication =
-                await authenticator.AuthenticateAsync(context).ConfigureAwait(false);
+                await authenticator.AuthenticateAsync(context)
+                    .ConfigureAwait(false);
 
             if (!authentication.IsAuthenticated)
             {
@@ -149,7 +155,147 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
                         authentication.ServerProof)
                 }).ConfigureAwait(false);
 
-            return await continuation(request, context).ConfigureAwait(false);
+            long started = Stopwatch.GetTimestamp();
+            ActivityContext parentContext =
+                TraceContextMetadata.Extract(context.RequestHeaders);
+            string spanName = ResolveServerSpanName(context.Method);
+            string service = ResolveService(context.Method);
+            string method = ResolveMethod(context.Method);
+            using Activity? activity =
+                OperationalTraceContract.RuntimeSource.StartActivity(
+                    spanName,
+                    ActivityKind.Server,
+                    parentContext);
+            OperationalTraceContract.SetSafeTag(
+                activity,
+                OperationalTraceContract.ServiceTag,
+                service);
+            OperationalTraceContract.SetSafeTag(
+                activity,
+                OperationalTraceContract.OperationKindTag,
+                "query");
+            OperationalTraceContract.SetSafeTag(
+                activity,
+                OperationalTraceContract.IpcMethodTag,
+                method);
+            string resultClass = "failure";
+            string failureClass = "ipc.internal";
+
+            try
+            {
+                TResponse response = await continuation(request, context)
+                    .ConfigureAwait(false);
+                resultClass = "success";
+                failureClass = "none";
+                return response;
+            }
+            catch (OperationCanceledException) when (
+                context.CancellationToken.IsCancellationRequested)
+            {
+                resultClass = "cancelled";
+                failureClass = "operation.cancelled";
+                throw;
+            }
+            catch (RpcException exception)
+            {
+                if (exception.StatusCode == StatusCode.Cancelled)
+                {
+                    resultClass = "cancelled";
+                }
+
+                failureClass = ResolveFailureClass(
+                    exception.StatusCode,
+                    failureClass);
+                throw;
+            }
+            finally
+            {
+                if (activity is not null)
+                {
+                    double durationMilliseconds =
+                        Stopwatch.GetElapsedTime(started).TotalMilliseconds;
+                    OperationalTraceContract.SetSafeTag(
+                        activity,
+                        OperationalTraceContract.ResultClassTag,
+                        resultClass);
+                    OperationalTraceContract.SetSafeTag(
+                        activity,
+                        OperationalTraceContract.FailureClassTag,
+                        failureClass);
+                    OperationalTraceContract.SetSafeTag(
+                        activity,
+                        OperationalTraceContract.DurationMillisecondsTag,
+                        durationMilliseconds);
+                    activity.SetStatus(
+                        string.Equals(
+                            resultClass,
+                            "success",
+                            StringComparison.Ordinal)
+                            ? ActivityStatusCode.Ok
+                            : ActivityStatusCode.Error);
+
+                    await traceCompletionSink.TryWriteAsync(
+                        new RuntimeHealthTraceCompletion(
+                            activity.TraceId.ToHexString(),
+                            activity.SpanId.ToHexString(),
+                            activity.DisplayName,
+                            resultClass,
+                            failureClass,
+                            durationMilliseconds)).ConfigureAwait(false);
+                }
+            }
+        }
+
+        private static string ResolveServerSpanName(string method)
+        {
+            return string.Equals(
+                method,
+                OperationalTraceContract.RuntimeHealthMethod,
+                StringComparison.Ordinal)
+                ? OperationalTraceContract.RuntimeHealthServerSpanName
+                : "runtime.ipc.service-registry.query";
+        }
+
+        private static string ResolveService(string method)
+        {
+            return string.Equals(
+                method,
+                OperationalTraceContract.RuntimeHealthMethod,
+                StringComparison.Ordinal)
+                ? "runtime.health"
+                : "runtime.service-registry";
+        }
+
+        private static string ResolveMethod(string method)
+        {
+            return string.Equals(
+                method,
+                OperationalTraceContract.RuntimeHealthMethod,
+                StringComparison.Ordinal)
+                ? "runtime-health.get"
+                : "service-registry.query";
+        }
+
+        private static string ResolveFailureClass(
+            StatusCode statusCode,
+            string currentFailureClass)
+        {
+            if (!string.Equals(
+                currentFailureClass,
+                "ipc.internal",
+                StringComparison.Ordinal))
+            {
+                return currentFailureClass;
+            }
+
+            return statusCode switch
+            {
+                StatusCode.Cancelled => "operation.cancelled",
+                StatusCode.DeadlineExceeded => "ipc.deadline_exceeded",
+                StatusCode.ResourceExhausted => "ipc.message_too_large",
+                StatusCode.Unauthenticated => "ipc.session_denied",
+                _ => "ipc.internal"
+            };
         }
     }
 
@@ -168,6 +314,19 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
             GetRuntimeHealthRequest request,
             ServerCallContext context)
         {
+            using Activity? activity =
+                OperationalTraceContract.RuntimeSource.StartActivity(
+                    OperationalTraceContract.RuntimeHealthOwnerSpanName,
+                    ActivityKind.Internal);
+            OperationalTraceContract.SetSafeTag(
+                activity,
+                OperationalTraceContract.ServiceTag,
+                "runtime.health");
+            OperationalTraceContract.SetSafeTag(
+                activity,
+                OperationalTraceContract.OperationKindTag,
+                "evaluate");
+
             RuntimeHealthValidationResult validation =
                 RuntimeHealthContractPolicy.ValidateRequest(request);
 
@@ -201,9 +360,49 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
                 };
             }
 
-            return await requestHandler
-                .HandleAsync(request, context.CancellationToken)
-                .ConfigureAwait(false);
+            try
+            {
+                GetRuntimeHealthResponse response = await requestHandler
+                    .HandleAsync(request, context.CancellationToken)
+                    .ConfigureAwait(false);
+                OperationalTraceContract.SetSafeTag(
+                    activity,
+                    OperationalTraceContract.ResultClassTag,
+                    "success");
+                OperationalTraceContract.SetSafeTag(
+                    activity,
+                    OperationalTraceContract.FailureClassTag,
+                    "none");
+                activity?.SetStatus(ActivityStatusCode.Ok);
+                return response;
+            }
+            catch (OperationCanceledException) when (
+                context.CancellationToken.IsCancellationRequested)
+            {
+                OperationalTraceContract.SetSafeTag(
+                    activity,
+                    OperationalTraceContract.ResultClassTag,
+                    "cancelled");
+                OperationalTraceContract.SetSafeTag(
+                    activity,
+                    OperationalTraceContract.FailureClassTag,
+                    "operation.cancelled");
+                activity?.SetStatus(ActivityStatusCode.Error);
+                throw;
+            }
+            catch (Exception)
+            {
+                OperationalTraceContract.SetSafeTag(
+                    activity,
+                    OperationalTraceContract.ResultClassTag,
+                    "failure");
+                OperationalTraceContract.SetSafeTag(
+                    activity,
+                    OperationalTraceContract.FailureClassTag,
+                    "service.unexpected");
+                activity?.SetStatus(ActivityStatusCode.Error);
+                throw;
+            }
         }
     }
 
@@ -226,6 +425,28 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
             return requestHandler.HandleAsync(
                 request,
                 context.CancellationToken);
+        }
+    }
+
+    private sealed class TraceCompletionSink(
+        Func<RuntimeHealthTraceCompletion, ValueTask>? sink)
+    {
+        internal async ValueTask TryWriteAsync(
+            RuntimeHealthTraceCompletion completion)
+        {
+            if (sink is null)
+            {
+                return;
+            }
+
+            try
+            {
+                await sink(completion).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                // Diagnostic delivery must never change request authority or outcome.
+            }
         }
     }
 }

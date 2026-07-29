@@ -268,6 +268,12 @@ Run the complete FND-018 structured operational logging evidence gate:
 pwsh ./build.ps1 structured-logging-policy
 ```
 
+Run the complete FND-019 trace propagation evidence gate:
+
+```powershell
+pwsh ./build.ps1 trace-propagation-policy
+```
+
 Bootstrap verifies absolute Runtime and Desktop executable paths and companion assembly identities before launch. It starts Runtime first, waits for explicit Runtime readiness, starts Desktop second, and shuts down Desktop before Runtime.
 
 Supervisor verification injects a bounded Runtime crash, a rapid crash loop and an abrupt Bootstrap termination. It verifies restart identity, exponential backoff, visible Safe Mode and Windows Job Object orphan cleanup without recording child environment values.
@@ -293,5 +299,13 @@ Transactional outbox verification exercises atomic domain/envelope commit and ro
 Transactional inbox verification exercises atomic receipt/domain-effect commit and rollback, source-scoped identities, matching duplicate acknowledgement, conflicting duplicate quarantine, unsupported revision refusal, restart-safe replay and conflict health. It records the idempotency and conflicting-duplicate reports under `eng/evidence/milestones/M3`; conflicting payload bytes are not copied into the conflict ledger.
 
 Structured operational logging verification exercises fixed reviewed event definitions, typed per-event attribute allowlists, pre-queue sanitisation, the bounded severity-aware queue, JSON Lines parsing, size rotation, age and count retention, partial-write recovery, Windows path pinning, validated-handle mutation, sink failure isolation and safe Runtime Health degradation. It records the schema, rotation, queue and injection reports under `eng/evidence/milestones/M3`; operational logs remain ordinary local diagnostics and never substitute for authoritative Trust Evidence.
+
+Trace propagation verification exercises a connected Desktop Gateway, Runtime
+IPC and owner-service trace, W3C metadata propagation, asynchronous parentage,
+cancellation, stable failure classes, payload-canary exclusion,
+high-cardinality rejection, disabled sampling and bounded latency overhead. A
+bounded Bootstrap launch verifies the trace identity in Runtime logs. Traces
+remain local, non-authoritative diagnostics; baggage and external export are
+disabled.
 
 Channel-specific data-root and one-time session material are passed through bounded environment variables. The session secret is not placed on command lines, written to disk or included in diagnostics.

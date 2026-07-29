@@ -196,6 +196,7 @@
           "Grpc.AspNetCore.Server": "[2.80.0, )",
           "Grpc.Net.Client": "[2.80.0, )",
           "Opure.Ipc.Abstractions": "[1.0.0, )",
+          "Opure.Observability.Contracts": "[1.0.0, )",
           "Opure.Runtime.Contracts": "[1.0.0, )"
         }
       },

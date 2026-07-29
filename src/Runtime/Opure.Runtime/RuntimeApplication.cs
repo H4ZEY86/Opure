@@ -36,6 +36,7 @@ public sealed class RuntimeApplication
         RuntimeServiceLifecycleCoordinator? serviceLifecycle = null;
         JsonLinesOperationalLogSink? operationalSink = null;
         BoundedOperationalLogger? operationalLogger = null;
+        OperationalTraceSession? traceSession = null;
         int sequence = 0;
 
         try
@@ -46,6 +47,10 @@ public sealed class RuntimeApplication
                 bootstrapEnvironment);
 
             bootSnapshot = RuntimeProductIdentity.CreateBootSnapshot();
+            string releaseChannel =
+                bootstrapEnvironment?.Channel ?? "Development";
+            traceSession = new OperationalTraceSession(
+                OperationalTracePolicy.ForReleaseChannel(releaseChannel));
             OperationalLogPolicy operationalLogPolicy = new();
             operationalSink = new JsonLinesOperationalLogSink(
                 dataRoot.FullPath,
@@ -77,7 +82,7 @@ public sealed class RuntimeApplication
             }
 
             RuntimeHealthEndpoint endpoint = NamedPipeRuntimeHealthEndpoint.Create(
-                bootstrapEnvironment?.Channel ?? "Development",
+                releaseChannel,
                 bootSnapshot.BootId);
             RuntimeHealthSessionMaterial sessionMaterial =
                 bootstrapEnvironment is null
@@ -116,7 +121,11 @@ public sealed class RuntimeApplication
                         output,
                         authenticationEvent,
                         operationalLogger),
-                registryRequestHandler: serviceRegistry).ConfigureAwait(false);
+                registryRequestHandler: serviceRegistry,
+                traceEventSink: completion =>
+                    RuntimeEventWriter.WriteTraceCompletionAsync(
+                        completion,
+                        operationalLogger)).ConfigureAwait(false);
 
             lifecycle.TransitionTo(RuntimeLifecycleState.Ready);
 
@@ -236,6 +245,7 @@ public sealed class RuntimeApplication
             }
 
             serviceLifecycle?.Dispose();
+            traceSession?.Dispose();
 
             if (operationalLogger is not null)
             {

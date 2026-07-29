@@ -1,0 +1,10 @@
+schema=opure.trace-leakage/1
+result=Passed
+payloadCanaryAbsent=Passed
+pipeNameAbsent=Passed
+absolutePathAbsent=Passed
+requestResponseAttributesAbsent=Passed
+attributeAllowlist=Passed
+allowedAttributes=opure.service,opure.operation.kind,opure.result.class,opure.failure.class,opure.ipc.method,opure.duration.ms
+baggagePropagation=Disabled
+authoritative=False

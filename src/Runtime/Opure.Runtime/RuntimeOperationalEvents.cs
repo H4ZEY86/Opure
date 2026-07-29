@@ -32,6 +32,15 @@ internal static class RuntimeOperationalEvents
             Safe("client.processId", OperationalLogAttributeKind.Integer)
         ];
 
+    private static readonly OperationalLogAttributeDefinition[]
+        TraceCompletionAttributes =
+        [
+            Safe("span.name", OperationalLogAttributeKind.String),
+            Safe("result.class", OperationalLogAttributeKind.String),
+            Safe("failure.class", OperationalLogAttributeKind.String),
+            Safe("duration.ms", OperationalLogAttributeKind.FloatingPoint)
+        ];
+
     internal static readonly OperationalLogEventDefinition Starting = new(
         "runtime.lifecycle.starting",
         OperationalLogSeverity.Information,
@@ -73,6 +82,12 @@ internal static class RuntimeOperationalEvents
         OperationalLogSeverity.Warning,
         "Runtime IPC session was denied.",
         IpcSessionAttributes);
+
+    internal static readonly OperationalLogEventDefinition TraceCompleted = new(
+        "runtime.trace.completed",
+        OperationalLogSeverity.Information,
+        "Runtime operation trace completed.",
+        TraceCompletionAttributes);
 
     internal static OperationalLogEventDefinition ForLifecycle(
         RuntimeLifecycleState state)

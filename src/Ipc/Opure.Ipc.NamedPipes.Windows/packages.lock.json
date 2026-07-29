@@ -40,6 +40,9 @@
           "Opure.Runtime.Contracts": "[1.0.0, )"
         }
       },
+      "opure.observability.contracts": {
+        "type": "Project"
+      },
       "opure.runtime.contracts": {
         "type": "Project",
         "dependencies": {

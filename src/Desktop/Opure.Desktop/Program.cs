@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Opure.Desktop.GatewayClient;
 
 namespace Opure.Desktop;
 
@@ -23,8 +24,13 @@ internal static class Program
             return 10;
         }
 
-        DesktopLaunchContext.Initialise(options);
+        string releaseChannel =
+            Environment.GetEnvironmentVariable("OPURE_CHANNEL") ??
+            "Development";
+        using IDisposable traceSession =
+            RuntimeHealthGatewayClient.CreateTraceSession(releaseChannel);
 
+        DesktopLaunchContext.Initialise(options);
         return BuildAvaloniaApp()
             .StartWithClassicDesktopLifetime(
                 Array.Empty<string>(),

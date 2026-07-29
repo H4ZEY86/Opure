@@ -2407,8 +2407,17 @@ recovery are exposed through bounded health signals; they do not crash domain
 services or grant authority.
 
 Operational logs are non-authoritative and are never ingested as Trust
-Evidence. External export, distributed tracing and resource metrics remain
-deferred to their own policy-gated tickets.
+Evidence. FND-019 adds local W3C trace propagation from Desktop Gateway through
+authenticated gRPC metadata to Runtime and the owner service. Trace attributes
+use a fixed low-cardinality allowlist; request and response payloads, source,
+paths, authentication material and baggage are excluded. Runtime completion
+logs receive trace and span correlation while the server activity remains
+active.
+
+Development sampling is explicit. Stable and Preview sampling remain disabled
+until their retention and export policy is reviewed. Trace loss or disabled
+sampling cannot change authority, request outcome or recovery. External export
+and resource metrics remain deferred to their own policy-gated tickets.
 
 ---
 
