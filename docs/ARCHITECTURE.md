@@ -1874,6 +1874,21 @@ is rejected. The initial nine entries are contracts only; Evidence Record
 envelopes, persistence, ingestion, query and reconciliation remain deferred to
 FND-022 through FND-025.
 
+FND-022 adds the provisional common Evidence Record envelope without adding
+persistence or ingestion authority. A record binds an opaque identity to the
+exact type-definition hash, owner record and revision, Authority Class,
+release channel, typed subject, action and outcome, source and observation
+times, bounded project, operation, workflow and trace references, owner
+sequence, retention, preservation and payload integrity metadata.
+
+Inline payloads are canonical JSON objects bounded to 64 KiB. Larger payloads
+use bounded owner or Trust Evidence content-addressed references with an exact
+size and SHA-256 digest. Fields must be declared by the Evidence Type, match
+their type, cannot be labelled below their strongest classification and must
+avoid prohibited secret-bearing names. A framed canonical SHA-256 covers every
+semantic envelope field and the payload digest. These are local integrity and
+corruption signals, not external proof.
+
 ---
 
 ## 67. Trust Record Detail

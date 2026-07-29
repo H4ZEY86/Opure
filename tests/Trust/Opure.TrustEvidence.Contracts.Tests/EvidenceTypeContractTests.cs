@@ -75,7 +75,7 @@ public sealed class EvidenceTypeContractTests
     {
         ArgumentException secretException = Assert.Throws<ArgumentException>(
             () => new EvidencePayloadFieldDefinition(
-                "credential",
+                "classified_value",
                 EvidencePayloadFieldType.String,
                 EvidenceDataClassification.Secret,
                 isRequired: true));

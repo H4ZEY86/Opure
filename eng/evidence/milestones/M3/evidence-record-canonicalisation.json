@@ -1,0 +1,12 @@
+{
+  "schema": "opure.evidence-record-canonicalisation/1",
+  "result": "Passed",
+  "vectorId": "project-operation-inline/1",
+  "canonicalPayloadSha256": "76b96b1e34925aa47eb462f19421a68628510ed34705b42fa481ebc5f2dad5f7",
+  "recordSha256": "606beff62aa17ce3526d881320c180f5d1a44bada1deede20bd38ce1523bd408",
+  "reorderedPayloadRecordSha256": "606beff62aa17ce3526d881320c180f5d1a44bada1deede20bd38ce1523bd408",
+  "semanticChangeRecordSha256": "7871d66eb4b31ba48c52203c00f49826e9ee804746ba161126e7f749c9b32c24",
+  "propertyOrderInvariant": true,
+  "semanticChangeDetected": true,
+  "authoritative": false
+}

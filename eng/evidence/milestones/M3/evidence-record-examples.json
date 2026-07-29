@@ -1,0 +1,47 @@
+{
+  "schema": "opure.evidence-record-examples/1",
+  "result": "Passed",
+  "records": [
+    {
+      "schema": "opure.trust-evidence-record/1",
+      "evidenceId": "00112233445566778899aabbccddeeff",
+      "evidenceTypeId": "test.operation-completed",
+      "evidenceTypeRevision": 1,
+      "evidenceTypeDefinitionSha256": "4f4e7bd1906216caea7284c6c4e200163fb62371135fa46015b2829e4f0fa2bd",
+      "ownerServiceId": "opure.test-owner",
+      "ownerRecordId": "owner_record_0001",
+      "ownerRecordRevision": 1,
+      "authorityClass": "VerifiedServiceReceipt",
+      "releaseChannel": "Development",
+      "scope": "Project",
+      "projectId": "project_00000001",
+      "operationId": "operation_000001",
+      "workflowInstanceId": "workflow_0000001",
+      "traceId": "abcdef0123456789abcdef0123456789",
+      "spanId": "0123456789abcdef",
+      "runtimeBootId": "0123456789abcdef0123456789abcdef",
+      "subjectKind": "Operation",
+      "subjectId": "operation_subject_0001",
+      "action": "operation.complete",
+      "outcome": "completed",
+      "occurredAtUtc": "2026-07-29T12:00:00.0000000\u002B00:00",
+      "observedAtUtc": "2026-07-29T12:00:00.0500000\u002B00:00",
+      "ownerSequence": 1,
+      "previousStreamSha256": null,
+      "retentionClass": "AuthoritativeTrustEvidence",
+      "preservationState": "NotPreserved",
+      "payload": {
+        "location": "Inline",
+        "classification": "Pseudonymous",
+        "payloadSizeBytes": 57,
+        "payloadSha256": "76b96b1e34925aa47eb462f19421a68628510ed34705b42fa481ebc5f2dad5f7",
+        "reference": null
+      },
+      "recordSha256": "606beff62aa17ce3526d881320c180f5d1a44bada1deede20bd38ce1523bd408"
+    }
+  ],
+  "secretValuesIncluded": false,
+  "projectNamesIncluded": false,
+  "pathsIncluded": false,
+  "authoritative": false
+}

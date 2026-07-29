@@ -333,7 +333,8 @@ public sealed class EvidenceTypeDefinition
     public IReadOnlyList<string> SafeIndexFields { get; }
 
     public IReadOnlyList<EvidenceRelationshipKind>
-        RelationshipEligibility { get; }
+        RelationshipEligibility
+    { get; }
 
     public EvidenceRetentionDefinition Retention { get; }
 
@@ -346,11 +347,29 @@ public sealed class EvidenceTypeDefinition
 
 internal static partial class EvidenceTypeContract
 {
+    private static readonly string[] ProhibitedFieldNameParts =
+    [
+        "authorization",
+        "cookie",
+        "credential",
+        "exceptiondata",
+        "password",
+        "payloadraw",
+        "privatekey",
+        "prompt",
+        "requestbody",
+        "responsebody",
+        "secret",
+        "sourcecontent",
+        "token"
+    ];
+
     internal static void ValidateStableId(string value, string parameterName)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(value, parameterName);
 
-        if (!StableIdPattern().IsMatch(value))
+        if (value.Length > 128 ||
+            !StableIdPattern().IsMatch(value))
         {
             throw new ArgumentException(
                 "A Trust Evidence identifier must use a bounded lowercase canonical form.",
@@ -362,12 +381,25 @@ internal static partial class EvidenceTypeContract
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(value, parameterName);
 
-        if (!FieldNamePattern().IsMatch(value))
+        if (!FieldNamePattern().IsMatch(value) ||
+            IsProhibitedFieldName(value))
         {
             throw new ArgumentException(
                 "A Trust Evidence payload field must use bounded snake_case.",
                 parameterName);
         }
+    }
+
+    internal static bool IsProhibitedFieldName(string value)
+    {
+        string compact = value.Replace(
+                "_",
+                string.Empty,
+                StringComparison.Ordinal)
+            .Replace("-", string.Empty, StringComparison.Ordinal);
+
+        return ProhibitedFieldNameParts.Any(part =>
+            compact.Contains(part, StringComparison.OrdinalIgnoreCase));
     }
 
     internal static void ValidateSha256(string value, string parameterName)

@@ -177,36 +177,37 @@ Completed and committed:
 * FND-017 — Add Transactional Inbox.
 * FND-018 — Add Structured Logging.
 * FND-019 — Add Trace Propagation.
+* FND-020 — Add Redaction and Canary Tests.
 
 Locally implemented, verified and committed; pending reviewed push:
 
-* FND-020 — Add Redaction and Canary Tests.
+* FND-021 — Add Evidence Type Schema.
 
 Implemented and verified by the current change:
 
-* FND-021 — Add Evidence Type Schema.
+* FND-022 — Add Evidence Record Schema.
 
-FND-021 includes:
+FND-022 includes:
 
-* the framework-neutral `opure.trust-evidence-type/1` contract;
-* stable type identifiers and immutable revisions;
-* required owner-service and Authority Class binding;
-* typed payload fields with explicit data classification;
-* safe index and relationship eligibility validation;
-* explicit retention, support-export and redaction metadata;
-* deterministic canonical SHA-256 definition identities;
-* exact trusted-catalogue resolution and unknown-type refusal;
-* readable historical revisions without silent owner or authority drift;
-* a reviewed nine-type foundation catalogue;
-* schema, catalogue and authority-review evidence.
+* the framework-neutral `opure.trust-evidence-record/1` envelope;
+* opaque Evidence, owner, subject and correlation identities;
+* exact Evidence Type definition, owner and Authority Class binding;
+* project-scope identity enforcement;
+* distinct UTC-normalised occurrence and observation times;
+* owner sequence, stream hash, retention and preservation metadata;
+* 64 KiB canonical inline JSON payloads;
+* bounded owner and content-addressed payload references;
+* declared-field, type, classification and prohibited-name validation;
+* payload and framed canonical record SHA-256 identities;
+* schema, canonicalisation-vector and safe example evidence.
 
 The next planned ticket is:
 
 ```text
-FND-022 — Add Evidence Record Schema
+FND-023 — Add Trust Evidence Database
 ```
 
-Do not assume FND-021 is complete until the Evidence Type verifier passes and the changes are reviewed, committed and pushed.
+Do not assume FND-022 is complete until the Evidence Record verifier passes and the changes are reviewed, committed and pushed.
 
 ## Build policy
 
