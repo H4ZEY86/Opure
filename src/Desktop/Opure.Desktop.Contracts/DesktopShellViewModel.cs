@@ -13,19 +13,27 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
     private string pageDetail;
 
     public DesktopShellViewModel(DesktopShellSnapshot snapshot)
-        : this(snapshot, CreateDisconnectedRuntimeStatus(snapshot))
+        : this(
+            snapshot,
+            CreateDisconnectedRuntimeStatus(snapshot),
+            new DesktopProjectFolderPickerViewModel(
+                new UnavailableProjectFolderSelectionCoordinator()))
     {
     }
 
     public DesktopShellViewModel(
         DesktopShellSnapshot snapshot,
-        DesktopRuntimeStatusViewModel runtimeHealth)
+        DesktopRuntimeStatusViewModel runtimeHealth,
+        DesktopProjectFolderPickerViewModel? projectFolderPicker = null)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
         ArgumentNullException.ThrowIfNull(runtimeHealth);
 
         Snapshot = snapshot;
         RuntimeHealth = runtimeHealth;
+        ProjectFolderPicker = projectFolderPicker ??
+            new DesktopProjectFolderPickerViewModel(
+                new UnavailableProjectFolderSelectionCoordinator());
         selectedSection = DesktopNavigationSection.Home;
         pageTitle = "Home";
         pageDetail =
@@ -37,6 +45,8 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
     public DesktopShellSnapshot Snapshot { get; }
 
     public DesktopRuntimeStatusViewModel RuntimeHealth { get; }
+
+    public DesktopProjectFolderPickerViewModel ProjectFolderPicker { get; }
 
     public string WindowTitle => Snapshot.WindowTitle;
 
@@ -60,6 +70,9 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
     public string PageTitle => pageTitle;
 
     public string PageDetail => pageDetail;
+
+    public bool IsProjectsPage =>
+        selectedSection == DesktopNavigationSection.Projects;
 
     public void SelectSection(DesktopNavigationSection section)
     {
@@ -94,6 +107,7 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(SelectedSection));
         OnPropertyChanged(nameof(PageTitle));
         OnPropertyChanged(nameof(PageDetail));
+        OnPropertyChanged(nameof(IsProjectsPage));
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
@@ -111,5 +125,20 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
         return new DesktopRuntimeStatusViewModel(
             health,
             new FixedDesktopRuntimeHealthSource(health));
+    }
+
+    private sealed class UnavailableProjectFolderSelectionCoordinator :
+        IProjectFolderSelectionCoordinator
+    {
+        public ValueTask<ProjectFolderSelectionResult> SelectAsync(
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return ValueTask.FromResult(new ProjectFolderSelectionResult(
+                ProjectFolderSelectionDisposition.Rejected,
+                "No folder selected.",
+                "Project Service unavailable.",
+                "The local Runtime must be available before a verified root can be transferred."));
+        }
     }
 }

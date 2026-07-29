@@ -3,7 +3,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('restore', 'build', 'test', 'verify', 'policy', 'version', 'version-policy', 'runtime', 'runtime-policy', 'desktop', 'desktop-policy', 'bootstrap', 'bootstrap-policy', 'supervisor-policy', 'health-contract-policy', 'health-transport-policy', 'health-session-policy', 'service-registry-policy', 'service-lifecycle-policy', 'runtime-health-ui-policy', 'persistence-policy', 'migration-policy', 'outbox-policy', 'inbox-policy', 'structured-logging-policy', 'trace-propagation-policy', 'redaction-policy', 'evidence-type-policy', 'evidence-record-policy', 'trust-database-policy', 'trust-ingestion-policy', 'trust-query-policy', 'path-reference-policy')]
+    [ValidateSet('restore', 'build', 'test', 'verify', 'policy', 'version', 'version-policy', 'runtime', 'runtime-policy', 'desktop', 'desktop-policy', 'bootstrap', 'bootstrap-policy', 'supervisor-policy', 'health-contract-policy', 'health-transport-policy', 'health-session-policy', 'service-registry-policy', 'service-lifecycle-policy', 'runtime-health-ui-policy', 'persistence-policy', 'migration-policy', 'outbox-policy', 'inbox-policy', 'structured-logging-policy', 'trace-propagation-policy', 'redaction-policy', 'evidence-type-policy', 'evidence-record-policy', 'trust-database-policy', 'trust-ingestion-policy', 'trust-query-policy', 'path-reference-policy', 'folder-picker-policy')]
     [string] $Target = 'verify',
 
     [Parameter()]
@@ -173,5 +173,9 @@ switch ($Target) {
 
     'path-reference-policy' {
         & (Join-Path $PSScriptRoot 'eng\verify-path-reference.ps1')
+    }
+
+    'folder-picker-policy' {
+        & (Join-Path $PSScriptRoot 'eng\verify-folder-picker.ps1')
     }
 }

@@ -316,6 +316,12 @@ Run the complete FND-026 Windows Path-Reference evidence gate:
 pwsh ./build.ps1 path-reference-policy
 ```
 
+Run the complete FND-027 Trusted Folder Picker evidence gate:
+
+```powershell
+pwsh ./build.ps1 folder-picker-policy
+```
+
 Bootstrap verifies absolute Runtime and Desktop executable paths and companion assembly identities before launch. It starts Runtime first, waits for explicit Runtime readiness, starts Desktop second, and shuts down Desktop before Runtime.
 
 Supervisor verification injects a bounded Runtime crash, a rapid crash loop and an abrupt Bootstrap termination. It verifies restart identity, exponential backoff, visible Safe Mode and Windows Job Object orphan cleanup without recording child environment values.
@@ -405,5 +411,12 @@ handle-derived final paths, 128-bit file identity, volume binding, alternate
 stream detection and replacement-race revalidation. The library is
 inspection-only: developer approval, mutation, journalling and recovery remain
 owned by later tickets.
+
+Trusted Folder Picker verification exercises one-shot Avalonia folder
+selection, cancellation without transfer, local-root handle verification,
+network and reparse refusal, deletion-after-selection recovery, an opaque
+capability receiver port and keyboard/automation metadata. Desktop retains
+only display classification; the Project Service receiver remains honestly
+unavailable until its dependency-ordered implementation.
 
 Channel-specific data-root and one-time session material are passed through bounded environment variables. The session secret is not placed on command lines, written to disk or included in diagnostics.

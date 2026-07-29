@@ -168,10 +168,10 @@ public sealed class DesktopHeadlessTests
             Assert.NotNull(details);
             Assert.True(refresh.IsTabStop);
             Assert.True(copy.IsTabStop);
-            Assert.Equal(5, refresh.TabIndex);
-            Assert.Equal(6, copy.TabIndex);
-            Assert.Equal(7, services.TabIndex);
-            Assert.Equal(8, details.TabIndex);
+            Assert.Equal(6, refresh.TabIndex);
+            Assert.Equal(7, copy.TabIndex);
+            Assert.Equal(8, services.TabIndex);
+            Assert.Equal(9, details.TabIndex);
 
             refresh.Focus();
             Assert.True(refresh.IsFocused);
@@ -195,6 +195,38 @@ public sealed class DesktopHeadlessTests
                 "Use arrow keys",
                 AutomationProperties.GetName(services));
             Assert.Equal(1, services.ItemCount);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void Project_folder_picker_is_keyboard_focusable_and_labelled()
+    {
+        DesktopShellViewModel viewModel = CreateViewModel();
+        viewModel.SelectSection(DesktopNavigationSection.Projects);
+        MainWindow window = new(viewModel);
+
+        try
+        {
+            window.Show();
+            Button? select =
+                window.FindControl<Button>("SelectProjectFolderButton");
+
+            Assert.NotNull(select);
+            Assert.True(select.IsTabStop);
+            Assert.Equal(5, select.TabIndex);
+            Assert.Equal(
+                "Select project folder",
+                AutomationProperties.GetName(select));
+            Assert.Equal(
+                "SelectProjectFolder",
+                AutomationProperties.GetAutomationId(select));
+
+            select.Focus();
+            Assert.True(select.IsFocused);
         }
         finally
         {

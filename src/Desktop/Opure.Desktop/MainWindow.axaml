@@ -114,6 +114,46 @@
             Text="{Binding PageDetail}"
             TextWrapping="Wrap" />
 
+        <GroupBox
+            Header="Open project"
+            IsVisible="{Binding IsProjectsPage}"
+            AutomationProperties.Name="Open a verified project folder"
+            AutomationProperties.AutomationId="ProjectFolderPicker">
+          <StackPanel Margin="8" Spacing="8">
+            <Button
+                x:Name="SelectProjectFolderButton"
+                Content="_Select folder"
+                Click="OnSelectProjectFolderClick"
+                IsEnabled="{Binding ProjectFolderPicker.CanSelect}"
+                IsTabStop="True"
+                TabIndex="5"
+                HorizontalAlignment="Left"
+                AutomationProperties.Name="Select project folder"
+                AutomationProperties.AutomationId="SelectProjectFolder"
+                AutomationProperties.AccessKey="Alt+S" />
+            <ProgressBar
+                IsIndeterminate="True"
+                IsVisible="{Binding ProjectFolderPicker.IsSelecting}"
+                AutomationProperties.Name="Verifying selected project folder" />
+            <TextBlock
+                Text="{Binding ProjectFolderPicker.SelectedPathDisplay}"
+                TextWrapping="Wrap"
+                AutomationProperties.Name="{Binding ProjectFolderPicker.SelectedPathDisplay}"
+                AutomationProperties.AutomationId="SelectedProjectPathDisplay" />
+            <TextBlock
+                Text="{Binding ProjectFolderPicker.Classification}"
+                FontWeight="SemiBold"
+                TextWrapping="Wrap"
+                AutomationProperties.Name="{Binding ProjectFolderPicker.Classification}"
+                AutomationProperties.AutomationId="SelectedProjectPathClassification" />
+            <TextBlock
+                Text="{Binding ProjectFolderPicker.SafeDetail}"
+                TextWrapping="Wrap"
+                AutomationProperties.Name="{Binding ProjectFolderPicker.SafeDetail}"
+                AutomationProperties.AutomationId="SelectedProjectPathDetail" />
+          </StackPanel>
+        </GroupBox>
+
         <Border
             x:Name="SafeModeBanner"
             IsVisible="{Binding RuntimeHealth.IsSafeMode}"
@@ -173,7 +213,7 @@
                   Click="OnRefreshRuntimeClick"
                   IsEnabled="{Binding RuntimeHealth.CanRefresh}"
                   IsTabStop="True"
-                  TabIndex="5"
+                  TabIndex="6"
                   AutomationProperties.Name="Refresh Runtime Health"
                   AutomationProperties.AutomationId="RefreshRuntimeHealth"
                   AutomationProperties.AccessKey="Alt+R" />
@@ -222,7 +262,7 @@
                   Click="OnCopyRuntimeBootIdentityClick"
                   IsEnabled="{Binding RuntimeHealth.CanCopyBootIdentity}"
                   IsTabStop="True"
-                  TabIndex="6"
+                  TabIndex="7"
                   AutomationProperties.Name="Copy Runtime boot identity"
                   AutomationProperties.AutomationId="CopyRuntimeBootIdentity"
                   AutomationProperties.AccessKey="Alt+C" />
@@ -244,7 +284,7 @@
                     MaxHeight="260"
                     ItemsSource="{Binding RuntimeHealth.Services}"
                     SelectionMode="Single"
-                    TabIndex="7"
+                    TabIndex="8"
                     AutomationProperties.Name="Runtime services. Use arrow keys to inspect each row."
                     AutomationProperties.AutomationId="RuntimeServiceHealthList">
                   <ListBox.ItemTemplate>
@@ -285,7 +325,7 @@
                 x:Name="RuntimeDetailsExpander"
                 Header="Runtime details"
                 IsExpanded="False"
-                TabIndex="8"
+                TabIndex="9"
                 AutomationProperties.Name="Runtime diagnostic details"
                 AutomationProperties.AutomationId="RuntimeDetailsDisclosure">
               <Grid

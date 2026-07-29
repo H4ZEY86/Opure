@@ -54,6 +54,30 @@ public sealed record WindowsResolvedPath(
     bool HasNamedStreams,
     DateTimeOffset VerifiedAtUtc);
 
+public sealed class VerifiedWorkspaceRootReference
+{
+    internal VerifiedWorkspaceRootReference(
+        WindowsRegisteredWorkspaceRoot root)
+    {
+        Root = root;
+    }
+
+    public Guid ReferenceId => Root.RegistrationId;
+
+    public FilesystemVolumeClass VolumeClass => Root.Volume.VolumeClass;
+
+    public string DisplayPath => Root.DisplayPath;
+
+    internal WindowsRegisteredWorkspaceRoot Root { get; }
+}
+
+public interface IVerifiedWorkspaceRootReceiver
+{
+    ValueTask ReceiveAsync(
+        VerifiedWorkspaceRootReference reference,
+        CancellationToken cancellationToken);
+}
+
 [SupportedOSPlatform("windows")]
 public sealed class VerifiedWindowsPathReference : IDisposable
 {

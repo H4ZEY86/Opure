@@ -1,0 +1,13 @@
+{
+  "schema": "opure.folder-picker-flow/1",
+  "result": "Passed",
+  "pathAcquisitions": 1,
+  "cancelledStateChange": false,
+  "desktopRetainsCapability": false,
+  "localTransfer": "VerifiedReferenceOnly",
+  "networkPolicy": "RejectedBeforeAccess",
+  "reparsePolicy": "Rejected",
+  "deletedSelection": "Rejected",
+  "recentPathAuthority": false,
+  "projectServiceUnavailable": "VisibleAndNonPersistent"
+}

@@ -1,0 +1,12 @@
+{
+  "schema": "opure.folder-picker-accessibility/1",
+  "result": "Passed",
+  "control": "Select project folder",
+  "keyboardFocusable": true,
+  "tabIndex": 5,
+  "automationId": "SelectProjectFolder",
+  "accessKey": "Alt+S",
+  "classificationTextVisible": true,
+  "safeDetailVisible": true,
+  "colourOnlyStatus": false
+}

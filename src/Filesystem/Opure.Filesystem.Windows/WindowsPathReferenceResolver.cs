@@ -39,6 +39,20 @@ public sealed class WindowsPathReferenceResolver
             volume);
     }
 
+    public static VerifiedWorkspaceRootReference AcquireRoot(
+        UntrustedPathText input)
+    {
+        return new VerifiedWorkspaceRootReference(RegisterRoot(input));
+    }
+
+    public static VerifiedWindowsPathReference ResolveExisting(
+        VerifiedWorkspaceRootReference root,
+        LogicalWorkspacePath logicalPath)
+    {
+        ArgumentNullException.ThrowIfNull(root);
+        return ResolveExisting(root.Root, logicalPath);
+    }
+
     public static VerifiedWindowsPathReference ResolveExisting(
         WindowsRegisteredWorkspaceRoot root,
         LogicalWorkspacePath logicalPath)

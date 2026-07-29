@@ -27,6 +27,13 @@ public partial class MainWindow : Window
 
         InitializeComponent();
         DataContext = viewModel;
+        if (OperatingSystem.IsWindows())
+        {
+            viewModel.ProjectFolderPicker.SetCoordinator(
+                new ProjectFolderSelectionCoordinator(
+                    new AvaloniaFolderPickerAdapter(this),
+                    new UnavailableProjectRootReceiver()));
+        }
         Opened += OnWindowOpened;
         Closed += OnWindowClosed;
     }
@@ -102,6 +109,23 @@ public partial class MainWindow : Window
         }
 
         await Clipboard.SetTextAsync(viewModel.RuntimeHealth.RuntimeBootId);
+    }
+
+    private async void OnSelectProjectFolderClick(
+        object? sender,
+        RoutedEventArgs eventArgs)
+    {
+        _ = sender;
+        _ = eventArgs;
+
+        try
+        {
+            await viewModel.ProjectFolderPicker.SelectAsync(
+                refreshCancellation?.Token ?? CancellationToken.None);
+        }
+        catch (OperationCanceledException)
+        {
+        }
     }
 
     private async Task RunRefreshLoopAsync(CancellationToken cancellationToken)

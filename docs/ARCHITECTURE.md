@@ -2830,6 +2830,13 @@ FND-026 is inspection-only. Folder-picker capability transfer, mutation,
 journalling, recovery and Project Service registration remain owned by later
 tickets.
 
+The FND-027 Desktop folder-picker adapter acquires one developer selection and
+passes it directly to the Windows filesystem boundary. Desktop receives only
+display classification and transfers the opaque verified-root reference
+through a receiver port; it neither opens project files nor persists
+authority. Until the Project Service is implemented, transfer is refused
+visibly and the reference is discarded.
+
 The following rules should be enforced as architectural invariants:
 
 1. AI providers are accessed only through the AI Router.

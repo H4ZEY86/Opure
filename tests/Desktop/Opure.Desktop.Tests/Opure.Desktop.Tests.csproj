@@ -20,6 +20,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Desktop\Opure.Desktop\Opure.Desktop.csproj" />
     <ProjectReference Include="..\..\..\src\Desktop\Opure.Desktop.Contracts\Opure.Desktop.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\src\Filesystem\Opure.Filesystem.Contracts\Opure.Filesystem.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\src\Filesystem\Opure.Filesystem.Windows\Opure.Filesystem.Windows.csproj" />
   </ItemGroup>
 
 </Project>

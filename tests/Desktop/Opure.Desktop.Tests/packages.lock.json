@@ -381,7 +381,9 @@
           "Avalonia.Desktop": "[12.1.0, )",
           "Avalonia.Themes.Fluent": "[12.1.0, )",
           "Opure.Desktop.Contracts": "[1.0.0, )",
-          "Opure.Desktop.GatewayClient": "[1.0.0, )"
+          "Opure.Desktop.GatewayClient": "[1.0.0, )",
+          "Opure.Filesystem.Contracts": "[1.0.0, )",
+          "Opure.Filesystem.Windows": "[1.0.0, )"
         }
       },
       "opure.desktop.contracts": {
@@ -395,6 +397,15 @@
           "Opure.Ipc.NamedPipes.Windows": "[1.0.0, )",
           "Opure.Observability": "[1.0.0, )",
           "Opure.Runtime.Contracts": "[1.0.0, )"
+        }
+      },
+      "opure.filesystem.contracts": {
+        "type": "Project"
+      },
+      "opure.filesystem.windows": {
+        "type": "Project",
+        "dependencies": {
+          "Opure.Filesystem.Contracts": "[1.0.0, )"
         }
       },
       "opure.ipc.abstractions": {

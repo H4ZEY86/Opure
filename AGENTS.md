@@ -186,31 +186,33 @@ Locally implemented, verified and committed; pending reviewed pushes:
 * FND-023 — Add Trust Evidence Database.
 * FND-024 — Add Trust Evidence Ingestion.
 * FND-025 — Add Trust Query Contract.
+* FND-026 — Add Windows Path-Reference Library.
 
 Implemented and verified by the current change:
 
-* FND-026 — Add Windows Path-Reference Library.
+* FND-027 — Add Trusted Folder Picker Adapter.
 
-FND-026 includes:
+FND-027 includes:
 
-* framework-neutral untrusted text, logical path and file-identity contracts;
-* bounded relative path parsing with traversal, stream, reserved-name and
-  trailing-dot-or-space refusal;
-* ordinary local-drive root registration with direct-directory verification;
-* no-follow handle walking for every component and explicit reparse denial;
-* handle-derived final paths, 128-bit file identity and volume binding;
-* fixed, removable, network and unsupported volume classification;
-* alternate-data-stream detection followed by identity revalidation;
-* held-handle leaf and root replacement-race detection;
-* a reviewed threat model, adversarial report and typed API review.
+* a framework-neutral folder-selection projection and view model;
+* one-shot Avalonia folder acquisition through a platform adapter;
+* immediate handoff to the Windows path-reference boundary;
+* an opaque verified-root receiver port with no Desktop authority retention;
+* cancellation without capability transfer or state mutation;
+* visible fixed-local, removable, network, unsupported and failure
+  classifications;
+* reparse, network and deletion-after-selection refusal;
+* an honest unavailable Project Service state pending FND-028;
+* keyboard focus, access-key and stable automation metadata;
+* reviewed picker-flow, capability-transfer and accessibility evidence.
 
 The next planned ticket is:
 
 ```text
-FND-027 — Add Trusted Folder Picker Adapter
+FND-028 — Add Project Service Database
 ```
 
-Do not assume FND-026 is complete until the Windows Path-Reference verifier
+Do not assume FND-027 is complete until the Trusted Folder Picker verifier
 passes and the changes are reviewed, committed and pushed.
 
 ## Build policy
