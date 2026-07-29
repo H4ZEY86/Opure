@@ -2,7 +2,7 @@
   "schema": "opure.trust-database-migration-report/1",
   "result": "Passed",
   "StartingVersion": 0,
-  "CurrentVersion": 4,
+  "CurrentVersion": 5,
   "migrations": [
     {
       "MigrationId": "trust-evidence-core-v1",
@@ -27,6 +27,12 @@
       "SourceVersion": 3,
       "TargetVersion": 4,
       "Checksum": "580217a31245bf8872f389a372c4f1ac41545ad4574b8bd276200f734f5715c0"
+    },
+    {
+      "MigrationId": "trust-evidence-query-v5",
+      "SourceVersion": 4,
+      "TargetVersion": 5,
+      "Checksum": "3d46ac62aa82c3b60abb1768523a6b3321397f3fde6e643512e37253da6c98db"
     }
   ],
   "validations": [
@@ -212,6 +218,102 @@
     },
     {
       "ValidationId": "trust-verified-receipt-projection-present",
+      "ExpectedScalar": "1",
+      "ActualScalar": "1",
+      "Passed": true
+    },
+    {
+      "ValidationId": "trust-core-tables-present",
+      "ExpectedScalar": "6",
+      "ActualScalar": "6",
+      "Passed": true
+    },
+    {
+      "ValidationId": "trust-record-type-foreign-key-present",
+      "ExpectedScalar": "3",
+      "ActualScalar": "3",
+      "Passed": true
+    },
+    {
+      "ValidationId": "trust-payload-foreign-key-present",
+      "ExpectedScalar": "1",
+      "ActualScalar": "1",
+      "Passed": true
+    },
+    {
+      "ValidationId": "inbox-tables-present",
+      "ExpectedScalar": "2",
+      "ActualScalar": "2",
+      "Passed": true
+    },
+    {
+      "ValidationId": "inbox-retention-triggers-present",
+      "ExpectedScalar": "4",
+      "ActualScalar": "4",
+      "Passed": true
+    },
+    {
+      "ValidationId": "inbox-conflict-foreign-key-present",
+      "ExpectedScalar": "3",
+      "ActualScalar": "3",
+      "Passed": true
+    },
+    {
+      "ValidationId": "trust-projection-tables-present",
+      "ExpectedScalar": "3",
+      "ActualScalar": "3",
+      "Passed": true
+    },
+    {
+      "ValidationId": "trust-safe-query-indexes-present",
+      "ExpectedScalar": "5",
+      "ActualScalar": "5",
+      "Passed": true
+    },
+    {
+      "ValidationId": "trust-full-text-payload-copy-absent",
+      "ExpectedScalar": "0",
+      "ActualScalar": "0",
+      "Passed": true
+    },
+    {
+      "ValidationId": "trust-ingestion-tables-present",
+      "ExpectedScalar": "3",
+      "ActualScalar": "3",
+      "Passed": true
+    },
+    {
+      "ValidationId": "trust-ingestion-indexes-present",
+      "ExpectedScalar": "2",
+      "ActualScalar": "2",
+      "Passed": true
+    },
+    {
+      "ValidationId": "trust-ingestion-receipt-inbox-foreign-key",
+      "ExpectedScalar": "3",
+      "ActualScalar": "3",
+      "Passed": true
+    },
+    {
+      "ValidationId": "trust-verified-receipt-projection-present",
+      "ExpectedScalar": "1",
+      "ActualScalar": "1",
+      "Passed": true
+    },
+    {
+      "ValidationId": "trust-query-projection-state-present",
+      "ExpectedScalar": "1",
+      "ActualScalar": "1",
+      "Passed": true
+    },
+    {
+      "ValidationId": "trust-query-projection-state-singleton",
+      "ExpectedScalar": "1",
+      "ActualScalar": "1",
+      "Passed": true
+    },
+    {
+      "ValidationId": "trust-query-project-channel-index-present",
       "ExpectedScalar": "1",
       "ActualScalar": "1",
       "Passed": true

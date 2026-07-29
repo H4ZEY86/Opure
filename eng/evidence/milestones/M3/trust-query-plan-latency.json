@@ -1,0 +1,14 @@
+{
+  "schema": "opure.trust-query-plan-latency/1",
+  "result": "Passed",
+  "index": "ix_evidence_records_project_channel_query",
+  "queryPlan": "SEARCH evidence_records USING COVERING INDEX ix_evidence_records_project_channel_query (project_id=? AND release_channel=? AND occurred_at_utc\u003E? AND occurred_at_utc\u003C?)",
+  "measuredRecords": 1,
+  "elapsedMilliseconds": 0,
+  "budgetMilliseconds": 2000,
+  "cursorPagination": "Keyset",
+  "snapshotMaximumRowBound": true,
+  "projectionGenerationBound": true,
+  "concurrentRecordExcluded": true,
+  "payloadColumnsSelected": false
+}

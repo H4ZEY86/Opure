@@ -5,11 +5,12 @@ namespace Opure.TrustEvidence.Sqlite;
 
 /// <summary>
 /// Defines the reviewed, service-owned schema for the non-authoritative Trust
-/// Evidence store. Ingestion behaviour is deliberately owned by a later ticket.
+/// Evidence store. Ingestion and query behaviour remain separate explicit
+/// service boundaries over this schema.
 /// </summary>
 public static class TrustEvidenceDatabaseSchema
 {
-    public const int CurrentVersion = 4;
+    public const int CurrentVersion = 5;
     public const string EvidenceTypeDefinitionTable = "evidence_type_definitions";
     public const string EvidenceTypeRevisionTable = "evidence_type_revisions";
     public const string EvidenceRecordTable = "evidence_records";
@@ -23,6 +24,7 @@ public static class TrustEvidenceDatabaseSchema
     public const string IngestionQuarantineTable =
         "evidence_ingestion_quarantine";
     public const string OwnerGapTable = "evidence_owner_gaps";
+    public const string ProjectionStateTable = "trust_projection_state";
     public const string OwnerSequenceIndex = "ix_evidence_records_owner_sequence";
     public const string ProjectQueryIndex = "ix_trust_projection_project_query";
     public const string OperationQueryIndex = "ix_trust_projection_operation_query";
@@ -31,6 +33,8 @@ public static class TrustEvidenceDatabaseSchema
     public const string QuarantineLatestIndex =
         "ix_evidence_quarantine_latest";
     public const string OwnerGapStateIndex = "ix_evidence_owner_gaps_state";
+    public const string ProjectChannelQueryIndex =
+        "ix_evidence_records_project_channel_query";
 
     private static readonly ReadOnlyCollection<string> CoreCommands =
         Array.AsReadOnly(
@@ -312,6 +316,58 @@ public static class TrustEvidenceDatabaseSchema
             """
         ]);
 
+    private static readonly ReadOnlyCollection<string> QueryCommands =
+        Array.AsReadOnly(
+        [
+            $"""
+            CREATE TABLE {ProjectionStateTable} (
+                state_id INTEGER PRIMARY KEY CHECK (state_id = 1),
+                projection_generation TEXT NOT NULL CHECK (length(projection_generation) = 32),
+                rebuilt_at_utc TEXT NOT NULL,
+                updated_at_utc TEXT NOT NULL,
+                projection_status TEXT NOT NULL CHECK (projection_status IN ('Current', 'RebuildRequired'))
+            ) STRICT
+            """,
+            $"""
+            INSERT INTO {ProjectionStateTable} (
+                state_id,
+                projection_generation,
+                rebuilt_at_utc,
+                updated_at_utc,
+                projection_status)
+            SELECT
+                1,
+                lower(hex(randomblob(16))),
+                '1970-01-01T00:00:00.0000000+00:00',
+                COALESCE(
+                    (SELECT MAX(projected_at_utc)
+                       FROM {ProjectionRecordTable}),
+                    '1970-01-01T00:00:00.0000000+00:00'),
+                CASE
+                    WHEN (SELECT COUNT(*) FROM {EvidenceRecordTable}) =
+                         (SELECT COUNT(*) FROM {ProjectionRecordTable})
+                    THEN 'Current'
+                    ELSE 'RebuildRequired'
+                END
+            """,
+            $"""
+            UPDATE {ProjectionRecordTable}
+               SET projection_generation = (
+                   SELECT projection_generation
+                     FROM {ProjectionStateTable}
+                    WHERE state_id = 1)
+            """,
+            $"""
+            CREATE INDEX {ProjectChannelQueryIndex}
+                ON {EvidenceRecordTable} (
+                    project_id,
+                    release_channel,
+                    occurred_at_utc DESC,
+                    evidence_id DESC)
+                WHERE project_id IS NOT NULL
+            """
+        ]);
+
     public static SqliteMigrationCatalogue CreateCatalogue(
         int targetVersion = CurrentVersion)
     {
@@ -361,6 +417,16 @@ public static class TrustEvidenceDatabaseSchema
                 IngestionCommands));
         }
 
+        if (targetVersion >= 5)
+        {
+            migrations.Add(new SqliteMigration(
+                "trust-evidence-query-v5",
+                sourceVersion: 4,
+                targetVersion: 5,
+                "Creates database-owned projection generation state and the bounded project-channel query index.",
+                QueryCommands));
+        }
+
         return new SqliteMigrationCatalogue(
             migrations,
             CreateValidations(targetVersion));
@@ -384,6 +450,7 @@ public static class TrustEvidenceDatabaseSchema
             IngestionReceiptTable,
             IngestionQuarantineTable,
             OwnerGapTable,
+            ProjectionStateTable,
             OwnerSequenceIndex,
             ProjectQueryIndex,
             OperationQueryIndex,
@@ -391,6 +458,7 @@ public static class TrustEvidenceDatabaseSchema
             RetentionEffectiveIndex,
             QuarantineLatestIndex,
             OwnerGapStateIndex,
+            ProjectChannelQueryIndex,
             "__opure_inbox_conflicts_latest",
             "__opure_inbox_receipts_immutable",
             "__opure_inbox_receipts_retained",
@@ -471,6 +539,28 @@ public static class TrustEvidenceDatabaseSchema
                     "trust-verified-receipt-projection-present",
                     minimumSchemaVersion: 4,
                     $"SELECT COUNT(*) FROM pragma_table_info('{ProjectionRecordTable}') WHERE name = 'verification_class' AND \"notnull\" = 1",
+                    "1")
+            ]);
+        }
+
+        if (targetVersion >= 5)
+        {
+            validations.AddRange(
+            [
+                new SqliteSchemaValidation(
+                    "trust-query-projection-state-present",
+                    minimumSchemaVersion: 5,
+                    $"SELECT COUNT(*) FROM sqlite_schema WHERE type = 'table' AND name = '{ProjectionStateTable}'",
+                    "1"),
+                new SqliteSchemaValidation(
+                    "trust-query-projection-state-singleton",
+                    minimumSchemaVersion: 5,
+                    $"SELECT COUNT(*) FROM {ProjectionStateTable} WHERE state_id = 1 AND length(projection_generation) = 32",
+                    "1"),
+                new SqliteSchemaValidation(
+                    "trust-query-project-channel-index-present",
+                    minimumSchemaVersion: 5,
+                    $"SELECT COUNT(*) FROM sqlite_schema WHERE type = 'index' AND name = '{ProjectChannelQueryIndex}'",
                     "1")
             ]);
         }

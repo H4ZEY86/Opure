@@ -181,37 +181,37 @@ Completed and committed:
 * FND-021 — Add Evidence Type Schema.
 * FND-022 — Add Evidence Record Schema.
 
-Locally implemented, verified and committed; pending reviewed push:
+Locally implemented, verified and committed; pending reviewed pushes:
 
 * FND-023 — Add Trust Evidence Database.
+* FND-024 — Add Trust Evidence Ingestion.
 
 Implemented and verified by the current change:
 
-* FND-024 — Add Trust Evidence Ingestion.
+* FND-025 — Add Trust Query Contract.
 
-FND-024 includes:
+FND-025 includes:
 
-* a framework-neutral versioned ingestion request and stable receipt;
-* transport-authenticated, time-bounded owner session binding;
-* exact Evidence Type revision, owner, Authority Class and definition-hash
-  validation;
-* independent payload and record SHA-256 envelope binding;
-* idempotent matching duplicate acknowledgement across restart;
-* retained conflicting-duplicate and unknown-type quarantine without payload
-  persistence;
-* owner sequence, previous-stream hash and gap handling;
-* atomic inbox, record, payload, sequence, relationship, Verified Service
-  Receipt projection, retention, receipt and gap writes;
-* complete rollback on injected database failure;
-* ingestion contract, authentication and conflict evidence.
+* the framework-neutral `opure.trust-query/1` typed request and snapshot;
+* transport-authenticated, time-bounded project and release-channel scope;
+* operation, Evidence Type, Authority Class, outcome and bounded UTC filters;
+* a maximum 31-day range and 100-result page;
+* fixed parameterised SQLite queries with no raw SQL, regex or expression
+  surface;
+* keyset cursors bound to exact filters, snapshot row anchor and database-owned
+  projection generation;
+* stable concurrent-ingestion pagination and refresh after projection rebuild;
+* Verified Service Receipt metadata only, with payloads and references omitted;
+* explicit freshness, owner availability, completeness and redaction metadata;
+* query schema, cross-project and query-plan/latency evidence.
 
 The next planned ticket is:
 
 ```text
-FND-025 — Add Trust Query Contract
+FND-026 — Add Windows Path-Reference Library
 ```
 
-Do not assume FND-024 is complete until the Trust Evidence ingestion verifier passes and the changes are reviewed, committed and pushed.
+Do not assume FND-025 is complete until the Trust Evidence query verifier passes and the changes are reviewed, committed and pushed.
 
 ## Build policy
 

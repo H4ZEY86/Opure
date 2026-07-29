@@ -82,7 +82,7 @@ if ($schema.schema -ne 'opure.trust-database-schema/1' -or
     $schema.result -ne 'Passed' -or
     $schema.databaseName -ne 'trust' -or
     $schema.ownerServiceId -ne 'opure.trust-evidence' -or
-    $schema.schemaVersion -ne 4 -or
+    $schema.schemaVersion -ne 5 -or
     $schema.journalMode -ne 'WAL' -or
     $schema.foreignKeysEnabled -ne $true -or
     $schema.oneWriter -ne $true -or
@@ -104,7 +104,8 @@ foreach ($table in @(
     '__opure_inbox_conflicts',
     'trust_projection_checkpoints',
     'trust_projection_records',
-    'evidence_retention_decisions')) {
+    'evidence_retention_decisions',
+    'trust_projection_state')) {
     if ($table -notin $schema.tables) {
         throw "FND-023 schema evidence omits table: $table"
     }
@@ -113,7 +114,8 @@ foreach ($table in @(
 foreach ($index in @(
     'ix_evidence_records_owner_sequence',
     'ix_trust_projection_project_query',
-    'ix_trust_projection_operation_query')) {
+    'ix_trust_projection_operation_query',
+    'ix_evidence_records_project_channel_query')) {
     if ($index -notin $schema.indexes) {
         throw "FND-023 schema evidence omits reviewed index: $index"
     }
@@ -122,9 +124,9 @@ foreach ($index in @(
 if ($migration.schema -ne 'opure.trust-database-migration-report/1' -or
     $migration.result -ne 'Passed' -or
     $migration.StartingVersion -ne 0 -or
-    $migration.CurrentVersion -ne 4 -or
-    $migration.migrations.Count -ne 4 -or
-    $migration.validations.Count -lt 12 -or
+    $migration.CurrentVersion -ne 5 -or
+    $migration.migrations.Count -ne 5 -or
+    $migration.validations.Count -lt 15 -or
     @($migration.validations | Where-Object { -not $_.Passed }).Count -ne 0 -or
     $migration.recoveryMeaning -notmatch 'not proof') {
     throw 'FND-023 migration evidence is incomplete or failed.'

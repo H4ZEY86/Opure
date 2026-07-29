@@ -3,7 +3,7 @@
   "result": "Passed",
   "databaseName": "trust",
   "ownerServiceId": "opure.trust-evidence",
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "journalMode": "WAL",
   "foreignKeysEnabled": true,
   "oneWriter": true,
@@ -23,13 +23,15 @@
     "evidence_type_definitions",
     "evidence_type_revisions",
     "trust_projection_checkpoints",
-    "trust_projection_records"
+    "trust_projection_records",
+    "trust_projection_state"
   ],
   "indexes": [
     "__opure_inbox_conflicts_latest",
     "ix_evidence_owner_gaps_state",
     "ix_evidence_quarantine_latest",
     "ix_evidence_records_owner_sequence",
+    "ix_evidence_records_project_channel_query",
     "ix_evidence_relationships_target",
     "ix_evidence_retention_effective",
     "ix_trust_projection_operation_query",

@@ -304,6 +304,12 @@ Run the complete FND-024 Trust Evidence ingestion evidence gate:
 pwsh ./build.ps1 trust-ingestion-policy
 ```
 
+Run the complete FND-025 Trust Evidence query evidence gate:
+
+```powershell
+pwsh ./build.ps1 trust-query-policy
+```
+
 Bootstrap verifies absolute Runtime and Desktop executable paths and companion assembly identities before launch. It starts Runtime first, waits for explicit Runtime readiness, starts Desktop second, and shuts down Desktop before Runtime.
 
 Supervisor verification injects a bounded Runtime crash, a rapid crash loop and an abrupt Bootstrap termination. It verifies restart identity, exponential backoff, visible Safe Mode and Windows Job Object orphan cleanup without recording child environment values.
@@ -377,5 +383,14 @@ quarantine, owner-gap recording, previous-stream validation and injected
 database rollback. Inbox, record, payload, sequence, projection, retention,
 receipt and gap writes share one SQLite transaction. The projection is a
 Verified Service Receipt and does not replace owner-domain authority.
+
+Trust Evidence query verification exercises the typed `opure.trust-query/1`
+contract, transport-authenticated project and release-channel scope, operation,
+Evidence Type, Authority Class, outcome and bounded time filters, stable keyset
+pagination during concurrent ingestion, malformed and mismatched cursors,
+projection-generation refresh, owner-gap completeness, payload omission and the
+reviewed project/channel/time query index. Query snapshots expose freshness,
+owner availability, completeness and redaction metadata; raw SQL, regex and
+arbitrary expressions are not contract fields.
 
 Channel-specific data-root and one-time session material are passed through bounded environment variables. The session secret is not placed on command lines, written to disk or included in diagnostics.

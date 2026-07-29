@@ -1,0 +1,30 @@
+{
+  "schema": "opure.trust-query/1",
+  "result": "Passed",
+  "contractRevision": 1,
+  "maximumPageSize": 100,
+  "maximumTimeRangeDays": 31,
+  "maximumCursorLength": 2048,
+  "scope": [
+    "ReleaseChannel",
+    "Project"
+  ],
+  "filters": [
+    "Operation",
+    "EvidenceType",
+    "Authority",
+    "Outcome",
+    "TimeRange"
+  ],
+  "rawSqlAccepted": false,
+  "arbitraryExpressionAccepted": false,
+  "payloadReturned": false,
+  "snapshotMetadata": [
+    "CalculatedAtUtc",
+    "ProjectionGeneration",
+    "ProjectionUpdatedAtUtc",
+    "OwnerAvailability",
+    "Completeness",
+    "Redaction"
+  ]
+}

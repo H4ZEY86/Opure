@@ -1889,6 +1889,30 @@ avoid prohibited secret-bearing names. A framed canonical SHA-256 covers every
 semantic envelope field and the payload digest. These are local integrity and
 corruption signals, not external proof.
 
+FND-023 and FND-024 add the service-owned `trust.db` projection store and
+authenticated ingestion boundary. The owner service remains authoritative.
+Trust Evidence atomically commits the immutable inbox receipt, validated record
+and payload reference, owner sequence, relationships, Verified Service Receipt
+projection, retention decision, ingestion receipt and any owner gap. Matching
+retries are idempotent; conflicting identities retain bounded quarantine
+metadata without copying the conflicting payload.
+
+FND-025 adds the provisional `opure.trust-query/1` read contract. Each query is
+bound to an authenticated local session's exact release channel and authorised
+opaque project set before database access. Typed operation, Evidence Type,
+Authority Class, outcome and time filters are fixed and parameterised; raw SQL,
+regex and arbitrary expressions are not accepted. Time ranges are limited to
+31 days and pages to 100 results.
+
+Cursor pagination binds the exact filters, first-page row anchor, calculation
+time and database-owned projection generation. Later ingestion cannot enter an
+existing snapshot, while a projection reset changes generation and requires a
+refresh. Results contain only Verified Service Receipt metadata. Payload bytes
+and payload references remain omitted, and freshness, owner availability,
+completeness and redaction are explicit. Cursor integrity is a local
+consistency signal, not authentication; authorisation is re-evaluated on every
+page.
+
 ---
 
 ## 67. Trust Record Detail

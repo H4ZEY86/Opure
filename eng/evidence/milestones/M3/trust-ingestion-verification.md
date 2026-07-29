@@ -39,5 +39,5 @@ Evidence files:
 - `trust-ingestion-owner-authentication.json`;
 - `trust-ingestion-duplicate-conflict.json`.
 
-Owner reconciliation and query contracts remain dependency-ordered work for
-FND-025 and FND-026.
+The query contract is verified separately by FND-025. Owner reconciliation
+remains dependency-ordered work for FND-056 and FND-057.

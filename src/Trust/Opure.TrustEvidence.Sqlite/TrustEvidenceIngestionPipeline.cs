@@ -21,7 +21,6 @@ public sealed class TrustEvidenceIngestionPipeline
     private readonly EvidenceTypeCatalogue evidenceTypes;
     private readonly SqliteInboxProcessor inbox;
     private readonly TimeProvider timeProvider;
-    private readonly string projectionGeneration;
 
     internal TrustEvidenceIngestionPipeline(
         SqliteServiceDatabase database,
@@ -33,7 +32,6 @@ public sealed class TrustEvidenceIngestionPipeline
         this.evidenceTypes = evidenceTypes ??
             throw new ArgumentNullException(nameof(evidenceTypes));
         this.timeProvider = timeProvider ?? TimeProvider.System;
-        projectionGeneration = EvidenceRecord.CreateEvidenceId();
         SqliteInboxContract[] contracts = evidenceTypes.Definitions
             .Select(static definition => definition.OwnerServiceId)
             .Distinct(StringComparer.Ordinal)
@@ -232,7 +230,7 @@ public sealed class TrustEvidenceIngestionPipeline
         return inbox.ReadConflictHealth(cancellationToken);
     }
 
-    private void ApplyIngestion(
+    private static void ApplyIngestion(
         SqliteConnection connection,
         SqliteTransaction transaction,
         EvidenceIngestionRequest request,
@@ -241,6 +239,9 @@ public sealed class TrustEvidenceIngestionPipeline
         DateTimeOffset now)
     {
         EvidenceRecord record = request.Record;
+        string projectionGeneration = ReadProjectionGeneration(
+            connection,
+            transaction);
 
         if (!resolution.IsTrusted)
         {
@@ -260,6 +261,7 @@ public sealed class TrustEvidenceIngestionPipeline
                 reason,
                 sequenceGapDetected: false,
                 domainEffectApplied: true,
+                projectionGeneration,
                 now);
             return;
         }
@@ -285,6 +287,7 @@ public sealed class TrustEvidenceIngestionPipeline
                     EvidenceIngestionCodes.Duplicate,
                     sequenceGapDetected: false,
                     domainEffectApplied: false,
+                    projectionGeneration,
                     now);
                 return;
             }
@@ -295,6 +298,7 @@ public sealed class TrustEvidenceIngestionPipeline
                 request,
                 receiptId,
                 EvidenceIngestionCodes.EvidenceConflict,
+                projectionGeneration,
                 now);
             return;
         }
@@ -313,6 +317,7 @@ public sealed class TrustEvidenceIngestionPipeline
                 request,
                 receiptId,
                 EvidenceIngestionCodes.SequenceConflict,
+                projectionGeneration,
                 now);
             return;
         }
@@ -338,6 +343,7 @@ public sealed class TrustEvidenceIngestionPipeline
                     request,
                     receiptId,
                     EvidenceIngestionCodes.PreviousHashMismatch,
+                    projectionGeneration,
                     now);
                 return;
             }
@@ -364,6 +370,7 @@ public sealed class TrustEvidenceIngestionPipeline
             transaction,
             record,
             gapDetected,
+            projectionGeneration,
             now);
         InsertRetentionDecision(
             connection,
@@ -383,6 +390,11 @@ public sealed class TrustEvidenceIngestionPipeline
                 now);
         }
 
+        UpdateProjectionState(
+            connection,
+            transaction,
+            now);
+
         InsertReceipt(
             connection,
             transaction,
@@ -392,15 +404,17 @@ public sealed class TrustEvidenceIngestionPipeline
             EvidenceIngestionCodes.Applied,
             gapDetected,
             domainEffectApplied: true,
+            projectionGeneration,
             now);
     }
 
-    private void QuarantineAndReceipt(
+    private static void QuarantineAndReceipt(
         SqliteConnection connection,
         SqliteTransaction transaction,
         EvidenceIngestionRequest request,
         string receiptId,
         string reason,
+        string projectionGeneration,
         DateTimeOffset now)
     {
         UpsertQuarantine(
@@ -418,6 +432,7 @@ public sealed class TrustEvidenceIngestionPipeline
             reason,
             sequenceGapDetected: false,
             domainEffectApplied: true,
+            projectionGeneration,
             now);
     }
 
@@ -483,7 +498,7 @@ public sealed class TrustEvidenceIngestionPipeline
         }, cancellationToken);
     }
 
-    private EvidenceIngestionReceipt CreateImmediateReceipt(
+    private static EvidenceIngestionReceipt CreateImmediateReceipt(
         string receiptId,
         EvidenceOwnerSessionContext session,
         EvidenceIngestionRequest request,
@@ -498,7 +513,7 @@ public sealed class TrustEvidenceIngestionPipeline
             request.MessageId,
             request.Record.EvidenceId,
             request.Record.RecordSha256,
-            projectionGeneration,
+            string.Empty,
             DomainEffectApplied: false,
             SequenceGapDetected: false,
             VerifiedServiceReceiptProjection: false,
@@ -893,11 +908,55 @@ public sealed class TrustEvidenceIngestionPipeline
         }
     }
 
-    private void InsertProjection(
+    private static string ReadProjectionGeneration(
+        SqliteConnection connection,
+        SqliteTransaction transaction)
+    {
+        using SqliteCommand command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = $"""
+            SELECT projection_generation
+              FROM {TrustEvidenceDatabaseSchema.ProjectionStateTable}
+             WHERE state_id = 1;
+            """;
+        object? value = command.ExecuteScalar();
+
+        if (value is not string generation || generation.Length != 32)
+        {
+            throw new InvalidOperationException(
+                "The Trust projection state singleton is invalid.");
+        }
+
+        return generation;
+    }
+
+    private static void UpdateProjectionState(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        DateTimeOffset now)
+    {
+        using SqliteCommand command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = $"""
+            UPDATE {TrustEvidenceDatabaseSchema.ProjectionStateTable}
+               SET updated_at_utc = $updatedAt
+             WHERE state_id = 1;
+            """;
+        AddParameter(command, "$updatedAt", FormatTime(now));
+
+        if (command.ExecuteNonQuery() != 1)
+        {
+            throw new InvalidOperationException(
+                "The Trust projection state singleton is missing.");
+        }
+    }
+
+    private static void InsertProjection(
         SqliteConnection connection,
         SqliteTransaction transaction,
         EvidenceRecord record,
         bool gapDetected,
+        string projectionGeneration,
         DateTimeOffset now)
     {
         using SqliteCommand command = connection.CreateCommand();
@@ -1017,7 +1076,7 @@ public sealed class TrustEvidenceIngestionPipeline
         _ = command.ExecuteNonQuery();
     }
 
-    private void InsertReceipt(
+    private static void InsertReceipt(
         SqliteConnection connection,
         SqliteTransaction transaction,
         EvidenceIngestionRequest request,
@@ -1026,6 +1085,7 @@ public sealed class TrustEvidenceIngestionPipeline
         string stableCode,
         bool sequenceGapDetected,
         bool domainEffectApplied,
+        string projectionGeneration,
         DateTimeOffset now)
     {
         using SqliteCommand command = connection.CreateCommand();

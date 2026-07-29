@@ -223,6 +223,7 @@ public sealed class TrustEvidenceDatabase : IDisposable
                     connection,
                     transaction,
                     TrustEvidenceDatabaseSchema.ProjectionCheckpointTable);
+                ResetProjectionState(connection, transaction);
 
                 return new TrustProjectionResetResult(
                     removedProjectionRecords,
@@ -239,6 +240,17 @@ public sealed class TrustEvidenceDatabase : IDisposable
     {
         ObjectDisposedException.ThrowIf(disposed, this);
         return new TrustEvidenceIngestionPipeline(
+            database,
+            evidenceTypes,
+            timeProvider);
+    }
+
+    public TrustEvidenceQueryService CreateQueryService(
+        EvidenceTypeCatalogue evidenceTypes,
+        TimeProvider? timeProvider = null)
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        return new TrustEvidenceQueryService(
             database,
             evidenceTypes,
             timeProvider);
@@ -353,5 +365,32 @@ public sealed class TrustEvidenceDatabase : IDisposable
         command.Transaction = transaction;
         command.CommandText = string.Concat("DELETE FROM ", tableName, ";");
         return command.ExecuteNonQuery();
+    }
+
+    private static void ResetProjectionState(
+        SqliteConnection connection,
+        SqliteTransaction transaction)
+    {
+        using SqliteCommand command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = $"""
+            UPDATE {TrustEvidenceDatabaseSchema.ProjectionStateTable}
+               SET projection_generation = lower(hex(randomblob(16))),
+                   rebuilt_at_utc = $resetAt,
+                   updated_at_utc = $resetAt,
+                   projection_status = 'RebuildRequired'
+             WHERE state_id = 1;
+            """;
+        _ = command.Parameters.AddWithValue(
+            "$resetAt",
+            DateTimeOffset.UtcNow.ToString(
+                "O",
+                CultureInfo.InvariantCulture));
+
+        if (command.ExecuteNonQuery() != 1)
+        {
+            throw new InvalidOperationException(
+                "The Trust projection state singleton is missing.");
+        }
     }
 }

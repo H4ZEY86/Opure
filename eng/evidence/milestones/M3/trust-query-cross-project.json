@@ -1,0 +1,12 @@
+{
+  "schema": "opure.trust-query-cross-project/1",
+  "result": "Passed",
+  "allowedDisposition": "Succeeded",
+  "allowedProject": "AuthorisedProject",
+  "allowedRecordCount": 1,
+  "deniedDisposition": "Denied",
+  "deniedCode": "TRUST_QUERY_PROJECT_DENIED",
+  "unauthorisedProjectRowsReturned": 0,
+  "authorisationBeforeDatabaseAccess": true,
+  "channelBound": true
+}

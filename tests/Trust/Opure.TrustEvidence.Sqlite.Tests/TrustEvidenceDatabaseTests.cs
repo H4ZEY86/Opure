@@ -74,7 +74,7 @@ public sealed class TrustEvidenceDatabaseTests
         Assert.Equal(
             TrustEvidenceDatabaseSchema.CurrentVersion,
             database.MigrationReport.CurrentVersion);
-        Assert.Equal(3, database.MigrationReport.AppliedMigrations.Count);
+        Assert.Equal(4, database.MigrationReport.AppliedMigrations.Count);
         Assert.All(
             database.MigrationReport.SchemaValidations,
             static validation => Assert.True(validation.Passed));
@@ -140,7 +140,9 @@ public sealed class TrustEvidenceDatabaseTests
                    TestContext.Current.CancellationToken))
         {
             Assert.Equal(3, upgraded.MigrationReport.StartingVersion);
-            Assert.Equal(4, upgraded.MigrationReport.CurrentVersion);
+            Assert.Equal(
+                TrustEvidenceDatabaseSchema.CurrentVersion,
+                upgraded.MigrationReport.CurrentVersion);
         }
 
         using SqliteConnection verification = OpenDirect(descriptor.DatabasePath);
@@ -149,6 +151,20 @@ public sealed class TrustEvidenceDatabaseTests
             ReadText(
                 verification,
                 $"SELECT verification_class FROM {TrustEvidenceDatabaseSchema.ProjectionRecordTable};"));
+        string generation = ReadText(
+            verification,
+            $"SELECT projection_generation FROM {TrustEvidenceDatabaseSchema.ProjectionStateTable} WHERE state_id = 1;");
+        Assert.Equal(32, generation.Length);
+        Assert.Equal(
+            generation,
+            ReadText(
+                verification,
+                $"SELECT projection_generation FROM {TrustEvidenceDatabaseSchema.ProjectionRecordTable};"));
+        Assert.Equal(
+            "Current",
+            ReadText(
+                verification,
+                $"SELECT projection_status FROM {TrustEvidenceDatabaseSchema.ProjectionStateTable} WHERE state_id = 1;"));
     }
 
     [Fact]
