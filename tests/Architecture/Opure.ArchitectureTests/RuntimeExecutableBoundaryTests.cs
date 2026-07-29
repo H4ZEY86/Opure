@@ -51,15 +51,15 @@ public sealed class RuntimeExecutableBoundaryTests
             projectReferences,
             reference => reference.EndsWith(
                 Path.Combine(
-                    "Opure.Observability.Abstractions",
-                    "Opure.Observability.Abstractions.csproj"),
+                    "Opure.Observability.Contracts",
+                    "Opure.Observability.Contracts.csproj"),
                 StringComparison.OrdinalIgnoreCase));
         Assert.Contains(
             projectReferences,
             reference => reference.EndsWith(
                 Path.Combine(
-                    "Opure.Observability.StructuredLogging",
-                    "Opure.Observability.StructuredLogging.csproj"),
+                    "Opure.Observability",
+                    "Opure.Observability.csproj"),
                 StringComparison.OrdinalIgnoreCase));
 
         Assert.False(

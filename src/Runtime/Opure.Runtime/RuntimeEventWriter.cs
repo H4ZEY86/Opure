@@ -1,5 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Diagnostics;
+using Opure.Observability.Contracts;
 using Opure.Runtime.Contracts;
 using Opure.Ipc.Abstractions;
 
@@ -13,14 +15,15 @@ public static class RuntimeEventWriter
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
-    public static Task WriteLifecycleAsync(
+    public static async Task WriteLifecycleAsync(
         TextWriter output,
         int sequence,
         RuntimeLifecycleState state,
         RuntimeBootSnapshot bootSnapshot,
         string dataRootScope,
         string? shutdownReason,
-        string? runtimeHealthPipe = null)
+        string? runtimeHealthPipe = null,
+        IOperationalLogger? operationalLogger = null)
     {
         ArgumentNullException.ThrowIfNull(output);
         ArgumentNullException.ThrowIfNull(bootSnapshot);
@@ -42,15 +45,46 @@ public static class RuntimeEventWriter
             },
             SerializerOptions);
 
-        return output.WriteLineAsync(json);
+        await output.WriteLineAsync(json).ConfigureAwait(false);
+
+        if (operationalLogger is not null)
+        {
+            List<OperationalLogAttribute> attributes =
+            [
+                OperationalLogAttribute.Integer("sequence", sequence),
+                OperationalLogAttribute.String(
+                    "lifecycle.state",
+                    state.ToString().ToLowerInvariant()),
+                OperationalLogAttribute.String("dataRoot.scope", dataRootScope),
+                OperationalLogAttribute.Integer("process.id", bootSnapshot.ProcessId),
+                OperationalLogAttribute.String(
+                    "contract.version",
+                    bootSnapshot.ContractVersion),
+                OperationalLogAttribute.String("network.access", "disabled")
+            ];
+
+            if (shutdownReason is not null)
+            {
+                attributes.Add(OperationalLogAttribute.String(
+                    "shutdown.reason",
+                    shutdownReason));
+            }
+
+            _ = await operationalLogger.WriteAsync(
+                RuntimeOperationalEvents.ForLifecycle(state),
+                attributes,
+                traceId: Activity.Current?.TraceId.ToHexString())
+                .ConfigureAwait(false);
+        }
     }
 
-    public static Task WriteFailureAsync(
+    public static async Task WriteFailureAsync(
         TextWriter output,
         RuntimeExitCode exitCode,
         string category,
         string safeMessage,
-        string? exceptionType)
+        string? exceptionType,
+        IOperationalLogger? operationalLogger = null)
     {
         ArgumentNullException.ThrowIfNull(output);
 
@@ -65,12 +99,35 @@ public static class RuntimeEventWriter
             },
             SerializerOptions);
 
-        return output.WriteLineAsync(json);
+        await output.WriteLineAsync(json).ConfigureAwait(false);
+
+        if (operationalLogger is not null)
+        {
+            List<OperationalLogAttribute> attributes =
+            [
+                OperationalLogAttribute.Integer("exit.code", (int)exitCode),
+                OperationalLogAttribute.String("failure.category", category)
+            ];
+
+            if (exceptionType is not null)
+            {
+                attributes.Add(OperationalLogAttribute.String(
+                    "exception.type",
+                    exceptionType));
+            }
+
+            _ = await operationalLogger.WriteAsync(
+                RuntimeOperationalEvents.Failed,
+                attributes,
+                traceId: Activity.Current?.TraceId.ToHexString())
+                .ConfigureAwait(false);
+        }
     }
 
-    public static ValueTask WriteIpcSessionAsync(
+    public static async ValueTask WriteIpcSessionAsync(
         TextWriter output,
-        RuntimeHealthAuthenticationEvent authenticationEvent)
+        RuntimeHealthAuthenticationEvent authenticationEvent,
+        IOperationalLogger? operationalLogger = null)
     {
         ArgumentNullException.ThrowIfNull(output);
         ArgumentNullException.ThrowIfNull(authenticationEvent);
@@ -87,6 +144,36 @@ public static class RuntimeEventWriter
             },
             SerializerOptions);
 
-        return new ValueTask(output.WriteLineAsync(json));
+        await output.WriteLineAsync(json).ConfigureAwait(false);
+
+        if (operationalLogger is not null)
+        {
+            OperationalLogEventDefinition definition =
+                authenticationEvent.Established
+                    ? RuntimeOperationalEvents.IpcSessionEstablished
+                    : RuntimeOperationalEvents.IpcSessionDenied;
+            List<OperationalLogAttribute> attributes =
+            [
+                OperationalLogAttribute.String(
+                    "admission.reasonCode",
+                    authenticationEvent.ReasonCode),
+                OperationalLogAttribute.Boolean(
+                    "session.materialIncluded",
+                    false)
+            ];
+
+            if (authenticationEvent.ClientProcessId is int clientProcessId)
+            {
+                attributes.Add(OperationalLogAttribute.Integer(
+                    "client.processId",
+                    clientProcessId));
+            }
+
+            _ = await operationalLogger.WriteAsync(
+                definition,
+                attributes,
+                traceId: Activity.Current?.TraceId.ToHexString())
+                .ConfigureAwait(false);
+        }
     }
 }

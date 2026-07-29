@@ -1,3 +1,4 @@
+using Opure.Observability.Contracts;
 using Opure.Runtime.Contracts;
 using Opure.Runtime.Contracts.Health.V1;
 using Opure.Runtime.Contracts.Registry.V1;
@@ -98,16 +99,90 @@ public sealed class RuntimeHealthRequestHandlerTests
             response.Health.GeneratedUnixTimeMilliseconds);
     }
 
+    [Fact]
+    public async Task Operational_log_failure_is_visible_as_safe_degraded_health()
+    {
+        RuntimeServiceRegistry registry = CreateRegistry();
+        registry.UpdateLifecycle(
+            "runtime.health",
+            RuntimeServiceLifecycleState.Ready,
+            sequence: 1,
+            failure: null);
+        RuntimeHealthRequestHandler handler = new(
+            CreateBootSnapshot(),
+            registry,
+            operationalLogHealthProvider: static () =>
+                new OperationalLogHealthSnapshot(
+                    OperationalLogHealthState.Degraded,
+                    TotalFailureCount: 1,
+                    ConsecutiveFailureCount: 1,
+                    PartialLineRecoveryCount: 0,
+                    LastSignalCode: "LOG_SINK_WRITE_FAILED",
+                    LastSignalTimestampUtc: DateTimeOffset.UnixEpoch));
+
+        GetRuntimeHealthResponse response = await handler.HandleAsync(
+            CreateRequest(),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(RuntimeReadiness.Degraded, response.Health.Readiness);
+        Assert.Equal(RuntimeHealthState.Degraded, response.Health.OverallHealth);
+        ServiceHealthSummary service = Assert.Single(response.Health.Services);
+        Assert.Equal(ServiceHealthState.Degraded, service.State);
+        Assert.Equal("LOG_DIAGNOSTICS_DEGRADED", service.RecentFailureCode);
+        Assert.Equal(
+            "Runtime health is available, but operational diagnostics are degraded.",
+            service.SafeDetail);
+        Assert.DoesNotContain(
+            "LOG_SINK_WRITE_FAILED",
+            service.SafeDetail,
+            StringComparison.Ordinal);
+        Assert.True(
+            RuntimeHealthContractPolicy.ValidateResponse(response).IsValid);
+    }
+
+    [Fact]
+    public async Task Operational_log_health_provider_failure_is_contained()
+    {
+        RuntimeServiceRegistry registry = CreateRegistry();
+        registry.UpdateLifecycle(
+            "runtime.health",
+            RuntimeServiceLifecycleState.Ready,
+            sequence: 1,
+            failure: null);
+        RuntimeHealthRequestHandler handler = new(
+            CreateBootSnapshot(),
+            registry,
+            operationalLogHealthProvider: static () =>
+                throw new InvalidOperationException("unsafe provider detail"));
+
+        GetRuntimeHealthResponse response = await handler.HandleAsync(
+            CreateRequest(),
+            TestContext.Current.CancellationToken);
+
+        ServiceHealthSummary service = Assert.Single(response.Health.Services);
+        Assert.Equal(ServiceHealthState.Degraded, service.State);
+        Assert.Equal("LOG_DIAGNOSTICS_DEGRADED", service.RecentFailureCode);
+        Assert.DoesNotContain(
+            "unsafe provider detail",
+            service.SafeDetail,
+            StringComparison.Ordinal);
+    }
+
     private static RuntimeHealthRequestHandler CreateHandler(
         RuntimeServiceRegistry registry)
     {
         return new RuntimeHealthRequestHandler(
-            new RuntimeBootSnapshot(
-                "0123456789abcdef0123456789abcdef",
-                Environment.ProcessId,
-                "1.0.0-test",
-                "1"),
+            CreateBootSnapshot(),
             registry);
+    }
+
+    private static RuntimeBootSnapshot CreateBootSnapshot()
+    {
+        return new RuntimeBootSnapshot(
+            "0123456789abcdef0123456789abcdef",
+            Environment.ProcessId,
+            "1.0.0-test",
+            "1");
     }
 
     private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider

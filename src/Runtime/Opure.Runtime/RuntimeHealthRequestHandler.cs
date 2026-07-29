@@ -1,4 +1,5 @@
 using Opure.Ipc.Abstractions;
+using Opure.Observability.Contracts;
 using Opure.Runtime.Contracts;
 using Opure.Runtime.Contracts.Health.V1;
 using Opure.Runtime.Contracts.Registry.V1;
@@ -8,8 +9,13 @@ namespace Opure.Runtime;
 internal sealed class RuntimeHealthRequestHandler(
     RuntimeBootSnapshot bootSnapshot,
     RuntimeServiceRegistry serviceRegistry,
-    TimeProvider? timeProvider = null) : IRuntimeHealthRequestHandler
+    TimeProvider? timeProvider = null,
+    Func<OperationalLogHealthSnapshot>? operationalLogHealthProvider = null)
+    : IRuntimeHealthRequestHandler
 {
+    private const string OperationalDiagnosticsDegradedCode =
+        "LOG_DIAGNOSTICS_DEGRADED";
+
     private readonly TimeProvider clock = timeProvider ?? TimeProvider.System;
 
     public Task<GetRuntimeHealthResponse> HandleAsync(
@@ -29,8 +35,12 @@ internal sealed class RuntimeHealthRequestHandler(
 
         IReadOnlyList<RuntimeServiceDescriptor> descriptors =
             serviceRegistry.Snapshot();
+        bool operationalDiagnosticsDegraded =
+            IsOperationalDiagnosticsDegraded();
         (RuntimeReadiness readiness, RuntimeHealthState overallHealth) =
-            CalculateOverallHealth(descriptors);
+            CalculateOverallHealth(
+                descriptors,
+                operationalDiagnosticsDegraded);
         GetRuntimeHealthResponse response = new()
         {
             ContractRevision = RuntimeHealthContractPolicy.CurrentRevision,
@@ -46,23 +56,18 @@ internal sealed class RuntimeHealthRequestHandler(
             }
         };
 
-        response.Health.Services.AddRange(descriptors.Select(
-            static descriptor => new ServiceHealthSummary
-            {
-                ServiceId = descriptor.ServiceId,
-                State = MapServiceState(descriptor.LifecycleState),
-                RequiredForReadiness = IsRequiredForReadiness(
-                    descriptor.Classification),
-                SafeDetail = CreateSafeDetail(descriptor.LifecycleState),
-                RecentFailureCode = descriptor.FailureCode
-            }));
+        response.Health.Services.AddRange(descriptors.Select(descriptor =>
+            CreateServiceHealthSummary(
+                descriptor,
+                operationalDiagnosticsDegraded)));
 
         return Task.FromResult(response);
     }
 
     private static (RuntimeReadiness Readiness, RuntimeHealthState Health)
         CalculateOverallHealth(
-            IReadOnlyList<RuntimeServiceDescriptor> descriptors)
+            IReadOnlyList<RuntimeServiceDescriptor> descriptors,
+            bool operationalDiagnosticsDegraded)
     {
         if (descriptors.Count == 0)
         {
@@ -99,7 +104,8 @@ internal sealed class RuntimeHealthRequestHandler(
                 RuntimeHealthState.Unavailable);
         }
 
-        if (descriptors.Any(static descriptor => descriptor.LifecycleState is
+        if (operationalDiagnosticsDegraded ||
+            descriptors.Any(static descriptor => descriptor.LifecycleState is
                 RuntimeServiceLifecycleState.Degraded or
                 RuntimeServiceLifecycleState.Failed or
                 RuntimeServiceLifecycleState.Quarantined or
@@ -112,6 +118,53 @@ internal sealed class RuntimeHealthRequestHandler(
         }
 
         return (RuntimeReadiness.Ready, RuntimeHealthState.Healthy);
+    }
+
+    private static ServiceHealthSummary CreateServiceHealthSummary(
+        RuntimeServiceDescriptor descriptor,
+        bool operationalDiagnosticsDegraded)
+    {
+        bool projectDiagnosticsDegradation =
+            operationalDiagnosticsDegraded &&
+            string.Equals(
+                descriptor.ServiceId,
+                "runtime.health",
+                StringComparison.Ordinal) &&
+            descriptor.LifecycleState == RuntimeServiceLifecycleState.Ready;
+
+        return new ServiceHealthSummary
+        {
+            ServiceId = descriptor.ServiceId,
+            State = projectDiagnosticsDegradation
+                ? ServiceHealthState.Degraded
+                : MapServiceState(descriptor.LifecycleState),
+            RequiredForReadiness = IsRequiredForReadiness(
+                descriptor.Classification),
+            SafeDetail = projectDiagnosticsDegradation
+                ? "Runtime health is available, but operational diagnostics are degraded."
+                : CreateSafeDetail(descriptor.LifecycleState),
+            RecentFailureCode = projectDiagnosticsDegradation
+                ? OperationalDiagnosticsDegradedCode
+                : descriptor.FailureCode
+        };
+    }
+
+    private bool IsOperationalDiagnosticsDegraded()
+    {
+        if (operationalLogHealthProvider is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            return operationalLogHealthProvider().State ==
+                OperationalLogHealthState.Degraded;
+        }
+        catch (Exception)
+        {
+            return true;
+        }
     }
 
     private static bool IsRequiredForReadiness(

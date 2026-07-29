@@ -20,18 +20,16 @@ public sealed class RuntimeApplicationTests
     {
         using StringWriter output = new(CultureInfo.InvariantCulture);
         using RuntimeShutdownSignal signal = new();
+        using TestDataRoot dataRoot = new();
 
         RuntimeApplication application = new(output);
         RuntimeOptions options = new(
-            AutomaticShutdownDelay: null,
-            ExplicitDataRoot: CreateUnusedDataRoot(),
+            AutomaticShutdownDelay: TimeSpan.FromMilliseconds(10),
+            ExplicitDataRoot: dataRoot.Root,
             TestStartupFailure: false,
             ShowHelp: false);
 
-        Task<RuntimeExitCode> runTask = application.RunAsync(options, signal);
-        signal.Request("unit_test");
-
-        RuntimeExitCode exitCode = await runTask;
+        RuntimeExitCode exitCode = await application.RunAsync(options, signal);
 
         Assert.Equal(RuntimeExitCode.Success, exitCode);
 
@@ -42,6 +40,46 @@ public sealed class RuntimeApplicationTests
             .ToArray();
 
         Assert.Equal(ExpectedLifecycleStates, states);
+
+        JsonElement[] operationalEvents = File
+            .ReadAllLines(Path.Combine(
+                dataRoot.Root,
+                "diagnostics",
+                "operational",
+                "opure.runtime",
+                "current.jsonl"))
+            .Select(ParseEvent)
+            .ToArray();
+        string runtimeBootId = ParseEvents(output.ToString())
+            .First(element =>
+                element.GetProperty("event").GetString() == "runtime.lifecycle")
+            .GetProperty("bootId")
+            .GetString()!;
+
+        Assert.Equal(4, operationalEvents.Length);
+        Assert.Equal(
+            [
+                "Runtime lifecycle is starting.",
+                "Runtime lifecycle is ready.",
+                "Runtime lifecycle is stopping.",
+                "Runtime lifecycle has stopped."
+            ],
+            operationalEvents.Select(element =>
+                element.GetProperty("message").GetString()));
+        Assert.All(
+            operationalEvents,
+            element =>
+            {
+                Assert.Equal(
+                    "opure.runtime",
+                    element.GetProperty("serviceId").GetString());
+                Assert.Equal(
+                    runtimeBootId,
+                    element.GetProperty("runtimeBootId").GetString());
+                Assert.Equal(
+                    "information",
+                    element.GetProperty("severity").GetString());
+            });
     }
 
     [Fact]
@@ -49,6 +87,7 @@ public sealed class RuntimeApplicationTests
     {
         using StringWriter output = new(CultureInfo.InvariantCulture);
         using RuntimeShutdownSignal signal = new();
+        using TestDataRoot dataRoot = new();
 
         RuntimeApplication application = new(
             output,
@@ -57,7 +96,7 @@ public sealed class RuntimeApplicationTests
 
         RuntimeOptions options = new(
             AutomaticShutdownDelay: null,
-            ExplicitDataRoot: CreateUnusedDataRoot(),
+            ExplicitDataRoot: dataRoot.Root,
             TestStartupFailure: true,
             ShowHelp: false);
 
@@ -86,10 +125,23 @@ public sealed class RuntimeApplicationTests
         return document.RootElement.Clone();
     }
 
-    private static string CreateUnusedDataRoot()
+    private sealed class TestDataRoot : IDisposable
     {
-        return Path.Combine(
-            Path.GetTempPath(),
-            $"Opure-Runtime-Application-{Guid.NewGuid():N}");
+        internal TestDataRoot()
+        {
+            Root = Path.Combine(
+                Path.GetTempPath(),
+                $"Opure-Runtime-Application-{Guid.NewGuid():N}");
+        }
+
+        internal string Root { get; }
+
+        public void Dispose()
+        {
+            if (Directory.Exists(Root))
+            {
+                Directory.Delete(Root, recursive: true);
+            }
+        }
     }
 }

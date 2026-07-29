@@ -16,8 +16,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Observability\Opure.Observability.Abstractions\Opure.Observability.Abstractions.csproj" />
-    <ProjectReference Include="..\..\..\src\Observability\Opure.Observability.StructuredLogging\Opure.Observability.StructuredLogging.csproj" />
+    <ProjectReference Include="..\..\..\src\Observability\Opure.Observability.Contracts\Opure.Observability.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\src\Observability\Opure.Observability\Opure.Observability.csproj" />
   </ItemGroup>
 
 </Project>

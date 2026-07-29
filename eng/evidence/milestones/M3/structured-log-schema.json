@@ -1,0 +1,78 @@
+{
+  "schema": "opure.structured-operational-log/1",
+  "format": "JSON Lines",
+  "encoding": "UTF-8 without BOM",
+  "authoritative": false,
+  "requiredFields": [
+    "formatVersion",
+    "timestampUtc",
+    "eventName",
+    "severity",
+    "serviceId",
+    "serviceVersion",
+    "runtimeBootId",
+    "message",
+    "attributes"
+  ],
+  "optionalFields": [
+    "traceId",
+    "operationId"
+  ],
+  "attributeTypes": [
+    "string",
+    "integer",
+    "floating-point",
+    "boolean"
+  ],
+  "severityValues": [
+    "trace",
+    "debug",
+    "information",
+    "warning",
+    "error",
+    "critical"
+  ],
+  "eventDefinitionPolicy": {
+    "callerSuppliedMessagesAllowed": false,
+    "maximumDefinitionMessageCharacters": 256,
+    "perEventAttributeAllowlistRequired": true,
+    "attributeKindMatchRequired": true,
+    "secretAndProhibitedDefinitionsAllowed": false,
+    "sanitisationBeforeQueue": true
+  },
+  "defaultQueuePolicy": {
+    "capacity": 1024,
+    "completionTimeoutMilliseconds": 5000,
+    "sinkDisposalTimeoutMilliseconds": 5000,
+    "severityPriority": [
+      "critical",
+      "error",
+      "warning",
+      "information",
+      "debug",
+      "trace"
+    ],
+    "droppedSummaryEvent": "observability.queue.records-dropped",
+    "droppedSummaryAttributes": [
+      "drop.count",
+      "queue.capacity"
+    ]
+  },
+  "defaultPolicy": {
+    "maximumActiveFileBytes": 8388608,
+    "maximumRetainedFileCount": 16,
+    "maximumRetainedAgeDays": 14,
+    "maximumMessageCharacters": 2048,
+    "maximumAttributeCount": 24,
+    "maximumAttributeNameCharacters": 64,
+    "maximumAttributeValueCharacters": 512,
+    "maximumEventBytes": 16384,
+    "maximumCleanupFileCount": 256
+  },
+  "ownership": {
+    "owner": "Observability",
+    "storageClass": "ordinary local diagnostics",
+    "trustEvidenceSubstitute": false,
+    "externalExportEnabled": false
+  }
+}

@@ -1,6 +1,8 @@
 using Opure.Runtime.Contracts;
 using Opure.Ipc.Abstractions;
 using Opure.Ipc.NamedPipes.Windows;
+using Opure.Observability;
+using Opure.Observability.Contracts;
 
 namespace Opure.Runtime;
 
@@ -32,6 +34,8 @@ public sealed class RuntimeApplication
         RuntimeBootSnapshot bootSnapshot;
         NamedPipeRuntimeHealthServer? healthTransport = null;
         RuntimeServiceLifecycleCoordinator? serviceLifecycle = null;
+        JsonLinesOperationalLogSink? operationalSink = null;
+        BoundedOperationalLogger? operationalLogger = null;
         int sequence = 0;
 
         try
@@ -42,6 +46,21 @@ public sealed class RuntimeApplication
                 bootstrapEnvironment);
 
             bootSnapshot = RuntimeProductIdentity.CreateBootSnapshot();
+            OperationalLogPolicy operationalLogPolicy = new();
+            operationalSink = new JsonLinesOperationalLogSink(
+                dataRoot.FullPath,
+                "opure.runtime",
+                operationalLogPolicy);
+            operationalLogger = new BoundedOperationalLogger(
+                operationalSink,
+                new OperationalLogContext(
+                    "opure.runtime",
+                    bootSnapshot.ProductVersion,
+                    bootSnapshot.BootId),
+                operationalLogPolicy,
+                new OperationalLogQueuePolicy(
+                    completionTimeout: TimeSpan.FromSeconds(2),
+                    sinkDisposalTimeout: TimeSpan.FromSeconds(2)));
 
             await RuntimeEventWriter.WriteLifecycleAsync(
                 output,
@@ -49,7 +68,8 @@ public sealed class RuntimeApplication
                 lifecycle.State,
                 bootSnapshot,
                 dataRoot.Scope,
-                shutdownReason: null).ConfigureAwait(false);
+                shutdownReason: null,
+                operationalLogger: operationalLogger).ConfigureAwait(false);
 
             if (startupHook is not null)
             {
@@ -84,13 +104,18 @@ public sealed class RuntimeApplication
 
             healthTransport = await NamedPipeRuntimeHealthServer.StartAsync(
                 endpoint,
-                new RuntimeHealthRequestHandler(bootSnapshot, serviceRegistry),
+                new RuntimeHealthRequestHandler(
+                    bootSnapshot,
+                    serviceRegistry,
+                    operationalLogHealthProvider:
+                        operationalLogger.GetHealthSnapshot),
                 sessionPolicy,
                 shutdownSignal.Token,
                 eventSink: authenticationEvent =>
                     RuntimeEventWriter.WriteIpcSessionAsync(
                         output,
-                        authenticationEvent),
+                        authenticationEvent,
+                        operationalLogger),
                 registryRequestHandler: serviceRegistry).ConfigureAwait(false);
 
             lifecycle.TransitionTo(RuntimeLifecycleState.Ready);
@@ -102,7 +127,8 @@ public sealed class RuntimeApplication
                 bootSnapshot,
                 dataRoot.Scope,
                 shutdownReason: null,
-                healthTransport.Endpoint.PipeName).ConfigureAwait(false);
+                healthTransport.Endpoint.PipeName,
+                operationalLogger).ConfigureAwait(false);
 
             using CancellationTokenSource timerCancellation = new();
             Task timerTask = ScheduleAutomaticShutdownAsync(
@@ -123,7 +149,8 @@ public sealed class RuntimeApplication
                 bootSnapshot,
                 dataRoot.Scope,
                 shutdownReason,
-                healthTransport.Endpoint.PipeName).ConfigureAwait(false);
+                healthTransport.Endpoint.PipeName,
+                operationalLogger).ConfigureAwait(false);
 
             using CancellationTokenSource shutdownTimeout = new(ShutdownTimeout);
             await serviceLifecycle.StopAsync(shutdownTimeout.Token)
@@ -142,7 +169,11 @@ public sealed class RuntimeApplication
                 lifecycle.State,
                 bootSnapshot,
                 dataRoot.Scope,
-                shutdownReason).ConfigureAwait(false);
+                shutdownReason,
+                operationalLogger: operationalLogger).ConfigureAwait(false);
+
+            await operationalLogger.CompleteAsync(shutdownTimeout.Token)
+                .ConfigureAwait(false);
 
             return RuntimeExitCode.Success;
         }
@@ -156,7 +187,8 @@ public sealed class RuntimeApplication
                 RuntimeExitCode.ShutdownFailure,
                 "shutdown_timeout",
                 "Runtime shutdown exceeded its controlled deadline.",
-                typeof(OperationCanceledException).FullName).ConfigureAwait(false);
+                typeof(OperationCanceledException).FullName,
+                operationalLogger).ConfigureAwait(false);
 
             return RuntimeExitCode.ShutdownFailure;
         }
@@ -176,7 +208,8 @@ public sealed class RuntimeApplication
                     ? "startup_failure"
                     : "shutdown_failure",
                 "Runtime could not complete its controlled lifecycle.",
-                exception.GetType().FullName).ConfigureAwait(false);
+                exception.GetType().FullName,
+                operationalLogger).ConfigureAwait(false);
 
             return exitCode;
         }
@@ -203,6 +236,15 @@ public sealed class RuntimeApplication
             }
 
             serviceLifecycle?.Dispose();
+
+            if (operationalLogger is not null)
+            {
+                await operationalLogger.DisposeAsync().ConfigureAwait(false);
+            }
+            else if (operationalSink is not null)
+            {
+                await operationalSink.DisposeAsync().ConfigureAwait(false);
+            }
         }
     }
 

@@ -199,22 +199,22 @@
           "Opure.Runtime.Contracts": "[1.0.0, )"
         }
       },
-      "opure.observability.abstractions": {
-        "type": "Project"
-      },
-      "opure.observability.structuredlogging": {
+      "opure.observability": {
         "type": "Project",
         "dependencies": {
-          "Opure.Observability.Abstractions": "[1.0.0, )"
+          "Opure.Observability.Contracts": "[1.0.0, )"
         }
+      },
+      "opure.observability.contracts": {
+        "type": "Project"
       },
       "opure.runtime": {
         "type": "Project",
         "dependencies": {
           "Opure.Ipc.Abstractions": "[1.0.0, )",
           "Opure.Ipc.NamedPipes.Windows": "[1.0.0, )",
-          "Opure.Observability.Abstractions": "[1.0.0, )",
-          "Opure.Observability.StructuredLogging": "[1.0.0, )",
+          "Opure.Observability": "[1.0.0, )",
+          "Opure.Observability.Contracts": "[1.0.0, )",
           "Opure.Runtime.Contracts": "[1.0.0, )"
         }
       },

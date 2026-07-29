@@ -2393,22 +2393,42 @@ Logs serve technical diagnosis.
 
 Trust records serve developer understanding and accountability.
 
+The implemented FND-018 boundary is owned by Observability and composed by
+Runtime. Runtime producers emit only registered event definitions with fixed
+reviewed messages and typed, per-event allowlisted attributes. Events are
+sanitised before admission to a bounded severity-aware queue, then written as
+UTF-8 JSON Lines beneath the channel-specific data root.
+
+The local sink rotates by size, retains segments by bounded age and count, and
+quarantines an incomplete active segment before the next append. On Windows,
+the owned directory chain remains pinned while the sink is active and rotation
+and retention mutate validated file handles. Queue pressure, sink failure and
+recovery are exposed through bounded health signals; they do not crash domain
+services or grant authority.
+
+Operational logs are non-authoritative and are never ingested as Trust
+Evidence. External export, distributed tracing and resource metrics remain
+deferred to their own policy-gated tickets.
+
 ---
 
 ## 86. Logging Rules
 
-Logs should include:
+Implemented operational log records include:
 
 - timestamp;
 - severity;
 - service;
-- Runtime instance;
-- project where relevant;
-- correlation identifier;
-- safe message;
-- and stable error code.
+- Runtime boot identity;
+- trace and safe operation identity when available;
+- a fixed reviewed safe message;
+- and typed allowlisted attributes.
 
 Logs must not include secret values.
+
+Project source, prompts, request or response bodies, authentication headers,
+caller-supplied exception text and arbitrary caller messages are excluded by
+the operational logging contract.
 
 ---
 

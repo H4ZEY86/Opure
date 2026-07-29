@@ -18,7 +18,7 @@ public sealed class RuntimeProcessTests
     [Fact]
     public async Task Runtime_starts_and_stops_as_a_child_process()
     {
-        RuntimeProcessResult result = await RunRuntimeAsync(
+        using RuntimeProcessResult result = await RunRuntimeAsync(
             "--shutdown-after-ms",
             "50");
 
@@ -33,17 +33,23 @@ public sealed class RuntimeProcessTests
 
         Assert.Equal(ExpectedLifecycleStates, states);
 
-        Assert.False(Directory.Exists(result.DataRoot));
+        Assert.True(Directory.Exists(result.DataRoot));
+        Assert.True(File.Exists(Path.Combine(
+            result.DataRoot,
+            "diagnostics",
+            "operational",
+            "opure.runtime",
+            "current.jsonl")));
     }
 
     [Fact]
     public async Task Separate_process_starts_receive_different_boot_identities()
     {
-        RuntimeProcessResult first = await RunRuntimeAsync(
+        using RuntimeProcessResult first = await RunRuntimeAsync(
             "--shutdown-after-ms",
             "25");
 
-        RuntimeProcessResult second = await RunRuntimeAsync(
+        using RuntimeProcessResult second = await RunRuntimeAsync(
             "--shutdown-after-ms",
             "25");
 
@@ -55,7 +61,7 @@ public sealed class RuntimeProcessTests
     [Fact]
     public async Task Process_level_startup_failure_uses_stable_exit_code()
     {
-        RuntimeProcessResult result = await RunRuntimeAsync(
+        using RuntimeProcessResult result = await RunRuntimeAsync(
             "--test-startup-failure");
 
         Assert.Equal((int)RuntimeExitCode.StartupFailure, result.ExitCode);
@@ -65,7 +71,7 @@ public sealed class RuntimeProcessTests
 
         Assert.Equal("startup_failure", failure.GetProperty("category").GetString());
         Assert.Equal(20, failure.GetProperty("exitCode").GetInt32());
-        Assert.False(Directory.Exists(result.DataRoot));
+        Assert.True(Directory.Exists(result.DataRoot));
     }
 
     private static async Task<RuntimeProcessResult> RunRuntimeAsync(
@@ -176,5 +182,14 @@ public sealed class RuntimeProcessTests
         int ExitCode,
         string StandardOutput,
         string StandardError,
-        string DataRoot);
+        string DataRoot) : IDisposable
+    {
+        public void Dispose()
+        {
+            if (Directory.Exists(DataRoot))
+            {
+                Directory.Delete(DataRoot, recursive: true);
+            }
+        }
+    }
 }

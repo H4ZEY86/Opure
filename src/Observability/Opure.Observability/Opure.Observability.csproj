@@ -2,11 +2,10 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Opure.Observability.Abstractions\Opure.Observability.Abstractions.csproj" />
+    <ProjectReference Include="..\Opure.Observability.Contracts\Opure.Observability.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

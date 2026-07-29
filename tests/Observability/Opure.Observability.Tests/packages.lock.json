@@ -163,14 +163,14 @@
           "xunit.v3.runner.common": "[3.2.2]"
         }
       },
-      "opure.observability.abstractions": {
-        "type": "Project"
-      },
-      "opure.observability.structuredlogging": {
+      "opure.observability": {
         "type": "Project",
         "dependencies": {
-          "Opure.Observability.Abstractions": "[1.0.0, )"
+          "Opure.Observability.Contracts": "[1.0.0, )"
         }
+      },
+      "opure.observability.contracts": {
+        "type": "Project"
       }
     }
   }

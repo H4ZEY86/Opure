@@ -174,31 +174,34 @@ Completed and committed:
 * FND-014 — SQLite Persistence Library.
 * FND-015 — Add Migration Runner.
 * FND-016 — Add Transactional Outbox.
+* FND-017 — Add Transactional Inbox.
 
 Implemented and verified by the current change:
 
-* FND-017 — Add Transactional Inbox.
+* FND-018 — Add Structured Logging.
 
-FND-017 includes:
+FND-018 includes:
 
-* a migration-owned immutable inbox receipt and retained conflict ledger;
-* explicit source-service and supported contract-revision admission;
-* atomic receipt insertion and receiver-owned domain effects;
-* source-scoped message identity and SHA-256 payload binding;
-* identical duplicate acknowledgement without a second domain effect;
-* same-identity envelope-conflict quarantine without payload persistence;
-* persisted conflict variants, observations and bounded aggregate health;
-* rollback-safe crash-before-commit recovery;
-* restart-safe crash-after-commit duplicate replay;
-* idempotency and conflicting-duplicate evidence reports.
+* reviewed event definitions with fixed safe messages and exact attribute allowlists;
+* a framework-neutral structured operational logging contract;
+* a bounded, severity-aware process queue with explicit drop accounting;
+* a local JSON Lines sink beneath the channel data root;
+* size rotation plus bounded age and count retention;
+* synchronous sanitisation before enqueue and persistence;
+* Runtime service, version, boot, trace and safe operation identities;
+* sink and queue failure isolation with safe Runtime Health degradation;
+* partial-line and mid-write quarantine recovery;
+* Windows directory pinning and validated-handle rotation and retention;
+* explicit separation from authoritative Trust Evidence;
+* schema, rotation, queue and injection evidence reports.
 
 The next planned ticket is:
 
 ```text
-FND-018 — Add Structured Logging
+FND-019 — Add Trace Propagation
 ```
 
-Do not assume FND-017 is complete until the transactional inbox verifier passes and the changes are reviewed, committed and pushed.
+Do not assume FND-018 is complete until the structured logging verifier passes and the changes are reviewed, committed and pushed.
 
 ## Build policy
 
