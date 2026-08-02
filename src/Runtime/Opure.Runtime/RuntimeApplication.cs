@@ -4,6 +4,7 @@ using Opure.Ipc.NamedPipes.Windows;
 using Opure.Observability;
 using Opure.Observability.Contracts;
 using Opure.Project.Service;
+using Opure.TrustEvidence.Service;
 
 namespace Opure.Runtime;
 
@@ -39,6 +40,7 @@ public sealed class RuntimeApplication
         BoundedOperationalLogger? operationalLogger = null;
         OperationalTraceSession? traceSession = null;
         ProjectServiceHost? projectService = null;
+        TrustEvidenceServiceHost? trustEvidenceService = null;
         int sequence = 0;
 
         try
@@ -103,9 +105,13 @@ public sealed class RuntimeApplication
                 DateTimeOffset.UtcNow.Add(
                     RuntimeHealthTransportPolicy.SessionLifetime));
             RuntimeServiceRegistry serviceRegistry = new();
+            trustEvidenceService = TrustEvidenceServiceHost.Start(
+                dataRoot.FullPath,
+                cancellationToken: shutdownSignal.Token);
             projectService = await ProjectServiceHost.StartAsync(
                 dataRoot.FullPath,
                 releaseChannel,
+                trustEvidenceService.BindOwner("opure.project"),
                 shutdownSignal.Token).ConfigureAwait(false);
             serviceLifecycle = new RuntimeServiceLifecycleCoordinator(
                 serviceRegistry,
@@ -260,6 +266,7 @@ public sealed class RuntimeApplication
 
             serviceLifecycle?.Dispose();
             projectService?.Dispose();
+            trustEvidenceService?.Dispose();
             traceSession?.Dispose();
 
             if (operationalLogger is not null)

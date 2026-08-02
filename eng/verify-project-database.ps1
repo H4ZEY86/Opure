@@ -61,7 +61,7 @@ $ownership = [System.IO.File]::ReadAllText($ownershipPath) |
 if ($schema.schema -ne 'opure.project-database-schema/1' -or
     $schema.result -ne 'Passed' -or
     $schema.databaseName -ne 'projects.db' -or
-    $schema.schemaVersion -ne 3 -or
+    $schema.schemaVersion -ne 4 -or
     $schema.tables.Count -ne 7 -or
     $schema.authoritative -ne $true -or
     $schema.wal -ne $true -or

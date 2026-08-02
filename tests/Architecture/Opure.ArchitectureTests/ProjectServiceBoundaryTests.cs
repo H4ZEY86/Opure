@@ -55,10 +55,60 @@ public sealed class ProjectServiceBoundaryTests
             "Opure.Filesystem.Windows.csproj",
             project,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "Opure.TrustEvidence.Contracts.csproj",
+            project,
+            StringComparison.Ordinal);
         Assert.DoesNotContain("PackageReference", project, StringComparison.Ordinal);
         Assert.DoesNotContain("Opure.Desktop", project, StringComparison.Ordinal);
         Assert.DoesNotContain("Opure.Runtime", project, StringComparison.Ordinal);
-        Assert.DoesNotContain("Opure.TrustEvidence", project, StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "Opure.TrustEvidence.Sqlite.csproj",
+            project,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "Opure.TrustEvidence.Service.csproj",
+            project,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ProjectServicePublishesOnlyThroughTrustContract()
+    {
+        string project = File.ReadAllText(Path.Combine(
+            RepositoryRoot,
+            "src",
+            "Project",
+            "Opure.Project.Service",
+            "Opure.Project.Service.csproj"));
+
+        Assert.Contains(
+            "Opure.TrustEvidence.Contracts.csproj",
+            project,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "Opure.TrustEvidence.Sqlite.csproj",
+            project,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "Opure.TrustEvidence.Service.csproj",
+            project,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ProjectTrustReceiptCodecCannotReadDisplayPath()
+    {
+        string source = File.ReadAllText(Path.Combine(
+            RepositoryRoot,
+            "src",
+            "Project",
+            "Opure.Project.Sqlite",
+            "ProjectTrustEvidenceOutbox.cs"));
+
+        Assert.DoesNotContain("DisplayPath", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("CanonicalPath", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("RootPath", source, StringComparison.Ordinal);
     }
 
     [Fact]

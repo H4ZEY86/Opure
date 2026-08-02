@@ -4,7 +4,7 @@ namespace Opure.Project.Sqlite;
 
 public static class ProjectDatabaseSchema
 {
-    public const int CurrentVersion = 3;
+    public const int CurrentVersion = 4;
     public const string ProjectTable = "projects";
     public const string RootTable = "project_root_references";
     public const string RepositoryTable = "project_repository_identities";
@@ -51,6 +51,24 @@ public static class ProjectDatabaseSchema
                 CreateLifecycleV3Commands()));
         }
 
+        if (targetVersion >= 4)
+        {
+            migrations.Add(new SqliteMigration(
+                "project-open-operation-v4",
+                sourceVersion: 3,
+                targetVersion: 4,
+                "Persists the bounded Open Project operation identity for receipt recovery.",
+                [
+                    $"""
+                    ALTER TABLE {ProjectTable}
+                        ADD COLUMN open_operation_id TEXT NULL
+                        CHECK (
+                            open_operation_id IS NULL OR
+                            length(open_operation_id) BETWEEN 16 AND 128)
+                    """
+                ]));
+        }
+
         List<SqliteSchemaValidation> validations =
         [
             new SqliteSchemaValidation(
@@ -84,6 +102,15 @@ public static class ProjectDatabaseSchema
                 minimumSchemaVersion: 3,
                 $"SELECT COUNT(*) FROM sqlite_schema WHERE type = 'table' AND name IN ('{ProjectTable}', '{LifecycleTable}') AND sql LIKE '%Opening%' AND sql LIKE '%RecoveryRequired%'",
                 "2"));
+        }
+
+        if (targetVersion >= 4)
+        {
+            validations.Add(new SqliteSchemaValidation(
+                "project-open-operation-identity-present",
+                minimumSchemaVersion: 4,
+                $"SELECT COUNT(*) FROM pragma_table_info('{ProjectTable}') WHERE name = 'open_operation_id' AND \"notnull\" = 0",
+                "1"));
         }
 
         return new SqliteMigrationCatalogue(migrations, validations);

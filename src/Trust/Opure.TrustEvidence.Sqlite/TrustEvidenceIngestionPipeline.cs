@@ -15,7 +15,7 @@ namespace Opure.TrustEvidence.Sqlite;
 /// </summary>
 public sealed class TrustEvidenceIngestionPipeline
 {
-    public const string MessageType = "trust.evidence-record";
+    public const string MessageType = EvidenceIngestionRequest.MessageType;
 
     private readonly SqliteServiceDatabase database;
     private readonly EvidenceTypeCatalogue evidenceTypes;

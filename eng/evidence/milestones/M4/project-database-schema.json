@@ -2,7 +2,7 @@
   "schema": "opure.project-database-schema/1",
   "result": "Passed",
   "databaseName": "projects.db",
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "ownerServiceId": "opure.project",
   "authoritative": true,
   "wal": true,

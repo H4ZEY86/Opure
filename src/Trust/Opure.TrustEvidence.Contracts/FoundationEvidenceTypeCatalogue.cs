@@ -23,6 +23,7 @@ public static class FoundationEvidenceTypeCatalogue
             RuntimeStopped(),
             ServiceStateChanged(),
             ConfigurationSnapshotCommitted(),
+            ProjectRegistered(),
             ProjectOpened(),
             ProjectClosed(),
             WorkspaceSnapshotCreated(),
@@ -142,32 +143,72 @@ public static class FoundationEvidenceTypeCatalogue
             ]);
     }
 
+    private static EvidenceTypeDefinition ProjectRegistered()
+    {
+        return Define(
+            "project.registered",
+            "opure.project",
+            EvidenceAuthorityClass.AuthoritativeDomainStateTransition,
+            ProjectStateTransitionFields(),
+            [
+                "lifecycle_state",
+                "project_id",
+                "repository_state",
+                "root_class"
+            ],
+            [
+                EvidenceRelationshipKind.Causes,
+                EvidenceRelationshipKind.Produces,
+                EvidenceRelationshipKind.CorrelatesWith
+            ]);
+    }
+
     private static EvidenceTypeDefinition ProjectOpened()
     {
         return Define(
             "project.opened",
             "opure.project",
-            EvidenceAuthorityClass.AuthoritativeDomainEffect,
+            EvidenceAuthorityClass.AuthoritativeDomainStateTransition,
+            ProjectStateTransitionFields(),
             [
-                Field(
-                    "project_id",
-                    EvidencePayloadFieldType.Identifier,
-                    EvidenceDataClassification.Pseudonymous),
-                Field(
-                    "registration_revision",
-                    EvidencePayloadFieldType.Integer,
-                    EvidenceDataClassification.Safe),
-                Field(
-                    "access_mode",
-                    EvidencePayloadFieldType.String,
-                    EvidenceDataClassification.Safe)
+                "lifecycle_state",
+                "project_id",
+                "repository_state",
+                "root_class"
             ],
-            ["access_mode", "project_id"],
             [
                 EvidenceRelationshipKind.AuthorisedBy,
                 EvidenceRelationshipKind.Produces,
                 EvidenceRelationshipKind.CorrelatesWith
             ]);
+    }
+
+    private static EvidencePayloadFieldDefinition[]
+        ProjectStateTransitionFields()
+    {
+        return
+        [
+            Field(
+                "project_id",
+                EvidencePayloadFieldType.Identifier,
+                EvidenceDataClassification.Pseudonymous),
+            Field(
+                "operation_id",
+                EvidencePayloadFieldType.Identifier,
+                EvidenceDataClassification.Pseudonymous),
+            Field(
+                "root_class",
+                EvidencePayloadFieldType.String,
+                EvidenceDataClassification.Safe),
+            Field(
+                "repository_state",
+                EvidencePayloadFieldType.String,
+                EvidenceDataClassification.Safe),
+            Field(
+                "lifecycle_state",
+                EvidencePayloadFieldType.String,
+                EvidenceDataClassification.Safe)
+        ];
     }
 
     private static EvidenceTypeDefinition ProjectClosed()

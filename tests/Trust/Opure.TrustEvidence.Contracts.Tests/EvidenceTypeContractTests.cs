@@ -246,6 +246,7 @@ public sealed class EvidenceTypeContractTests
             "configuration.snapshot-committed",
             "project.closed",
             "project.opened",
+            "project.registered",
             "runtime.started",
             "runtime.stopped",
             "security.policy-denied",
@@ -253,7 +254,7 @@ public sealed class EvidenceTypeContractTests
             "workspace.snapshot-created"
         ];
 
-        Assert.Equal(9, catalogue.Definitions.Count);
+        Assert.Equal(10, catalogue.Definitions.Count);
         Assert.Equal(
             expectedTypeIds,
             catalogue.Definitions
@@ -277,6 +278,49 @@ public sealed class EvidenceTypeContractTests
             });
 
         await WriteEvidenceAsync(catalogue);
+    }
+
+    [Fact]
+    public void Project_open_types_bind_authority_and_minimised_payload()
+    {
+        EvidenceTypeCatalogue catalogue = FoundationEvidenceTypeCatalogue.Current;
+        string[] expectedFields =
+        [
+            "lifecycle_state",
+            "operation_id",
+            "project_id",
+            "repository_state",
+            "root_class"
+        ];
+
+        foreach (string evidenceTypeId in
+                 new[] { "project.registered", "project.opened" })
+        {
+            EvidenceTypeDefinition definition =
+                Assert.Single(
+                    catalogue.Definitions,
+                    candidate => candidate.EvidenceTypeId == evidenceTypeId);
+
+            Assert.Equal("opure.project", definition.OwnerServiceId);
+            Assert.Equal(
+                EvidenceAuthorityClass.AuthoritativeDomainStateTransition,
+                definition.AuthorityClass);
+            Assert.Equal(
+                expectedFields,
+                definition.PayloadFields
+                    .Select(static field => field.Name)
+                    .Order(StringComparer.Ordinal)
+                    .ToArray());
+            Assert.DoesNotContain(
+                definition.PayloadFields,
+                static field =>
+                    field.Name.Contains("path", StringComparison.OrdinalIgnoreCase));
+            Assert.DoesNotContain(
+                definition.PayloadFields,
+                static field => field.Classification is
+                    EvidenceDataClassification.Secret or
+                    EvidenceDataClassification.Prohibited);
+        }
     }
 
     private static EvidenceTypeDefinition CreateDefinition(

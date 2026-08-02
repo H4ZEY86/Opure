@@ -151,7 +151,7 @@ public sealed class RuntimeServiceRegistryTests
             TestContext.Current.CancellationToken);
         string contractJson = JsonFormatter.Default.Format(response);
 
-        Assert.Equal(2, response.Registry.Services.Count);
+        Assert.Equal(3, response.Registry.Services.Count);
         RuntimeServiceDescriptor health = Assert.Single(
             response.Registry.Services,
             static service =>
@@ -160,6 +160,15 @@ public sealed class RuntimeServiceRegistryTests
         Assert.Equal(
             RuntimeServiceLifecycleState.Registered,
             health.LifecycleState);
+        RuntimeServiceDescriptor trust = Assert.Single(
+            response.Registry.Services,
+            static service =>
+                service.ServiceId == "trust.evidence");
+        Assert.Equal("opure.trust", trust.OwnerId);
+        Assert.Contains(
+            trust.Capabilities,
+            static capability =>
+                capability.CapabilityId == "trust.evidence.ingest");
         RuntimeServiceDescriptor project = Assert.Single(
             response.Registry.Services,
             static service =>
@@ -169,6 +178,12 @@ public sealed class RuntimeServiceRegistryTests
             project.Capabilities,
             static capability =>
                 capability.CapabilityId == "project.open");
+        RuntimeServiceDependency trustDependency = Assert.Single(
+            project.Dependencies);
+        Assert.Equal("trust.evidence", trustDependency.TargetId);
+        Assert.Equal(
+            RuntimeDependencyRequirement.Optional,
+            trustDependency.Requirement);
         Assert.DoesNotContain(
             nameof(RuntimeServiceRegistry),
             contractJson,

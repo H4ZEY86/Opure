@@ -247,6 +247,7 @@ public sealed class ProjectOpenServiceTests : IDisposable
                     DomainReleaseChannel.Development,
                     "Restart",
                     root,
+                    Guid.NewGuid().ToString("N"),
                     TestContext.Current.CancellationToken);
             projectId = Assert.IsType<ProjectSnapshot>(
                 opening.Project).ProjectId;

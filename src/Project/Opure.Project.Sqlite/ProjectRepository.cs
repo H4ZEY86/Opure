@@ -59,7 +59,8 @@ public sealed class ProjectRepository
                 displayName,
                 root,
                 repositoryKind,
-                repositoryIdentity),
+                repositoryIdentity,
+                trustOperationId: null),
             cancellationToken);
     }
 
@@ -69,6 +70,39 @@ public sealed class ProjectRepository
         string displayName,
         VerifiedWorkspaceRootReference root,
         CancellationToken cancellationToken = default)
+    {
+        return BeginOpenCore(
+            releaseChannel,
+            displayName,
+            root,
+            trustOperationId: null,
+            cancellationToken: cancellationToken);
+    }
+
+    [SupportedOSPlatform("windows")]
+    public ProjectRegistrationResult BeginOpen(
+        ProjectReleaseChannel releaseChannel,
+        string displayName,
+        VerifiedWorkspaceRootReference root,
+        string operationId,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateOperationId(operationId);
+        return BeginOpenCore(
+            releaseChannel,
+            displayName,
+            root,
+            operationId,
+            cancellationToken);
+    }
+
+    [SupportedOSPlatform("windows")]
+    private ProjectRegistrationResult BeginOpenCore(
+        ProjectReleaseChannel releaseChannel,
+        string displayName,
+        VerifiedWorkspaceRootReference root,
+        string? trustOperationId,
+        CancellationToken cancellationToken)
     {
         ValidateRegistration(
             releaseChannel,
@@ -95,7 +129,8 @@ public sealed class ProjectRepository
                     displayName,
                     root,
                     repositoryKind: null,
-                    repositoryIdentity: null);
+                    repositoryIdentity: null,
+                    trustOperationId: trustOperationId);
 
                 if (registration.Disposition ==
                     ProjectRegistrationDisposition.DisplayPathIdentityConflict)
@@ -106,6 +141,15 @@ public sealed class ProjectRepository
                 ProjectSnapshot project = registration.Project ??
                     throw new InvalidOperationException(
                         "A successful project registration returned no project.");
+
+                if (trustOperationId is not null)
+                {
+                    UpdateOpenOperationId(
+                        connection,
+                        transaction,
+                        project.ProjectId,
+                        trustOperationId);
+                }
 
                 if (project.LifecycleState != ProjectLifecycleState.Opening)
                 {
@@ -234,6 +278,99 @@ public sealed class ProjectRepository
             cancellationToken);
     }
 
+    public ProjectSnapshot CompleteOpen(
+        string projectId,
+        string operationId,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateProjectId(projectId);
+        ValidateOperationId(operationId);
+        return database.ExecuteTransaction(
+            (connection, transaction) =>
+            {
+                ProjectSnapshot existing =
+                    ReadByProjectId(connection, transaction, projectId) ??
+                    throw new KeyNotFoundException(
+                        "The requested project does not exist.");
+
+                if (existing.LifecycleState != ProjectLifecycleState.Opening)
+                {
+                    throw new InvalidOperationException(
+                        "Only an Opening project can complete its Open transition.");
+                }
+
+                string? persistedOperationId = ReadOpenOperationIdCore(
+                    connection,
+                    transaction,
+                    projectId);
+
+                if (!string.Equals(
+                        persistedOperationId,
+                        operationId,
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "The Open Project operation identity changed before completion.");
+                }
+
+                DateTimeOffset now = timeProvider.GetUtcNow();
+                long revision = ReadNextRevision(
+                    connection,
+                    transaction,
+                    projectId);
+                UpdateLifecycle(
+                    connection,
+                    transaction,
+                    projectId,
+                    ProjectLifecycleState.Open,
+                    now);
+                InsertLifecycle(
+                    connection,
+                    transaction,
+                    projectId,
+                    revision,
+                    ProjectLifecycleState.Open,
+                    "project-opened",
+                    now);
+                EnqueueLifecycle(
+                    connection,
+                    transaction,
+                    projectId,
+                    existing.ReleaseChannel,
+                    ProjectLifecycleState.Open,
+                    "project-opened",
+                    revision,
+                    now);
+                ProjectSnapshot opened =
+                    ReadByProjectId(connection, transaction, projectId) ??
+                    throw new InvalidOperationException(
+                        "The opened project could not be read.");
+                _ = ProjectTrustEvidenceOutbox.Enqueue(
+                    outbox,
+                    connection,
+                    transaction,
+                    opened,
+                    operationId,
+                    ProjectTrustEvidenceOutbox.ProjectOpenedTypeId,
+                    now);
+                return opened;
+            },
+            cancellationToken);
+    }
+
+    public string? ReadOpenOperationId(
+        string projectId,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateProjectId(projectId);
+        return database.ExecuteTransaction(
+            (connection, transaction) => ReadOpenOperationIdCore(
+                connection,
+                transaction,
+                projectId),
+            cancellationToken);
+    }
+
     private ProjectRegistrationResult RegisterCore(
         SqliteConnection connection,
         SqliteTransaction transaction,
@@ -241,7 +378,8 @@ public sealed class ProjectRepository
         string displayName,
         VerifiedWorkspaceRootReference root,
         string? repositoryKind,
-        string? repositoryIdentity)
+        string? repositoryIdentity,
+        string? trustOperationId)
     {
         ProjectSnapshot? exact = ReadByIdentity(
             connection,
@@ -322,6 +460,19 @@ public sealed class ProjectRepository
             ReadByProjectId(connection, transaction, projectId) ??
             throw new InvalidOperationException(
                 "The created project could not be read.");
+
+        if (trustOperationId is not null)
+        {
+            _ = ProjectTrustEvidenceOutbox.Enqueue(
+                outbox,
+                connection,
+                transaction,
+                created,
+                trustOperationId,
+                ProjectTrustEvidenceOutbox.ProjectRegisteredTypeId,
+                now);
+        }
+
         return new ProjectRegistrationResult(
             ProjectRegistrationDisposition.Created,
             created,
@@ -530,6 +681,57 @@ public sealed class ProjectRepository
             throw new KeyNotFoundException(
                 "The requested project does not exist.");
         }
+    }
+
+    private static void UpdateOpenOperationId(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        string projectId,
+        string operationId)
+    {
+        using SqliteCommand command = CreateCommand(
+            connection,
+            transaction,
+            $"""
+            UPDATE {ProjectDatabaseSchema.ProjectTable}
+               SET open_operation_id = $operationId
+             WHERE project_id = $projectId;
+            """);
+        Add(command, "$operationId", operationId);
+        Add(command, "$projectId", projectId);
+
+        if (command.ExecuteNonQuery() != 1)
+        {
+            throw new KeyNotFoundException(
+                "The requested project does not exist.");
+        }
+    }
+
+    private static string? ReadOpenOperationIdCore(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        string projectId)
+    {
+        using SqliteCommand command = CreateCommand(
+            connection,
+            transaction,
+            $"""
+            SELECT open_operation_id
+              FROM {ProjectDatabaseSchema.ProjectTable}
+             WHERE project_id = $projectId;
+            """);
+        Add(command, "$projectId", projectId);
+        object? value = command.ExecuteScalar();
+
+        if (value is null)
+        {
+            throw new KeyNotFoundException(
+                "The requested project does not exist.");
+        }
+
+        return value is DBNull
+            ? null
+            : Convert.ToString(value, CultureInfo.InvariantCulture);
     }
 
     private static long ReadNextRevision(
@@ -786,6 +988,21 @@ public sealed class ProjectRepository
             throw new ArgumentException(
                 "Project metadata must be bounded single-line text.",
                 parameterName);
+        }
+    }
+
+    private static void ValidateOperationId(string operationId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(operationId);
+
+        if (operationId.Length is < 16 or > 128 ||
+            operationId.Any(static character =>
+                !char.IsAsciiLetterOrDigit(character) &&
+                character is not '_' and not '-'))
+        {
+            throw new ArgumentException(
+                "An Open Project operation ID must be a bounded opaque identifier.",
+                nameof(operationId));
         }
     }
 }

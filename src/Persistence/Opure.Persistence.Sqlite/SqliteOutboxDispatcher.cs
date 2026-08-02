@@ -290,6 +290,23 @@ public sealed class SqliteOutboxDispatcher
     public SqliteOutboxDeliveryLease? TryAcquireNext(
         CancellationToken cancellationToken = default)
     {
+        return TryAcquireNextCore(
+            eventType: null,
+            cancellationToken);
+    }
+
+    public SqliteOutboxDeliveryLease? TryAcquireNextOfType(
+        string eventType,
+        CancellationToken cancellationToken = default)
+    {
+        SqliteIdentifier.Validate(eventType, nameof(eventType));
+        return TryAcquireNextCore(eventType, cancellationToken);
+    }
+
+    private SqliteOutboxDeliveryLease? TryAcquireNextCore(
+        string? eventType,
+        CancellationToken cancellationToken)
+    {
         DateTimeOffset now = timeProvider.GetUtcNow();
         string nowText = SqliteTime.Format(now);
 
@@ -299,6 +316,7 @@ public sealed class SqliteOutboxDispatcher
                 connection,
                 transaction,
                 database.Descriptor.OwnerServiceId,
+                eventType,
                 nowText);
 
             if (candidate is null)
@@ -512,8 +530,33 @@ public sealed class SqliteOutboxDispatcher
         ISqliteOutboxPublisher publisher,
         CancellationToken cancellationToken = default)
     {
+        return DispatchNextCore(
+            publisher,
+            eventType: null,
+            cancellationToken);
+    }
+
+    public SqliteOutboxDispatchResult DispatchNextOfType(
+        string eventType,
+        ISqliteOutboxPublisher publisher,
+        CancellationToken cancellationToken = default)
+    {
+        SqliteIdentifier.Validate(eventType, nameof(eventType));
+        return DispatchNextCore(
+            publisher,
+            eventType,
+            cancellationToken);
+    }
+
+    private SqliteOutboxDispatchResult DispatchNextCore(
+        ISqliteOutboxPublisher publisher,
+        string? eventType,
+        CancellationToken cancellationToken)
+    {
         ArgumentNullException.ThrowIfNull(publisher);
-        SqliteOutboxDeliveryLease? lease = TryAcquireNext(cancellationToken);
+        SqliteOutboxDeliveryLease? lease = TryAcquireNextCore(
+            eventType,
+            cancellationToken);
 
         if (lease is null)
         {
@@ -572,6 +615,23 @@ public sealed class SqliteOutboxDispatcher
     public SqliteOutboxBacklogHealth ReadBacklogHealth(
         CancellationToken cancellationToken = default)
     {
+        return ReadBacklogHealthCore(
+            eventType: null,
+            cancellationToken);
+    }
+
+    public SqliteOutboxBacklogHealth ReadBacklogHealthOfType(
+        string eventType,
+        CancellationToken cancellationToken = default)
+    {
+        SqliteIdentifier.Validate(eventType, nameof(eventType));
+        return ReadBacklogHealthCore(eventType, cancellationToken);
+    }
+
+    private SqliteOutboxBacklogHealth ReadBacklogHealthCore(
+        string? eventType,
+        CancellationToken cancellationToken)
+    {
         DateTimeOffset now = timeProvider.GetUtcNow();
 
         return database.ExecuteTransaction((connection, transaction) =>
@@ -592,13 +652,17 @@ public sealed class SqliteOutboxDispatcher
                         ELSE NULL
                     END)
                   FROM {SqliteOutboxSchema.MessageTableName} AS m
-                  JOIN {SqliteOutboxSchema.DeliveryTableName} AS d
-                    ON d.message_id = m.message_id
-                 WHERE m.owner_service_id = $ownerServiceId;
-                """;
+                   JOIN {SqliteOutboxSchema.DeliveryTableName} AS d
+                     ON d.message_id = m.message_id
+                  WHERE m.owner_service_id = $ownerServiceId
+                    AND ($eventType IS NULL OR m.event_type = $eventType);
+            """;
             _ = command.Parameters.AddWithValue(
                 "$ownerServiceId",
                 database.Descriptor.OwnerServiceId);
+            _ = command.Parameters.AddWithValue(
+                "$eventType",
+                (object?)eventType ?? DBNull.Value);
             using SqliteDataReader reader = command.ExecuteReader();
             _ = reader.Read();
             long pending = reader.GetInt64(0);
@@ -635,6 +699,7 @@ public sealed class SqliteOutboxDispatcher
         SqliteConnection connection,
         SqliteTransaction transaction,
         string ownerServiceId,
+        string? eventType,
         string nowText)
     {
         using SqliteCommand command = connection.CreateCommand();
@@ -661,6 +726,7 @@ public sealed class SqliteOutboxDispatcher
               JOIN {SqliteOutboxSchema.DeliveryTableName} AS d
                 ON d.message_id = m.message_id
              WHERE m.owner_service_id = $ownerServiceId
+               AND ($eventType IS NULL OR m.event_type = $eventType)
                AND (
                     (d.state = 'Pending' AND d.next_attempt_utc <= $nowUtc)
                     OR
@@ -671,10 +737,11 @@ public sealed class SqliteOutboxDispatcher
                       FROM {SqliteOutboxSchema.MessageTableName} AS earlier
                       JOIN {SqliteOutboxSchema.DeliveryTableName} AS earlier_delivery
                         ON earlier_delivery.message_id = earlier.message_id
-                     WHERE earlier.owner_service_id = m.owner_service_id
-                       AND earlier.stream_id = m.stream_id
-                       AND earlier.owner_sequence < m.owner_sequence
-                       AND earlier_delivery.state NOT IN ('Delivered', 'DeadLettered')
+                      WHERE earlier.owner_service_id = m.owner_service_id
+                        AND earlier.stream_id = m.stream_id
+                        AND earlier.owner_sequence < m.owner_sequence
+                        AND ($eventType IS NULL OR earlier.event_type = $eventType)
+                        AND earlier_delivery.state NOT IN ('Delivered', 'DeadLettered')
                )
              ORDER BY m.enqueued_at_utc,
                       m.stream_id,
@@ -683,6 +750,9 @@ public sealed class SqliteOutboxDispatcher
              LIMIT 1;
             """;
         _ = command.Parameters.AddWithValue("$ownerServiceId", ownerServiceId);
+        _ = command.Parameters.AddWithValue(
+            "$eventType",
+            (object?)eventType ?? DBNull.Value);
         _ = command.Parameters.AddWithValue("$nowUtc", nowText);
         using SqliteDataReader reader = command.ExecuteReader();
 

@@ -1,0 +1,12 @@
+{
+  "schema": "opure.project-open-trust-recovery/1",
+  "result": "Passed",
+  "ownerCommitSurvivedTrustUnavailable": true,
+  "pendingReceiptPersisted": true,
+  "projectRestartResumedDelivery": true,
+  "trustRestartAcceptedDelivery": true,
+  "duplicateDeliveryIdempotent": true,
+  "boundedDispatchMaximum": 4096,
+  "retryMaximumAttempts": 100,
+  "finalUndeliveredCount": 0
+}

@@ -208,6 +208,11 @@ public sealed class RuntimeHealthRequestHandlerTests
             sequence: 1,
             failure: null);
         registry.UpdateLifecycle(
+            "trust.evidence",
+            RuntimeServiceLifecycleState.Ready,
+            sequence: 1,
+            failure: null);
+        registry.UpdateLifecycle(
             "project.service",
             RuntimeServiceLifecycleState.Ready,
             sequence: 1,

@@ -85,6 +85,17 @@ public sealed class ProjectDatabase : IDisposable
         return new ProjectRepository(database, timeProvider);
     }
 
+    public SqliteOutboxDispatcher CreateOutboxDispatcher(
+        SqliteOutboxRetryPolicy? retryPolicy = null,
+        TimeProvider? timeProvider = null)
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        return new SqliteOutboxDispatcher(
+            database,
+            retryPolicy,
+            timeProvider);
+    }
+
     public ProjectDatabaseHealth InspectHealth(
         CancellationToken cancellationToken = default)
     {

@@ -270,9 +270,42 @@ public sealed class SqliteOutboxWriter
         SqliteTransaction transaction,
         SqliteOutboxEnvelope envelope)
     {
+        ArgumentNullException.ThrowIfNull(envelope);
+        return EnqueueCore(
+            connection,
+            transaction,
+            envelope.StreamId,
+            _ => envelope);
+    }
+
+    /// <summary>
+    /// Allocates the immutable stream sequence before constructing the
+    /// envelope. This supports owner receipts whose canonical record binds the
+    /// same sequence that is committed by the outbox transaction.
+    /// </summary>
+    public SqliteOutboxWriteResult Enqueue(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        string streamId,
+        Func<long, SqliteOutboxEnvelope> envelopeFactory)
+    {
+        SqliteIdentifier.Validate(streamId, nameof(streamId));
+        ArgumentNullException.ThrowIfNull(envelopeFactory);
+        return EnqueueCore(
+            connection,
+            transaction,
+            streamId,
+            envelopeFactory);
+    }
+
+    private SqliteOutboxWriteResult EnqueueCore(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        string streamId,
+        Func<long, SqliteOutboxEnvelope> envelopeFactory)
+    {
         ArgumentNullException.ThrowIfNull(connection);
         ArgumentNullException.ThrowIfNull(transaction);
-        ArgumentNullException.ThrowIfNull(envelope);
 
         if (!ReferenceEquals(transaction.Connection, connection))
         {
@@ -296,10 +329,6 @@ public sealed class SqliteOutboxWriter
                 recoveryRequired: false);
         }
 
-        string payloadHash = SqliteHash.Calculate(
-            envelope.PayloadUtf8Json.Span);
-        string idempotencyHash = SqliteHash.Calculate(
-            Encoding.UTF8.GetBytes(envelope.IdempotencyKey));
         string enqueuedAt = SqliteTime.Format(
             timeProvider.GetUtcNow());
 
@@ -309,7 +338,26 @@ public sealed class SqliteOutboxWriter
                 connection,
                 transaction,
                 descriptor.OwnerServiceId,
-                envelope.StreamId);
+                streamId);
+            SqliteOutboxEnvelope envelope =
+                envelopeFactory(ownerSequence) ??
+                throw new InvalidOperationException(
+                    "The outbox envelope factory returned no envelope.");
+
+            if (!string.Equals(
+                    envelope.StreamId,
+                    streamId,
+                    StringComparison.Ordinal))
+            {
+                throw new ArgumentException(
+                    "The generated outbox envelope must use the allocated stream.",
+                    nameof(envelopeFactory));
+            }
+
+            string payloadHash = SqliteHash.Calculate(
+                envelope.PayloadUtf8Json.Span);
+            string idempotencyHash = SqliteHash.Calculate(
+                Encoding.UTF8.GetBytes(envelope.IdempotencyKey));
             InsertMessage(
                 connection,
                 transaction,
@@ -327,13 +375,13 @@ public sealed class SqliteOutboxWriter
             return new SqliteOutboxWriteResult(
                 envelope.MessageId,
                 descriptor.OwnerServiceId,
-                envelope.StreamId,
+                streamId,
                 ownerSequence,
                 payloadHash,
                 idempotencyHash);
         }
         catch (SqliteException exception) when (
-            exception.SqliteErrorCode == 19)
+            exception.SqliteExtendedErrorCode is 1555 or 2067)
         {
             throw new SqlitePersistenceException(
                 SqlitePersistenceErrorCodes.OutboxDuplicate,

@@ -1,0 +1,11 @@
+{
+  "schema": "opure.project-open-trust-transaction/1",
+  "result": "Passed",
+  "projectStateAndReceiptCommitTogether": true,
+  "receiptInsertFailureRolledBackProject": true,
+  "successfulReceiptForFailedOpen": false,
+  "ownerDatabase": "projects.db",
+  "ownerServiceId": "opure.project",
+  "crossServiceTransactionUsed": false,
+  "delivery": "transactional-outbox-at-least-once"
+}

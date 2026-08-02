@@ -116,6 +116,7 @@ public sealed class ProjectOpenService : IProjectOpenRequestHandler
                 ToDomain(request.ReleaseChannel),
                 request.DisplayName,
                 root,
+                request.OperationId,
                 cancellationToken);
         }
         catch (WindowsPathReferenceException)
@@ -151,10 +152,9 @@ public sealed class ProjectOpenService : IProjectOpenRequestHandler
             initialSnapshot = await snapshotRequester.RequestAsync(
                 opening.ProjectId,
                 cancellationToken).ConfigureAwait(false);
-            ProjectSnapshot opened = repository.TransitionLifecycle(
+            ProjectSnapshot opened = repository.CompleteOpen(
                 opening.ProjectId,
-                DomainLifecycleState.Open,
-                "project-opened",
+                request.OperationId,
                 cancellationToken);
             return CreateSuccess(
                 request.OperationId,
@@ -205,6 +205,19 @@ public sealed class ProjectOpenService : IProjectOpenRequestHandler
 
             try
             {
+                string? operationId = repository.ReadOpenOperationId(
+                    project.ProjectId,
+                    cancellationToken);
+
+                if (operationId is null)
+                {
+                    MarkRecoveryRequired(
+                        project.ProjectId,
+                        "project-open-operation-missing");
+                    recoveryRequired++;
+                    continue;
+                }
+
                 VerifiedWorkspaceRootReference root =
                     WindowsPathReferenceResolver.AcquireRoot(
                         new UntrustedPathText(project.Root.DisplayPath));
@@ -222,10 +235,9 @@ public sealed class ProjectOpenService : IProjectOpenRequestHandler
                 _ = await snapshotRequester.RequestAsync(
                     project.ProjectId,
                     cancellationToken).ConfigureAwait(false);
-                _ = repository.TransitionLifecycle(
+                _ = repository.CompleteOpen(
                     project.ProjectId,
-                    DomainLifecycleState.Open,
-                    "project-open-reconciled",
+                    operationId,
                     cancellationToken);
                 completed++;
             }

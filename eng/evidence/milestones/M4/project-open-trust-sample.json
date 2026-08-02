@@ -1,0 +1,22 @@
+{
+  "schema": "opure.project-open-trust-sample/1",
+  "result": "Passed",
+  "evidenceTypeId": "project.opened",
+  "ownerServiceId": "opure.project",
+  "authorityClass": "AuthoritativeDomainStateTransition",
+  "scope": "Project",
+  "action": "project.open",
+  "outcome": "succeeded",
+  "payloadClassification": "Pseudonymous",
+  "payload": {
+    "project_id": "0123456789abcdef0123456789abcdef",
+    "operation_id": "123456789abcdef0123456789abcdef0",
+    "root_class": "fixed-local",
+    "repository_state": "not-inspected",
+    "lifecycle_state": "open"
+  },
+  "identifiersPseudonymisedForEvidence": true,
+  "payloadHashValidated": true,
+  "recordHashValidated": true,
+  "rawRootPathPersisted": false
+}

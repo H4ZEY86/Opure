@@ -2862,6 +2862,28 @@ different identity requires explicit review. Contract sizes, deadlines,
 authentication and safe error projection are bounded. This flow does not grant
 Desktop filesystem or Project database authority.
 
+FND-030 makes Project Open visible through a typed Trust receipt without
+moving authority into Trust Evidence. `project.registered` and
+`project.opened` are owned by `opure.project` and classified as authoritative
+domain state transitions. Project Service writes each canonical Evidence
+Record envelope to its own transactional outbox in the same short SQLite
+transaction as the corresponding lifecycle state. There is no cross-service
+transaction: the Project database commit is authoritative and the Trust
+database is a separately recoverable projection.
+
+Runtime composes an ingestion port already bound to the Project owner identity.
+The publisher cannot select or infer another owner from message content. A
+bounded type-filtered dispatcher delivers at least once; Trust Evidence inbox
+semantics acknowledge an identical duplicate without a second projection. A
+Trust failure leaves the receipt pending with inspectable backlog health and
+bounded retry, while the completed Project operation remains honestly
+successful. Startup drains eligible receipts after Project or Trust restart.
+Raw root paths and project content are deliberately omitted: the inline payload
+contains only pseudonymous Project and operation identifiers, safe root class,
+repository state and lifecycle state. Repository identity detection remains
+deferred to FND-031, so the current receipt reports `not-inspected` unless
+authoritative repository metadata already exists.
+
 The following rules should be enforced as architectural invariants:
 
 1. AI providers are accessed only through the AI Router.

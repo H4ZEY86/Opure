@@ -102,6 +102,84 @@ public sealed class SqliteOutboxTests
     }
 
     [Fact]
+    public void Type_filtered_dispatch_does_not_consume_or_block_other_events()
+    {
+        using TestDataRoot testRoot = new();
+        ManualTimeProvider timeProvider = CreateTimeProvider();
+        using SqliteServiceDatabase database = OpenDatabase(
+            testRoot.ChannelRoot,
+            timeProvider);
+        SqliteOutboxWriter writer = new(database.Descriptor, timeProvider);
+        const string streamId = "project-trust-evidence";
+        const string targetType = "trust.evidence-record";
+
+        _ = database.ExecuteTransaction((connection, transaction) =>
+        {
+            _ = writer.Enqueue(
+                connection,
+                transaction,
+                new SqliteOutboxEnvelope(
+                    "message-lifecycle-001",
+                    streamId,
+                    "project.lifecycle-changed",
+                    eventSchemaVersion: 1,
+                    SqliteOutboxDataClassification.Internal,
+                    timeProvider.GetUtcNow(),
+                    "operation-lifecycle-001",
+                    Encoding.UTF8.GetBytes(
+                        """{"outcome":"committed"}""")));
+            return writer.Enqueue(
+                connection,
+                transaction,
+                new SqliteOutboxEnvelope(
+                    "message-trust-001",
+                    streamId,
+                    targetType,
+                    eventSchemaVersion: 1,
+                    SqliteOutboxDataClassification.ProjectMetadata,
+                    timeProvider.GetUtcNow(),
+                    "operation-trust-001",
+                    Encoding.UTF8.GetBytes(
+                        """{"outcome":"committed"}""")));
+        }, TestContext.Current.CancellationToken);
+        SqliteOutboxDispatcher dispatcher = new(
+            database,
+            timeProvider: timeProvider);
+
+        SqliteOutboxBacklogHealth targetBefore =
+            dispatcher.ReadBacklogHealthOfType(
+                targetType,
+                TestContext.Current.CancellationToken);
+        SqliteOutboxDeliveryLease lease = Assert.IsType<
+            SqliteOutboxDeliveryLease>(
+                dispatcher.TryAcquireNextOfType(
+                    targetType,
+                    TestContext.Current.CancellationToken));
+        dispatcher.MarkDelivered(
+            lease,
+            "trust-receipt-001",
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, targetBefore.UndeliveredCount);
+        Assert.Equal("message-trust-001", lease.Message.MessageId);
+        Assert.Equal(
+            0,
+            dispatcher.ReadBacklogHealthOfType(
+                targetType,
+                TestContext.Current.CancellationToken).UndeliveredCount);
+        Assert.Equal(
+            1,
+            dispatcher.ReadBacklogHealth(
+                TestContext.Current.CancellationToken).UndeliveredCount);
+        Assert.Equal(
+            "message-lifecycle-001",
+            Assert.IsType<SqliteOutboxDeliveryLease>(
+                dispatcher.TryAcquireNext(
+                    TestContext.Current.CancellationToken))
+                .Message.MessageId);
+    }
+
+    [Fact]
     public async Task Crash_before_and_during_delivery_recovers_without_loss()
     {
         using TestDataRoot testRoot = new();

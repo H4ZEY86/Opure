@@ -119,6 +119,7 @@ $expectedTypeIds = @(
     'configuration.snapshot-committed',
     'project.closed',
     'project.opened',
+    'project.registered',
     'runtime.started',
     'runtime.stopped',
     'security.policy-denied',
@@ -128,8 +129,8 @@ $expectedTypeIds = @(
 
 if ($catalogue.schema -ne 'opure.foundation-evidence-type-catalogue/1' -or
     $catalogue.result -ne 'Passed' -or
-    $catalogue.typeCount -ne 9 -or
-    $catalogue.types.Count -ne 9 -or
+    $catalogue.typeCount -ne 10 -or
+    $catalogue.types.Count -ne 10 -or
     $catalogue.authoritative -ne $false -or
     [string]::Join(',', $catalogue.types.evidenceTypeId) -ne
         [string]::Join(',', $expectedTypeIds)) {

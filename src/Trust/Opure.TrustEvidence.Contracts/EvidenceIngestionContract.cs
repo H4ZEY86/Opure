@@ -94,6 +94,7 @@ public sealed record EvidenceIngestionRelationship
 /// </summary>
 public sealed class EvidenceIngestionRequest
 {
+    public const string MessageType = "trust.evidence-record";
     public const int CurrentContractRevision = 1;
     public const int MaximumRelationships = 64;
 
@@ -229,4 +230,18 @@ public static class EvidenceIngestionCodes
         "TRUST_INGESTION_PREVIOUS_HASH_MISMATCH";
     public const string ConflictingDuplicate =
         "TRUST_INGESTION_CONFLICTING_DUPLICATE";
+}
+
+/// <summary>
+/// Represents one owner identity bound by trusted Runtime composition. The
+/// caller supplies only the Evidence Record; it cannot select or replace the
+/// authenticated owner identity carried by the implementation.
+/// </summary>
+public interface ITrustEvidenceOwnerIngestionPort
+{
+    string BoundOwnerServiceId { get; }
+
+    EvidenceIngestionReceipt Ingest(
+        EvidenceIngestionRequest request,
+        CancellationToken cancellationToken = default);
 }

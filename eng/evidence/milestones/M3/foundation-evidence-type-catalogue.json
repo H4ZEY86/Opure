@@ -1,7 +1,7 @@
 {
   "schema": "opure.foundation-evidence-type-catalogue/1",
   "result": "Passed",
-  "typeCount": 9,
+  "typeCount": 10,
   "types": [
     {
       "evidenceTypeId": "backup.recovery-point-created",
@@ -138,13 +138,19 @@
       "evidenceTypeId": "project.opened",
       "revision": 1,
       "ownerServiceId": "opure.project",
-      "authorityClass": "AuthoritativeDomainEffect",
+      "authorityClass": "AuthoritativeDomainStateTransition",
       "payloadLocation": "Inline",
       "payloadFields": [
         {
-          "name": "access_mode",
+          "name": "lifecycle_state",
           "fieldType": "String",
           "classification": "Safe",
+          "isRequired": true
+        },
+        {
+          "name": "operation_id",
+          "fieldType": "Identifier",
+          "classification": "Pseudonymous",
           "isRequired": true
         },
         {
@@ -154,15 +160,23 @@
           "isRequired": true
         },
         {
-          "name": "registration_revision",
-          "fieldType": "Integer",
+          "name": "repository_state",
+          "fieldType": "String",
+          "classification": "Safe",
+          "isRequired": true
+        },
+        {
+          "name": "root_class",
+          "fieldType": "String",
           "classification": "Safe",
           "isRequired": true
         }
       ],
       "safeIndexFields": [
-        "access_mode",
-        "project_id"
+        "lifecycle_state",
+        "project_id",
+        "repository_state",
+        "root_class"
       ],
       "relationshipEligibility": [
         "AuthorisedBy",
@@ -176,7 +190,65 @@
       },
       "supportExportEligibility": "EligibleAfterRedaction",
       "redactionProfileId": "opure.trust-evidence-redaction.1",
-      "canonicalSha256": "a3f8d537b211d1db6e5deb528235c535f7d42edb22bcb7582dc4abec16815c2b"
+      "canonicalSha256": "0bf7a808ed43060dc27f8598cc1625a4911885aa33343dd6b7f498e2f3ab84ad"
+    },
+    {
+      "evidenceTypeId": "project.registered",
+      "revision": 1,
+      "ownerServiceId": "opure.project",
+      "authorityClass": "AuthoritativeDomainStateTransition",
+      "payloadLocation": "Inline",
+      "payloadFields": [
+        {
+          "name": "lifecycle_state",
+          "fieldType": "String",
+          "classification": "Safe",
+          "isRequired": true
+        },
+        {
+          "name": "operation_id",
+          "fieldType": "Identifier",
+          "classification": "Pseudonymous",
+          "isRequired": true
+        },
+        {
+          "name": "project_id",
+          "fieldType": "Identifier",
+          "classification": "Pseudonymous",
+          "isRequired": true
+        },
+        {
+          "name": "repository_state",
+          "fieldType": "String",
+          "classification": "Safe",
+          "isRequired": true
+        },
+        {
+          "name": "root_class",
+          "fieldType": "String",
+          "classification": "Safe",
+          "isRequired": true
+        }
+      ],
+      "safeIndexFields": [
+        "lifecycle_state",
+        "project_id",
+        "repository_state",
+        "root_class"
+      ],
+      "relationshipEligibility": [
+        "Causes",
+        "Produces",
+        "CorrelatesWith"
+      ],
+      "retention": {
+        "retentionClass": "AuthoritativeTrustEvidence",
+        "defaultRetentionDays": 180,
+        "dependencyExtensionAllowed": true
+      },
+      "supportExportEligibility": "EligibleAfterRedaction",
+      "redactionProfileId": "opure.trust-evidence-redaction.1",
+      "canonicalSha256": "961a3723edb9322b394288ae94b93e732f6732cfd5df30cacc6a0e029dcbb5be"
     },
     {
       "evidenceTypeId": "runtime.started",

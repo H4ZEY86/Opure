@@ -29,6 +29,37 @@ internal static class RuntimeServiceCatalogue
             SafeSummary = "Provides a bounded Runtime and service health projection."
         });
 
+        RuntimeServiceDescriptor trustEvidence = new()
+        {
+            ServiceId = "trust.evidence",
+            ServiceRevision = 1,
+            ContractRevision = 1,
+            DisplayName = "Trust Evidence Service",
+            OwnerId = "opure.trust",
+            Classification = RuntimeServiceClassification.CriticalCore,
+            LifecycleState = RuntimeServiceLifecycleState.Registered,
+            ProcessPlacement = RuntimeServiceProcessPlacement.RuntimeProcess,
+            HealthReference = new RuntimeServiceHealthReference
+            {
+                HealthServiceId = "runtime.health",
+                ContractRevision = 1
+            }
+        };
+        trustEvidence.Capabilities.Add(new RuntimeCapabilitySummary
+        {
+            CapabilityId = "trust.evidence.ingest",
+            ContractRevision = 1,
+            SafeSummary =
+                "Validates owner-bound Evidence Records into the local Trust projection."
+        });
+        trustEvidence.Capabilities.Add(new RuntimeCapabilitySummary
+        {
+            CapabilityId = "trust.evidence.query",
+            ContractRevision = 1,
+            SafeSummary =
+                "Provides bounded project-scoped Trust Evidence queries."
+        });
+
         RuntimeServiceDescriptor project = new()
         {
             ServiceId = "project.service",
@@ -52,8 +83,15 @@ internal static class RuntimeServiceCatalogue
             SafeSummary =
                 "Validates, registers and opens a verified local project root."
         });
+        project.Dependencies.Add(new RuntimeServiceDependency
+        {
+            Kind = RuntimeDependencyKind.Service,
+            TargetId = trustEvidence.ServiceId,
+            MinimumContractRevision = 1,
+            Requirement = RuntimeDependencyRequirement.Optional
+        });
 
-        return [health, project];
+        return [health, trustEvidence, project];
     }
 
     internal static IReadOnlyList<RuntimeManagedServiceDefinition>

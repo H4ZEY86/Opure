@@ -14,10 +14,12 @@ and definition-hash mismatches are rejected. Historical revisions remain
 readable. A stable type cannot change owner or authority between revisions; a
 different authority requires a new type identifier.
 
-The initial catalogue defines nine foundation contracts. It does not publish
-records or claim that every future owner service is implemented. Record
-envelopes, persistence, ingestion, querying and reconciliation remain assigned
-to FND-022 through FND-025.
+The reviewed catalogue defines ten foundation contracts, including the distinct
+`project.registered` and `project.opened` state transitions owned by Project
+Service. This catalogue does not itself publish records or claim that every
+future owner service is implemented. Record envelopes, persistence, ingestion,
+querying and reconciliation are verified by their later dependency-ordered
+gates.
 
 The evidence gate runs the complete Release build and test suite, focused schema
 and canonical-hash vectors, the reviewed catalogue fixture, authority-drift and

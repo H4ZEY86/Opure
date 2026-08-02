@@ -69,8 +69,12 @@
           "Opure.Filesystem.Windows": "[1.0.0, )",
           "Opure.Persistence.Sqlite": "[1.0.0, )",
           "Opure.Project.Contracts": "[1.0.0, )",
-          "Opure.Project.Protocol": "[1.0.0, )"
+          "Opure.Project.Protocol": "[1.0.0, )",
+          "Opure.TrustEvidence.Contracts": "[1.0.0, )"
         }
+      },
+      "opure.trustevidence.contracts": {
+        "type": "Project"
       },
       "Google.Protobuf": {
         "type": "CentralTransitive",

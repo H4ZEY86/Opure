@@ -189,37 +189,36 @@ Locally implemented, verified and committed; pending reviewed pushes:
 * FND-026 — Add Windows Path-Reference Library.
 * FND-027 — Add Trusted Folder Picker Adapter.
 * FND-028 — Add Project Service Database.
+* FND-029 — Add Open Project Flow.
 
 Implemented and verified by the current change:
 
-* FND-029 — Add Open Project Flow.
+* FND-030 — Add Project Open Trust Receipt.
 
-FND-029 includes:
+FND-030 includes:
 
-* a bounded, revisioned Open Project protobuf contract in its own protocol
-  assembly;
-* authenticated named-pipe command transport using the existing Runtime
-  endpoint and session proof;
-* Desktop Gateway transfer of an opaque verified-root identity claim without
-  Project database authority;
-* Runtime-side root reacquisition, identity revalidation and fixed-local-root
-  policy enforcement;
-* atomic registration and durable `Opening` lifecycle state before the initial
-  Workspace Snapshot boundary;
-* exact-identity idempotency and explicit changed-identity review;
-* cancellation before commit without Project creation and post-commit
-  `RecoveryRequired` state;
-* startup reconciliation of interrupted `Opening` records;
-* bounded contract, race and sequence evidence without paths, payloads or
-  session material.
+* Project-owned `project.registered` and `project.opened` Evidence Types with
+  authoritative domain state-transition classification;
+* canonical Evidence Records committed to the Project transactional outbox in
+  the same transaction as owner lifecycle state;
+* a separate Trust Evidence service host with Runtime-bound owner identity;
+* type-filtered bounded at-least-once dispatch that does not consume unrelated
+  Project outbox events;
+* idempotent duplicate acknowledgement and restart-safe pending delivery;
+* honest Project success when the Trust projection is temporarily unavailable;
+* durable Open operation identity for interrupted `Opening` reconciliation;
+* pseudonymous receipt payloads containing safe root class, repository state
+  and lifecycle state without the raw root path;
+* transaction, failure, duplicate, owner-impersonation, restart, privacy and
+  architecture verification evidence.
 
 The next planned ticket is:
 
 ```text
-FND-030 — Add Project Open Trust Receipt
+FND-031 — Add Repository Identity Detection
 ```
 
-Do not assume FND-029 is complete until the Open Project verifier
+Do not assume FND-030 is complete until the Project Open Trust verifier
 passes and the changes are reviewed, committed and pushed.
 
 ## Build policy

@@ -1,0 +1,46 @@
+{
+  "schema": "opure.project-open-evidence-types/1",
+  "result": "Passed",
+  "ownerServiceId": "opure.project",
+  "authorityClass": "AuthoritativeDomainStateTransition",
+  "types": [
+    {
+      "evidenceTypeId": "project.opened",
+      "revision": 1,
+      "definitionSha256": "0bf7a808ed43060dc27f8598cc1625a4911885aa33343dd6b7f498e2f3ab84ad",
+      "payloadFields": [
+        "lifecycle_state",
+        "operation_id",
+        "project_id",
+        "repository_state",
+        "root_class"
+      ],
+      "safeIndexes": [
+        "lifecycle_state",
+        "project_id",
+        "repository_state",
+        "root_class"
+      ]
+    },
+    {
+      "evidenceTypeId": "project.registered",
+      "revision": 1,
+      "definitionSha256": "961a3723edb9322b394288ae94b93e732f6732cfd5df30cacc6a0e029dcbb5be",
+      "payloadFields": [
+        "lifecycle_state",
+        "operation_id",
+        "project_id",
+        "repository_state",
+        "root_class"
+      ],
+      "safeIndexes": [
+        "lifecycle_state",
+        "project_id",
+        "repository_state",
+        "root_class"
+      ]
+    }
+  ],
+  "rawPathFieldAllowed": false,
+  "secretFieldAllowed": false
+}

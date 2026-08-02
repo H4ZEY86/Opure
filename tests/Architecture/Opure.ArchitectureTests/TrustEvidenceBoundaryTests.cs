@@ -102,6 +102,62 @@ public sealed class TrustEvidenceBoundaryTests
         Assert.DoesNotContain("Socket", source, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Trust_evidence_service_host_has_only_storage_and_contract_authority()
+    {
+        string sourceRoot = Path.Combine(
+            RepositoryRoot,
+            "src",
+            "Trust",
+            "Opure.TrustEvidence.Service");
+        string project = File.ReadAllText(Path.Combine(
+            sourceRoot,
+            "Opure.TrustEvidence.Service.csproj"));
+        string source = string.Join(
+            Environment.NewLine,
+            Directory.EnumerateFiles(
+                    sourceRoot,
+                    "*.cs",
+                    SearchOption.AllDirectories)
+                .Select(File.ReadAllText));
+
+        Assert.Contains(
+            "Opure.TrustEvidence.Contracts.csproj",
+            project,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Opure.TrustEvidence.Sqlite.csproj",
+            project,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("PackageReference", project, StringComparison.Ordinal);
+        Assert.DoesNotContain("Opure.Project", project, StringComparison.Ordinal);
+        Assert.DoesNotContain("Opure.Runtime", project, StringComparison.Ordinal);
+        Assert.DoesNotContain("Opure.Desktop", project, StringComparison.Ordinal);
+        Assert.DoesNotContain("System.Net", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("HttpClient", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("Socket", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Runtime_composes_service_host_without_direct_trust_storage_access()
+    {
+        string project = File.ReadAllText(Path.Combine(
+            RepositoryRoot,
+            "src",
+            "Runtime",
+            "Opure.Runtime",
+            "Opure.Runtime.csproj"));
+
+        Assert.Contains(
+            "Opure.TrustEvidence.Service.csproj",
+            project,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "Opure.TrustEvidence.Sqlite.csproj",
+            project,
+            StringComparison.Ordinal);
+    }
+
     private static string FindRepositoryRoot()
     {
         DirectoryInfo? directory = new(AppContext.BaseDirectory);

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Opure.TrustEvidence.Contracts\Opure.TrustEvidence.Contracts.csproj" />
+    <ProjectReference Include="..\Opure.TrustEvidence.Sqlite\Opure.TrustEvidence.Sqlite.csproj" />
+  </ItemGroup>
+
+</Project>
