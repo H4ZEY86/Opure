@@ -4,7 +4,7 @@ namespace Opure.Project.Sqlite;
 
 public static class ProjectDatabaseSchema
 {
-    public const int CurrentVersion = 5;
+    public const int CurrentVersion = 6;
     public const string ProjectTable = "projects";
     public const string RootTable = "project_root_references";
     public const string RepositoryTable = "project_repository_identities";
@@ -92,6 +92,18 @@ public static class ProjectDatabaseSchema
                 ]));
         }
 
+        if (targetVersion >= 6)
+        {
+            migrations.Add(new SqliteMigration(
+                "project-list-last-open-v6",
+                sourceVersion: 5,
+                targetVersion: 6,
+                "Adds the authoritative last-successful-open timestamp used by Project Service list projections.",
+                [
+                    $"ALTER TABLE {ProjectTable} ADD COLUMN last_opened_at_utc TEXT NULL"
+                ]));
+        }
+
         List<SqliteSchemaValidation> validations =
         [
             new SqliteSchemaValidation(
@@ -143,6 +155,16 @@ public static class ProjectDatabaseSchema
                 minimumSchemaVersion: 5,
                 $"SELECT COUNT(*) FROM pragma_table_info('{RepositoryTable}') WHERE name IN ('observation_state', 'head_commit', 'branch_name', 'remote_fingerprint_sha256', 'remote_count', 'modified_count', 'staged_count', 'untracked_count', 'deleted_count', 'renamed_count', 'conflicted_count', 'stable_code')",
                 "12"));
+        }
+
+
+        if (targetVersion >= 6)
+        {
+            validations.Add(new SqliteSchemaValidation(
+                "project-list-last-open-present",
+                minimumSchemaVersion: 6,
+                $"SELECT COUNT(*) FROM pragma_table_info('{ProjectTable}') WHERE name = 'last_opened_at_utc' AND \"notnull\" = 0",
+                "1"));
         }
 
         return new SqliteMigrationCatalogue(migrations, validations);

@@ -2904,6 +2904,28 @@ contains only safe state, hashes and the stable result code. Corrupt or missing
 metadata is restart-safe: observation becomes `Degraded` or `NotDetected` and
 Project access is preserved.
 
+FND-032 adds the first Project Service-backed Desktop project list. A revisioned
+protobuf contract exposes bounded query rows and explicit Open and
+Remove Registration commands over the existing authenticated Runtime named
+pipe. Project Service remains authoritative: Desktop receives no database
+handle, raw project path, filesystem capability or direct project-file access.
+
+The projection includes a display name, path-free storage class, repository
+class, authoritative last-successful-open time and explicit availability.
+Unavailable projects remain present. Desktop retains the most recent successful
+projection during a disconnect only when it labels that projection stale; a
+failed refresh cannot silently replace its ordering or imply an empty list.
+
+Opening a registered project re-acquires its stored root and compares the
+Windows filesystem identity before entering the established Project Open
+pipeline. Removing a registration records an `Archived` Project lifecycle
+transition and hides it from the active list; it never deletes or modifies
+developer-owned files. The Avalonia view uses a virtualised list, keyboard
+selection and commands, stable automation identifiers, text availability and
+path-free Narrator labels. FND-033 will define the Workspace Service contract;
+Desktop project-file reads remain deliberately unavailable until that boundary
+exists.
+
 The following rules should be enforced as architectural invariants:
 
 1. AI providers are accessed only through the AI Router.

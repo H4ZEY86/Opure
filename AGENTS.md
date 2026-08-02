@@ -191,27 +191,27 @@ Locally implemented, verified and committed; pending reviewed pushes:
 * FND-028 — Add Project Service Database.
 * FND-029 — Add Open Project Flow.
 * FND-030 — Add Project Open Trust Receipt.
+* FND-031 — Add Repository Identity Detection.
 
 Implemented and verified by the current change:
 
-* FND-031 — Add Repository Identity Detection.
+* FND-032 — Add Project List UI.
 
-FND-031 includes:
+FND-032 includes:
 
-* provider-neutral observation contracts and a replaceable local Git adapter;
-* verified-root and repository-admin identity binding without write authority;
-* exact HEAD, bounded branch metadata and aggregate working-tree state;
-* explicit non-Git, nested, detached, corrupt and boundary-escape handling;
-* move-stable and replacement-sensitive repository identity;
-* credential-stripped, query-free remote fingerprints with no network access;
-* schema-v5 Project persistence and restart reconciliation;
-* a Project-owned `repository.observed` Verified Service receipt;
-* adversarial privacy, recovery, persistence and architecture verification.
+* a revisioned, bounded Project List query and command contract;
+* authenticated list, registered-open and remove-registration calls on the Runtime pipe;
+* Project Service-owned path-free projections with display name, storage class, repository class, last-open time and availability;
+* schema-v6 authoritative last-successful-open persistence;
+* registered Open root re-acquisition and Windows identity comparison through the existing Open pipeline;
+* registration removal through an Archived lifecycle decision without filesystem mutation;
+* unavailable rows retained and disconnected projections explicitly labelled stale;
+* keyboard, automation, Narrator, high-contrast and 10,000-row performance verification.
 
 The next planned ticket is:
 
 ```text
-FND-032 — Add Project List UI
+FND-033 — Define Workspace Service Contract
 ```
 
 Do not assume FND-031 is complete until the Repository Identity verifier

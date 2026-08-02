@@ -7,6 +7,12 @@ namespace Opure.Desktop.GatewayClient;
 
 public static class RuntimeHealthGatewayClient
 {
+    public static IDesktopProjectListSource CreateProjectListSource(string releaseChannel)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(releaseChannel);
+        return new ProjectListGatewaySource(releaseChannel);
+    }
+
     public static IVerifiedWorkspaceRootReceiver CreateProjectRootReceiver(
         string releaseChannel)
     {

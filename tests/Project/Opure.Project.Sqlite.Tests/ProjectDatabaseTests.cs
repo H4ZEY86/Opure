@@ -228,7 +228,7 @@ public sealed class ProjectDatabaseTests : IDisposable
         Assert.Equal(
             ProjectDatabaseSchema.CurrentVersion,
             upgraded.MigrationReport.CurrentVersion);
-        Assert.Equal(4, upgraded.MigrationReport.AppliedMigrations.Count);
+        Assert.Equal(5, upgraded.MigrationReport.AppliedMigrations.Count);
         Assert.All(
             upgraded.MigrationReport.SchemaValidations,
             static validation => Assert.True(validation.Passed));

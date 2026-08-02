@@ -1,0 +1,15 @@
+{
+  "ticket": "FND-032",
+  "result": "Passed",
+  "contractRevision": 1,
+  "transport": "authenticated-current-user-named-pipe",
+  "authoritativeOwner": "Project Service",
+  "desktopDatabaseAuthority": false,
+  "desktopFilesystemAuthority": false,
+  "removeDeletesFiles": false,
+  "removeDisposition": "archive-registration",
+  "registeredOpenRevalidatesRootIdentity": true,
+  "unavailableProjectsRetained": true,
+  "staleProjectionRetained": true,
+  "rawPathProjected": false
+}

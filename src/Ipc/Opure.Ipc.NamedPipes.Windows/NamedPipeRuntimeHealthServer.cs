@@ -13,6 +13,7 @@ using Opure.Ipc.Abstractions;
 using Opure.Observability.Contracts;
 using Opure.Project.Protocol;
 using Opure.Project.Protocol.Open.V1;
+using Opure.Project.Protocol.List.V1;
 using Opure.Runtime.Contracts;
 using Opure.Runtime.Contracts.Health.V1;
 using Opure.Runtime.Contracts.Registry.V1;
@@ -42,7 +43,8 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
         Func<RuntimeHealthAuthenticationEvent, ValueTask>? eventSink = null,
         IRuntimeServiceRegistryRequestHandler? registryRequestHandler = null,
         Func<RuntimeHealthTraceCompletion, ValueTask>? traceEventSink = null,
-        IProjectOpenRequestHandler? projectOpenRequestHandler = null)
+        IProjectOpenRequestHandler? projectOpenRequestHandler = null,
+        IProjectListRequestHandler? projectListRequestHandler = null)
     {
         ArgumentNullException.ThrowIfNull(endpoint);
         ArgumentNullException.ThrowIfNull(requestHandler);
@@ -77,12 +79,16 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
                 Math.Max(
                     RuntimeHealthContractPolicy.MaximumRequestBytes,
                     RuntimeServiceRegistryContractPolicy.MaximumRequestBytes),
-                ProjectOpenContractPolicy.MaximumRequestBytes);
+                Math.Max(
+                    ProjectOpenContractPolicy.MaximumRequestBytes,
+                    ProjectListContractPolicy.MaximumRequestBytes));
             options.MaxWriteBufferSize = Math.Max(
                 Math.Max(
                     RuntimeHealthContractPolicy.MaximumResponseBytes,
                     RuntimeServiceRegistryContractPolicy.MaximumResponseBytes),
-                ProjectOpenContractPolicy.MaximumResponseBytes);
+                Math.Max(
+                    ProjectOpenContractPolicy.MaximumResponseBytes,
+                    ProjectListContractPolicy.MaximumResponseBytes));
         });
         builder.WebHost.UseKestrel(options =>
         {
@@ -101,6 +107,10 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
         {
             builder.Services.AddSingleton(projectOpenRequestHandler);
         }
+        if (projectListRequestHandler is not null)
+        {
+            builder.Services.AddSingleton(projectListRequestHandler);
+        }
         builder.Services.AddSingleton(new RuntimeHealthSessionAuthenticator(
             endpoint,
             sessionPolicy,
@@ -114,12 +124,16 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
                 Math.Max(
                     RuntimeHealthContractPolicy.MaximumRequestBytes,
                     RuntimeServiceRegistryContractPolicy.MaximumRequestBytes),
-                ProjectOpenContractPolicy.MaximumRequestBytes);
+                Math.Max(
+                    ProjectOpenContractPolicy.MaximumRequestBytes,
+                    ProjectListContractPolicy.MaximumRequestBytes));
             options.MaxSendMessageSize = Math.Max(
                 Math.Max(
                     RuntimeHealthContractPolicy.MaximumResponseBytes,
                     RuntimeServiceRegistryContractPolicy.MaximumResponseBytes),
-                ProjectOpenContractPolicy.MaximumResponseBytes);
+                Math.Max(
+                    ProjectOpenContractPolicy.MaximumResponseBytes,
+                    ProjectListContractPolicy.MaximumResponseBytes));
             options.Interceptors.Add<RuntimeHealthAuthenticationInterceptor>();
         });
 
@@ -134,6 +148,10 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
         if (projectOpenRequestHandler is not null)
         {
             application.MapGrpcService<ProjectOpenGrpcService>();
+        }
+        if (projectListRequestHandler is not null)
+        {
+            application.MapGrpcService<ProjectListGrpcService>();
         }
 
         try
@@ -194,7 +212,7 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
             OperationalTraceContract.SetSafeTag(
                 activity,
                 OperationalTraceContract.OperationKindTag,
-                IsProjectOpenMethod(context.Method) ? "command" : "query");
+                IsProjectCommandMethod(context.Method) ? "command" : "query");
             OperationalTraceContract.SetSafeTag(
                 activity,
                 OperationalTraceContract.IpcMethodTag,
@@ -341,6 +359,13 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
             method,
             ProjectOpenContractPolicy.Method,
             StringComparison.Ordinal);
+    }
+
+    private static bool IsProjectCommandMethod(string method)
+    {
+        return IsProjectOpenMethod(method) ||
+            string.Equals(method, ProjectListContractPolicy.OpenMethod, StringComparison.Ordinal) ||
+            string.Equals(method, ProjectListContractPolicy.RemoveMethod, StringComparison.Ordinal);
     }
 
     public async ValueTask DisposeAsync()
@@ -492,6 +517,45 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
             return requestHandler.HandleAsync(
                 request,
                 context.CancellationToken);
+        }
+    }
+
+    private sealed class ProjectListGrpcService(
+        IProjectListRequestHandler requestHandler)
+        : Project.Protocol.List.V1.ProjectListService.ProjectListServiceBase
+    {
+        public override Task<ListProjectsResponse> ListProjects(
+            ListProjectsRequest request,
+            ServerCallContext context)
+        {
+            EnsureBounded(request.CalculateSize());
+            return requestHandler.ListAsync(request, context.CancellationToken);
+        }
+
+        public override Task<ProjectListCommandResponse> OpenRegisteredProject(
+            ProjectListCommandRequest request,
+            ServerCallContext context)
+        {
+            EnsureBounded(request.CalculateSize());
+            return requestHandler.OpenAsync(request, context.CancellationToken);
+        }
+
+        public override Task<ProjectListCommandResponse> RemoveProjectRegistration(
+            ProjectListCommandRequest request,
+            ServerCallContext context)
+        {
+            EnsureBounded(request.CalculateSize());
+            return requestHandler.RemoveAsync(request, context.CancellationToken);
+        }
+
+        private static void EnsureBounded(int requestSize)
+        {
+            if (requestSize > ProjectListContractPolicy.MaximumRequestBytes)
+            {
+                throw new RpcException(new Status(
+                    StatusCode.ResourceExhausted,
+                    "The Project List request exceeded its transport limit."));
+            }
         }
     }
 

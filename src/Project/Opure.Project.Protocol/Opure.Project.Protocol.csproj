@@ -18,6 +18,9 @@
     <Protobuf
       Include="Protos\open\open_project.proto"
       GrpcServices="Both" />
+    <Protobuf
+      Include="Protos\list\project_list.proto"
+      GrpcServices="Both" />
   </ItemGroup>
 
 </Project>

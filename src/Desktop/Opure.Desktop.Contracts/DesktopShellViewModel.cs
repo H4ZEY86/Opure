@@ -16,6 +16,7 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
         : this(
             snapshot,
             CreateDisconnectedRuntimeStatus(snapshot),
+            new DesktopProjectListViewModel(new UnavailableDesktopProjectListSource()),
             new DesktopProjectFolderPickerViewModel(
                 new UnavailableProjectFolderSelectionCoordinator()))
     {
@@ -24,6 +25,7 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
     public DesktopShellViewModel(
         DesktopShellSnapshot snapshot,
         DesktopRuntimeStatusViewModel runtimeHealth,
+        DesktopProjectListViewModel? projectList = null,
         DesktopProjectFolderPickerViewModel? projectFolderPicker = null)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
@@ -31,6 +33,7 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
 
         Snapshot = snapshot;
         RuntimeHealth = runtimeHealth;
+        ProjectList = projectList ?? new DesktopProjectListViewModel(new UnavailableDesktopProjectListSource());
         ProjectFolderPicker = projectFolderPicker ??
             new DesktopProjectFolderPickerViewModel(
                 new UnavailableProjectFolderSelectionCoordinator());
@@ -47,6 +50,8 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
     public DesktopRuntimeStatusViewModel RuntimeHealth { get; }
 
     public DesktopProjectFolderPickerViewModel ProjectFolderPicker { get; }
+
+    public DesktopProjectListViewModel ProjectList { get; }
 
     public string WindowTitle => Snapshot.WindowTitle;
 
@@ -83,7 +88,7 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
                 "Opure is waiting for the local Runtime. No project or provider has been opened."),
             DesktopNavigationSection.Projects => (
                 "Projects",
-                "Project operations will appear after the Desktop Gateway is available."),
+                "Registered projects are projected by Project Service through the Desktop Gateway. Removing a registration never deletes project files."),
             DesktopNavigationSection.Workflows => (
                 "Workflows",
                 "Workflow state remains unavailable while the Runtime is disconnected."),

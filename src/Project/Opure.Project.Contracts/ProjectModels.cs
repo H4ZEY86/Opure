@@ -41,7 +41,8 @@ public sealed record ProjectSnapshot(
     string? RepositoryKind,
     string? RepositoryIdentity,
     DateTimeOffset CreatedAtUtc,
-    DateTimeOffset UpdatedAtUtc);
+    DateTimeOffset UpdatedAtUtc,
+    DateTimeOffset? LastOpenedAtUtc = null);
 
 public sealed record ProjectRegistrationResult(
     ProjectRegistrationDisposition Disposition,

@@ -325,6 +325,11 @@ public sealed class ProjectRepository
                     projectId,
                     ProjectLifecycleState.Open,
                     now);
+                UpdateLastOpened(
+                    connection,
+                    transaction,
+                    projectId,
+                    now);
                 InsertLifecycle(
                     connection,
                     transaction,
@@ -849,6 +854,21 @@ public sealed class ProjectRepository
         }
     }
 
+    private static void UpdateLastOpened(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        string projectId,
+        DateTimeOffset occurredAtUtc)
+    {
+        using SqliteCommand command = CreateCommand(
+            connection,
+            transaction,
+            $"UPDATE {ProjectDatabaseSchema.ProjectTable} SET last_opened_at_utc = $openedAt WHERE project_id = $projectId");
+        Add(command, "$openedAt", occurredAtUtc.ToString("O", CultureInfo.InvariantCulture));
+        Add(command, "$projectId", projectId);
+        _ = command.ExecuteNonQuery();
+    }
+
     private static void UpdateOpenOperationId(
         SqliteConnection connection,
         SqliteTransaction transaction,
@@ -997,7 +1017,8 @@ public sealed class ProjectRepository
                 repo.repository_kind,
                 repo.repository_identity,
                 p.created_at_utc,
-                p.updated_at_utc
+                p.updated_at_utc,
+                p.last_opened_at_utc
               FROM {ProjectDatabaseSchema.ProjectTable} AS p
               JOIN {ProjectDatabaseSchema.RootTable} AS r
                 ON r.project_id = p.project_id
@@ -1030,7 +1051,12 @@ public sealed class ProjectRepository
                 CultureInfo.InvariantCulture),
             DateTimeOffset.Parse(
                 reader.GetString(12),
-                CultureInfo.InvariantCulture));
+                CultureInfo.InvariantCulture),
+            reader.IsDBNull(13)
+                ? null
+                : DateTimeOffset.Parse(
+                    reader.GetString(13),
+                    CultureInfo.InvariantCulture));
     }
 
     private static bool HasDisplayPath(

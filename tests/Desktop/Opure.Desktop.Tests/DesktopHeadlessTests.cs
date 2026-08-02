@@ -168,10 +168,10 @@ public sealed class DesktopHeadlessTests
             Assert.NotNull(details);
             Assert.True(refresh.IsTabStop);
             Assert.True(copy.IsTabStop);
-            Assert.Equal(6, refresh.TabIndex);
-            Assert.Equal(7, copy.TabIndex);
-            Assert.Equal(8, services.TabIndex);
-            Assert.Equal(9, details.TabIndex);
+            Assert.Equal(10, refresh.TabIndex);
+            Assert.Equal(11, copy.TabIndex);
+            Assert.Equal(12, services.TabIndex);
+            Assert.Equal(13, details.TabIndex);
 
             refresh.Focus();
             Assert.True(refresh.IsFocused);
@@ -217,7 +217,7 @@ public sealed class DesktopHeadlessTests
 
             Assert.NotNull(select);
             Assert.True(select.IsTabStop);
-            Assert.Equal(5, select.TabIndex);
+            Assert.Equal(9, select.TabIndex);
             Assert.Equal(
                 "Select project folder",
                 AutomationProperties.GetName(select));

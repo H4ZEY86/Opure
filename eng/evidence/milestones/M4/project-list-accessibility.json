@@ -1,0 +1,11 @@
+{
+  "ticket": "FND-032",
+  "result": "Passed",
+  "keyboardSelection": true,
+  "keyboardOpen": true,
+  "stableAutomationIdentifiers": true,
+  "availabilityNarrated": true,
+  "removeFileSafetyNarrated": true,
+  "colourOnlyState": false,
+  "highContrastUsesFrameworkControls": true
+}

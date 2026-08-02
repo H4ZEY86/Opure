@@ -1,0 +1,9 @@
+{
+  "ticket": "FND-032",
+  "result": "Passed",
+  "projectCount": 10000,
+  "applicationBudgetMilliseconds": 2000,
+  "perItemDesktopIo": false,
+  "boundedResponseBytes": 4194304,
+  "virtualisedList": true
+}

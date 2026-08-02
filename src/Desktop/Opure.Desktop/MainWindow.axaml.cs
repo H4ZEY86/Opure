@@ -48,6 +48,7 @@ public partial class MainWindow : Window
     private void OnProjectsClick(object? sender, RoutedEventArgs eventArgs)
     {
         viewModel.SelectSection(DesktopNavigationSection.Projects);
+        _ = RefreshProjectsAsync();
     }
 
     private void OnWorkflowsClick(object? sender, RoutedEventArgs eventArgs)
@@ -124,6 +125,55 @@ public partial class MainWindow : Window
         {
             await viewModel.ProjectFolderPicker.SelectAsync(
                 refreshCancellation?.Token ?? CancellationToken.None);
+            await viewModel.ProjectList.RefreshAsync(
+                refreshCancellation?.Token ?? CancellationToken.None);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private async void OnRefreshProjectListClick(object? sender, RoutedEventArgs eventArgs)
+    {
+        _ = sender;
+        _ = eventArgs;
+        await RefreshProjectsAsync();
+    }
+
+    private async void OnOpenRegisteredProjectClick(object? sender, RoutedEventArgs eventArgs)
+    {
+        _ = sender;
+        _ = eventArgs;
+        try
+        {
+            await viewModel.ProjectList.OpenSelectedAsync(
+                refreshCancellation?.Token ?? CancellationToken.None);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private async void OnRemoveProjectRegistrationClick(object? sender, RoutedEventArgs eventArgs)
+    {
+        _ = sender;
+        _ = eventArgs;
+        try
+        {
+            await viewModel.ProjectList.RemoveSelectedRegistrationAsync(
+                refreshCancellation?.Token ?? CancellationToken.None);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private async Task RefreshProjectsAsync()
+    {
+        try
+        {
+            await viewModel.ProjectList.RefreshAsync(
+                refreshCancellation?.Token ?? CancellationToken.None);
         }
         catch (OperationCanceledException)
         {
@@ -137,6 +187,10 @@ public partial class MainWindow : Window
             while (!cancellationToken.IsCancellationRequested)
             {
                 await viewModel.RuntimeHealth.RefreshAsync(cancellationToken);
+                if (viewModel.IsProjectsPage)
+                {
+                    await viewModel.ProjectList.RefreshAsync(cancellationToken);
+                }
                 await Task.Delay(RuntimeRefreshInterval, cancellationToken);
             }
         }

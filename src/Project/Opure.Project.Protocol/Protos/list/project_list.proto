@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+package opure.project.list.v1;
+
+option csharp_namespace = "Opure.Project.Protocol.List.V1";
+
+service ProjectListService {
+  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
+  rpc OpenRegisteredProject(ProjectListCommandRequest) returns (ProjectListCommandResponse);
+  rpc RemoveProjectRegistration(ProjectListCommandRequest) returns (ProjectListCommandResponse);
+}
+
+message ListProjectsRequest {
+  uint32 minimum_contract_revision = 1;
+  uint32 maximum_contract_revision = 2;
+  string correlation_id = 3;
+  ProjectListReleaseChannel release_channel = 4;
+}
+
+message ListProjectsResponse {
+  uint32 contract_revision = 1;
+  repeated ProjectListItem projects = 2;
+  ProjectListError error = 3;
+  int64 generated_unix_time_milliseconds = 4;
+}
+
+message ProjectListItem {
+  string project_id = 1;
+  string display_name = 2;
+  string safe_location_summary = 3;
+  string repository_class = 4;
+  int64 last_opened_unix_time_milliseconds = 5;
+  ProjectAvailability availability = 6;
+  string lifecycle_label = 7;
+  string accessibility_label = 8;
+}
+
+message ProjectListCommandRequest {
+  uint32 minimum_contract_revision = 1;
+  uint32 maximum_contract_revision = 2;
+  string operation_id = 3;
+  string correlation_id = 4;
+  ProjectListReleaseChannel release_channel = 5;
+  string project_id = 6;
+}
+
+message ProjectListCommandResponse {
+  uint32 contract_revision = 1;
+  oneof outcome {
+    ProjectListCommandSummary project = 2;
+    ProjectListError error = 3;
+  }
+}
+
+message ProjectListCommandSummary {
+  string operation_id = 1;
+  string project_id = 2;
+  ProjectListCommandDisposition disposition = 3;
+  string safe_detail = 4;
+}
+
+message ProjectListError {
+  string code = 1;
+  string safe_message = 2;
+  bool retryable = 3;
+  bool review_required = 4;
+}
+
+enum ProjectListReleaseChannel {
+  PROJECT_LIST_RELEASE_CHANNEL_UNSPECIFIED = 0;
+  PROJECT_LIST_RELEASE_CHANNEL_DEVELOPMENT = 1;
+  PROJECT_LIST_RELEASE_CHANNEL_PREVIEW = 2;
+  PROJECT_LIST_RELEASE_CHANNEL_STABLE = 3;
+}
+
+enum ProjectAvailability {
+  PROJECT_AVAILABILITY_UNSPECIFIED = 0;
+  PROJECT_AVAILABILITY_AVAILABLE = 1;
+  PROJECT_AVAILABILITY_UNAVAILABLE = 2;
+  PROJECT_AVAILABILITY_REVIEW_REQUIRED = 3;
+}
+
+enum ProjectListCommandDisposition {
+  PROJECT_LIST_COMMAND_DISPOSITION_UNSPECIFIED = 0;
+  PROJECT_LIST_COMMAND_DISPOSITION_OPENED = 1;
+  PROJECT_LIST_COMMAND_DISPOSITION_REGISTRATION_REMOVED = 2;
+}

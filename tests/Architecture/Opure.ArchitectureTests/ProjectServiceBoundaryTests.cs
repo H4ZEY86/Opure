@@ -195,6 +195,45 @@ public sealed class ProjectServiceBoundaryTests
             StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void DesktopProjectListProjectionHasNoPathOrPersistenceAuthority()
+    {
+        string contracts = File.ReadAllText(Path.Combine(
+            RepositoryRoot,
+            "src",
+            "Desktop",
+            "Opure.Desktop.Contracts",
+            "DesktopProjectListViewModel.cs"));
+        string gateway = File.ReadAllText(Path.Combine(
+            RepositoryRoot,
+            "src",
+            "Desktop",
+            "Opure.Desktop.GatewayClient",
+            "ProjectListGatewaySource.cs"));
+
+        Assert.DoesNotContain("DisplayPath", contracts, StringComparison.Ordinal);
+        Assert.DoesNotContain("DisplayPath", gateway, StringComparison.Ordinal);
+        Assert.DoesNotContain("ProjectDatabase", contracts, StringComparison.Ordinal);
+        Assert.DoesNotContain("ProjectRepository", gateway, StringComparison.Ordinal);
+        Assert.DoesNotContain("System.IO", gateway, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RegistrationRemovalArchivesWithoutFilesystemMutation()
+    {
+        string source = File.ReadAllText(Path.Combine(
+            RepositoryRoot,
+            "src",
+            "Project",
+            "Opure.Project.Sqlite",
+            "ProjectListProjectionService.cs"));
+
+        Assert.Contains("DomainLifecycle.Archived", source, StringComparison.Ordinal);
+        Assert.Contains("Project files were not changed or deleted", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("File.Delete", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("Directory.Delete", source, StringComparison.Ordinal);
+    }
+
     private static string ReadSources(string root)
     {
         return string.Join(

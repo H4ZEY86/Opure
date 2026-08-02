@@ -472,4 +472,18 @@ Verified Service receipt. Detection is local and read-only: it starts no Git
 process, invokes no credential provider, performs no network operation and
 grants no repository-write authority.
 
+Project List UI verification exercises the bounded revisioned Project Service
+query and command contract, authenticated named-pipe transport, schema-v6
+last-open persistence, unavailable-row retention, registered-root identity
+revalidation, registration-only removal, stale-on-disconnect presentation,
+keyboard and automation metadata, textual availability and a virtualised
+10,000-row projection. Desktop receives neither raw paths nor Project database
+or filesystem authority; removing a registration cannot delete project files.
+
+Run the focused gate with:
+
+```powershell
+pwsh ./build.ps1 project-list-ui-policy
+```
+
 Channel-specific data-root and one-time session material are passed through bounded environment variables. The session secret is not placed on command lines, written to disk or included in diagnostics.

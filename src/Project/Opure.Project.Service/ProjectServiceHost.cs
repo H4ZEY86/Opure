@@ -19,6 +19,7 @@ public sealed class ProjectServiceHost : IDisposable
     private ProjectServiceHost(
         ProjectDatabase database,
         ProjectOpenService openService,
+        ProjectListProjectionService listService,
         SqliteOutboxDispatcher trustReceiptDispatcher,
         ProjectTrustEvidencePublisher trustReceiptPublisher)
     {
@@ -28,9 +29,12 @@ public sealed class ProjectServiceHost : IDisposable
         OpenHandler = new DispatchingProjectOpenHandler(
             openService,
             DispatchPendingTrustReceipts);
+        ListHandler = listService;
     }
 
     public IProjectOpenRequestHandler OpenHandler { get; }
+
+    public IProjectListRequestHandler ListHandler { get; }
 
     public static async Task<ProjectServiceHost> StartAsync(
         string channelDataRoot,
@@ -70,6 +74,10 @@ public sealed class ProjectServiceHost : IDisposable
                 snapshotRequester,
                 rootPolicy: null,
                 repositoryDetector: new GitRepositoryIdentityDetector());
+            ProjectListProjectionService listService = new(
+                database.CreateRepository(timeProvider),
+                openService,
+                timeProvider);
             SqliteOutboxDispatcher dispatcher =
                 database.CreateOutboxDispatcher(
                     new SqliteOutboxRetryPolicy(
@@ -86,6 +94,7 @@ public sealed class ProjectServiceHost : IDisposable
             ProjectServiceHost host = new(
                 database,
                 openService,
+                listService,
                 dispatcher,
                 publisher);
             _ = host.DispatchPendingTrustReceipts(

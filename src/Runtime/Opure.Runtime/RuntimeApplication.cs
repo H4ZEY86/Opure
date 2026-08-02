@@ -144,7 +144,8 @@ public sealed class RuntimeApplication
                     RuntimeEventWriter.WriteTraceCompletionAsync(
                         completion,
                         operationalLogger),
-                projectOpenRequestHandler: projectService.OpenHandler)
+                projectOpenRequestHandler: projectService.OpenHandler,
+                projectListRequestHandler: projectService.ListHandler)
                 .ConfigureAwait(false);
 
             lifecycle.TransitionTo(RuntimeLifecycleState.Ready);

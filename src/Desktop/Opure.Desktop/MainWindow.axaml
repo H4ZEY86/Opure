@@ -115,6 +115,91 @@
             TextWrapping="Wrap" />
 
         <GroupBox
+            Header="Registered projects"
+            IsVisible="{Binding IsProjectsPage}"
+            AutomationProperties.Name="Registered projects from Project Service"
+            AutomationProperties.AutomationId="RegisteredProjectListGroup">
+          <Grid Margin="8" RowDefinitions="Auto,Auto,*,Auto">
+            <StackPanel Spacing="4">
+              <TextBlock
+                  Text="{Binding ProjectList.StatusTitle}"
+                  FontWeight="SemiBold"
+                  AutomationProperties.Name="{Binding ProjectList.StatusTitle}"
+                  AutomationProperties.AutomationId="ProjectListStatusTitle" />
+              <TextBlock
+                  Text="{Binding ProjectList.StatusDetail}"
+                  TextWrapping="Wrap"
+                  AutomationProperties.Name="{Binding ProjectList.StatusDetail}"
+                  AutomationProperties.AutomationId="ProjectListStatusDetail" />
+            </StackPanel>
+            <ProgressBar
+                Grid.Row="1"
+                Margin="0,8,0,0"
+                IsIndeterminate="True"
+                IsVisible="{Binding ProjectList.IsBusy}"
+                AutomationProperties.Name="Refreshing registered projects" />
+            <ListBox
+                x:Name="RegisteredProjectList"
+                Grid.Row="2"
+                Margin="0,8"
+                MinHeight="96"
+                MaxHeight="280"
+                ItemsSource="{Binding ProjectList.Projects}"
+                SelectedItem="{Binding ProjectList.SelectedProject, Mode=TwoWay}"
+                IsVisible="{Binding ProjectList.HasProjects}"
+                SelectionMode="Single"
+                TabIndex="5"
+                AutomationProperties.Name="Registered projects. Use arrow keys to select a project."
+                AutomationProperties.AutomationId="RegisteredProjectList">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="contracts:DesktopProjectListItem">
+                  <Grid
+                      Margin="8,6"
+                      ColumnDefinitions="2*,Auto"
+                      RowDefinitions="Auto,Auto,Auto"
+                      AutomationProperties.Name="{Binding AccessibilityLabel}">
+                    <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
+                    <TextBlock Grid.Column="1" Margin="16,0,0,0" Text="{Binding AvailabilityLabel}" FontWeight="SemiBold" />
+                    <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding SafeLocationSummary}" />
+                    <TextBlock Grid.Row="2" Text="{Binding RepositoryClass}" />
+                    <TextBlock Grid.Row="2" Grid.Column="1" Margin="16,0,0,0" Text="{Binding LastOpenedLabel}" />
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+            <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8">
+              <Button
+                  x:Name="OpenRegisteredProjectButton"
+                  Content="_Open selected"
+                  Click="OnOpenRegisteredProjectClick"
+                  IsEnabled="{Binding ProjectList.CanOpen}"
+                  TabIndex="6"
+                  AutomationProperties.Name="Open selected registered project through Project Service"
+                  AutomationProperties.AutomationId="OpenRegisteredProject"
+                  AutomationProperties.AccessKey="Alt+O" />
+              <Button
+                  x:Name="RemoveProjectRegistrationButton"
+                  Content="_Remove registration"
+                  Click="OnRemoveProjectRegistrationClick"
+                  IsEnabled="{Binding ProjectList.CanRemoveRegistration}"
+                  TabIndex="7"
+                  AutomationProperties.Name="Remove selected project registration only. Project files will not be deleted."
+                  AutomationProperties.AutomationId="RemoveProjectRegistration"
+                  AutomationProperties.AccessKey="Alt+M" />
+              <Button
+                  x:Name="RefreshProjectListButton"
+                  Content="Re_fresh list"
+                  Click="OnRefreshProjectListClick"
+                  IsEnabled="{Binding ProjectList.CanRefresh}"
+                  TabIndex="8"
+                  AutomationProperties.Name="Refresh registered projects from Project Service"
+                  AutomationProperties.AutomationId="RefreshProjectList"
+                  AutomationProperties.AccessKey="Alt+F" />
+            </StackPanel>
+          </Grid>
+        </GroupBox>
+
+        <GroupBox
             Header="Open project"
             IsVisible="{Binding IsProjectsPage}"
             AutomationProperties.Name="Open a verified project folder"
@@ -126,7 +211,7 @@
                 Click="OnSelectProjectFolderClick"
                 IsEnabled="{Binding ProjectFolderPicker.CanSelect}"
                 IsTabStop="True"
-                TabIndex="5"
+                TabIndex="9"
                 HorizontalAlignment="Left"
                 AutomationProperties.Name="Select project folder"
                 AutomationProperties.AutomationId="SelectProjectFolder"
@@ -213,7 +298,7 @@
                   Click="OnRefreshRuntimeClick"
                   IsEnabled="{Binding RuntimeHealth.CanRefresh}"
                   IsTabStop="True"
-                  TabIndex="6"
+                  TabIndex="10"
                   AutomationProperties.Name="Refresh Runtime Health"
                   AutomationProperties.AutomationId="RefreshRuntimeHealth"
                   AutomationProperties.AccessKey="Alt+R" />
@@ -262,7 +347,7 @@
                   Click="OnCopyRuntimeBootIdentityClick"
                   IsEnabled="{Binding RuntimeHealth.CanCopyBootIdentity}"
                   IsTabStop="True"
-                  TabIndex="7"
+                  TabIndex="11"
                   AutomationProperties.Name="Copy Runtime boot identity"
                   AutomationProperties.AutomationId="CopyRuntimeBootIdentity"
                   AutomationProperties.AccessKey="Alt+C" />
@@ -284,7 +369,7 @@
                     MaxHeight="260"
                     ItemsSource="{Binding RuntimeHealth.Services}"
                     SelectionMode="Single"
-                    TabIndex="8"
+                    TabIndex="12"
                     AutomationProperties.Name="Runtime services. Use arrow keys to inspect each row."
                     AutomationProperties.AutomationId="RuntimeServiceHealthList">
                   <ListBox.ItemTemplate>
@@ -325,7 +410,7 @@
                 x:Name="RuntimeDetailsExpander"
                 Header="Runtime details"
                 IsExpanded="False"
-                TabIndex="9"
+                TabIndex="13"
                 AutomationProperties.Name="Runtime diagnostic details"
                 AutomationProperties.AutomationId="RuntimeDetailsDisclosure">
               <Grid

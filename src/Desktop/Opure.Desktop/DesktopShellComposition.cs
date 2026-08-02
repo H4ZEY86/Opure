@@ -1,4 +1,5 @@
 using Opure.Desktop.Contracts;
+using Opure.Desktop.GatewayClient;
 
 namespace Opure.Desktop;
 
@@ -14,7 +15,10 @@ public static class DesktopShellComposition
             DesktopLaunchContext.RuntimeHealthSource);
         return new DesktopShellViewModel(
             DesktopLaunchContext.ShellStateSource.GetCurrent(),
-            runtimeHealth);
+            runtimeHealth,
+            new DesktopProjectListViewModel(
+                RuntimeHealthGatewayClient.CreateProjectListSource(
+                    DesktopLaunchContext.ReleaseChannel)));
     }
 
     public static MainWindow CreateMainWindow()
