@@ -45,6 +45,7 @@
   <Folder Name="/src/Workspace/">
     <Project Path="src/Workspace/Opure.Workspace.Contracts/Opure.Workspace.Contracts.csproj" />
     <Project Path="src/Workspace/Opure.Workspace.Protocol/Opure.Workspace.Protocol.csproj" />
+    <Project Path="src/Workspace/Opure.Workspace.Windows/Opure.Workspace.Windows.csproj" />
   </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/Architecture/">
@@ -81,5 +82,6 @@
   </Folder>
   <Folder Name="/tests/Workspace/">
     <Project Path="tests/Workspace/Opure.Workspace.Protocol.Tests/Opure.Workspace.Protocol.Tests.csproj" />
+    <Project Path="tests/Workspace/Opure.Workspace.Windows.Tests/Opure.Workspace.Windows.Tests.csproj" />
   </Folder>
 </Solution>

@@ -1,0 +1,15 @@
+{
+  "ticket": "FND-034",
+  "result": "Passed",
+  "smallTree": true,
+  "entryLimit": true,
+  "depthLimit": true,
+  "symlinkDenied": true,
+  "junctionDenied": true,
+  "hiddenIncludedAndLabelled": true,
+  "casePreserved": true,
+  "cancellation": true,
+  "directoryMutationPartial": true,
+  "absolutePathsInRecords": false,
+  "fileContentReads": false
+}

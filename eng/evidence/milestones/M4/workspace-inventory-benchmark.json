@@ -1,0 +1,9 @@
+{
+  "ticket": "FND-034",
+  "result": "Passed",
+  "fixture": "flat-empty-files",
+  "entryCount": 250,
+  "maximumAllowedMilliseconds": 20000,
+  "boundedByOwnerPolicy": true,
+  "fileContentReads": false
+}

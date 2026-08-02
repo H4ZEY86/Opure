@@ -50,12 +50,28 @@ public sealed class WindowsPathReferenceResolver
         LogicalWorkspacePath logicalPath)
     {
         ArgumentNullException.ThrowIfNull(root);
-        return ResolveExisting(root.Root, logicalPath);
+        return ResolveExisting(root.Root, logicalPath, allowFinalReparse: false);
+    }
+
+    public static VerifiedWindowsPathReference InspectExisting(
+        VerifiedWorkspaceRootReference root,
+        LogicalWorkspacePath logicalPath)
+    {
+        ArgumentNullException.ThrowIfNull(root);
+        return ResolveExisting(root.Root, logicalPath, allowFinalReparse: true);
     }
 
     public static VerifiedWindowsPathReference ResolveExisting(
         WindowsRegisteredWorkspaceRoot root,
         LogicalWorkspacePath logicalPath)
+    {
+        return ResolveExisting(root, logicalPath, allowFinalReparse: false);
+    }
+
+    private static VerifiedWindowsPathReference ResolveExisting(
+        WindowsRegisteredWorkspaceRoot root,
+        LogicalWorkspacePath logicalPath,
+        bool allowFinalReparse)
     {
         ArgumentNullException.ThrowIfNull(root);
         ArgumentNullException.ThrowIfNull(logicalPath);
@@ -78,7 +94,10 @@ public sealed class WindowsPathReferenceResolver
                     SafeFileHandle candidate = Open(current);
                     HandleFacts component = ReadFacts(candidate);
 
-                    if (component.ReparseKind != FilesystemReparseKind.None)
+                    bool finalComponent =
+                        index == logicalPath.Segments.Count - 1;
+                    if (component.ReparseKind != FilesystemReparseKind.None &&
+                        (!finalComponent || !allowFinalReparse))
                     {
                         candidate.Dispose();
                         throw new WindowsPathReferenceException(
@@ -118,7 +137,8 @@ public sealed class WindowsPathReferenceResolver
                     "The protected path resolved onto another volume.");
             }
 
-            bool hasNamedStreams = volume.SupportsNamedStreams &&
+            bool hasNamedStreams = facts.ReparseKind == FilesystemReparseKind.None &&
+                volume.SupportsNamedStreams &&
                 HasNamedStreamsAndRevalidate(current, facts.Identity);
             WindowsResolvedPath value = new(
                 logicalPath,
@@ -130,6 +150,9 @@ public sealed class WindowsPathReferenceResolver
                 facts.ReparseKind,
                 facts.LinkCount,
                 hasNamedStreams,
+                facts.SizeBytes,
+                facts.Attributes,
+                facts.LastWriteTimeUtc,
                 DateTimeOffset.UtcNow);
             VerifiedWindowsPathReference result = new(securedHandle, value);
             finalHandle = null;
@@ -256,6 +279,11 @@ public sealed class WindowsPathReferenceResolver
                 WindowsNativeMethods.FileInfoByHandleClass.FileStandardInfo,
                 out WindowsNativeMethods.FileStandardInformation standard,
                 (uint)Marshal.SizeOf<WindowsNativeMethods.FileStandardInformation>()) ||
+            !WindowsNativeMethods.GetBasicInfo(
+                handle,
+                WindowsNativeMethods.FileInfoByHandleClass.FileBasicInfo,
+                out WindowsNativeMethods.FileBasicInformation basic,
+                (uint)Marshal.SizeOf<WindowsNativeMethods.FileBasicInformation>()) ||
             !WindowsNativeMethods.GetFileIdInfo(
                 handle,
                 WindowsNativeMethods.FileInfoByHandleClass.FileIdInfo,
@@ -287,7 +315,10 @@ public sealed class WindowsPathReferenceResolver
                     ? FilesystemObjectType.Directory
                     : FilesystemObjectType.RegularFile,
             ClassifyReparse(attributes.ReparseTag, reparse),
-            standard.NumberOfLinks);
+            standard.NumberOfLinks,
+            directory ? 0 : standard.EndOfFile,
+            basic.FileAttributes,
+            DateTimeOffset.FromFileTime(basic.LastWriteTime));
     }
 
     private static WindowsVolumeIdentity ReadVolume(
@@ -464,5 +495,8 @@ public sealed class WindowsPathReferenceResolver
         FileObjectIdentity Identity,
         FilesystemObjectType ObjectType,
         FilesystemReparseKind ReparseKind,
-        uint LinkCount);
+        uint LinkCount,
+        long SizeBytes,
+        FileAttributes Attributes,
+        DateTimeOffset LastWriteTimeUtc);
 }

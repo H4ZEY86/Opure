@@ -52,6 +52,9 @@ public sealed record WindowsResolvedPath(
     FilesystemReparseKind ReparseKind,
     uint LinkCount,
     bool HasNamedStreams,
+    long SizeBytes,
+    FileAttributes Attributes,
+    DateTimeOffset LastWriteTimeUtc,
     DateTimeOffset VerifiedAtUtc);
 
 public sealed class VerifiedWorkspaceRootReference

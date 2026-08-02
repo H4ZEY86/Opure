@@ -193,29 +193,30 @@ Locally implemented, verified and committed; pending reviewed pushes:
 * FND-030 — Add Project Open Trust Receipt.
 * FND-031 — Add Repository Identity Detection.
 * FND-032 — Add Project List UI.
+* FND-033 — Define Workspace Service Contract.
 
 Implemented and verified by the current change:
 
-* FND-033 — Define Workspace Service Contract.
+* FND-034 — Add File Inventory Generation.
 
-FND-033 includes:
+FND-034 includes:
 
-* Workspace-owned framework-neutral request contracts and a revisioned protobuf schema;
-* bounded Create, Get and Invalidate Snapshot operations;
-* Project ID, opaque verified-root reference and non-zero generation binding;
-* portable logical file paths, hashes and repository summaries without raw content;
-* explicit count, aggregate-byte, duration and message limits;
-* cancellation, partial, invalidation and Complete/current invariants;
-* cross-project denial and safe unsupported-file representation;
-* Project Open migration from a Project-owned placeholder to the Workspace-owned request seam.
+* an iterative Windows Workspace inventory generator rooted in verified filesystem authority;
+* component-level no-follow inspection, handle-derived identity and final containment checks;
+* logical-path, size, last-write observation, hidden-state and opaque identity metadata;
+* explicit built-in directory, credential-store and temporary-file exclusions with stable reasons;
+* final reparse-object classification without symbolic-link or junction traversal;
+* entry-count, directory-count, depth and duration budgets with cancellable enumeration;
+* safe Partial results and hashed issues for concurrent mutation or unsupported names;
+* small, large, deep, reparse, hidden, case, cancellation, mutation and benchmark fixtures without file-content reads.
 
 The next planned ticket is:
 
 ```text
-FND-034 — Implement File Inventory Generation
+FND-035 — Add Safe File Hashing
 ```
 
-Do not assume FND-033 is complete until the Workspace Service contract verifier
+Do not assume FND-034 is complete until the Workspace file inventory verifier
 passes and the changes are reviewed, committed and pushed.
 
 ## Build policy

@@ -492,12 +492,27 @@ opaque verified-root reference and a generation. It carries bounded logical
 paths, metadata, hashes and repository summaries only; absolute paths and raw
 file content are excluded. Count, aggregate-byte, duration and message limits
 are explicit, and cancellation or a partial result cannot claim a current
-Complete generation. File inventory generation remains deferred to FND-034.
+Complete generation. File inventory generation is implemented by the next gate.
 
 Run the focused gate with:
 
 ```powershell
 pwsh ./build.ps1 workspace-contract-policy
+```
+
+FND-034 adds the Windows Workspace file inventory generator. It walks
+iteratively from a verified root, reopens every emitted entry through the
+no-follow filesystem boundary, checks handle identity and containment, and
+records only portable logical metadata. Reparse objects are classified and
+denied traversal; hidden entries are included and labelled; built-in exclusions
+remain visible with stable reasons. Entry, directory, depth and duration budgets
+are independent, cancellation returns no misleading result, and concurrent
+mutation produces a safe Partial inventory. File content is never opened.
+
+Run the focused gate with:
+
+```powershell
+pwsh ./build.ps1 workspace-inventory-policy
 ```
 
 Channel-specific data-root and one-time session material are passed through bounded environment variables. The session secret is not placed on command lines, written to disk or included in diagnostics.

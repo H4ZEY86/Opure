@@ -2923,7 +2923,8 @@ transition and hides it from the active list; it never deletes or modifies
 developer-owned files. The Avalonia view uses a virtualised list, keyboard
 selection and commands, stable automation identifiers, text availability and
 path-free Narrator labels. Desktop project-file reads remain deliberately
-unavailable while the Workspace boundary is contract-only.
+unavailable until a persisted Workspace generation is exposed through an
+authorised projection.
 
 FND-033 establishes that Workspace Service boundary without implementing file
 enumeration. The framework-neutral owner contract accepts a Project ID, the
@@ -2944,9 +2945,35 @@ current. A limit-bounded generation is explicitly `Partial` and not current;
 cancellation has no generation or entries; invalidation clears currency.
 Request/response validation denies cross-project or cross-root substitution and
 handles unsupported file objects through a stable safe class. FND-034 owns the
-actual Windows inventory adapter, generation persistence, interruption recovery
-and measurement against real repositories. Trust receipts remain deferred until
-the backlog assigns an evidence-producing Workspace transition.
+actual Windows inventory adapter. Generation persistence remains FND-036, and
+Trust receipts remain deferred until the backlog assigns an evidence-producing
+Workspace transition.
+
+FND-034 implements the first Windows inventory adapter behind that boundary.
+The adapter walks directories iteratively from a verified Project root. Path
+enumeration supplies candidate names only: before a candidate becomes normal
+Workspace metadata, every component is reopened without following reparse
+points, the root is revalidated, handle-derived file identity is captured and
+the final object is confirmed inside the registered root. A same-user race may
+cause an entry to be omitted as a safe Partial issue, but cannot authorise an
+outside record.
+
+Final symbolic links, junctions, mounted folders, cloud placeholders and unknown
+reparse objects are recorded with denied traversal and never queued as
+directories. Hidden and system entries are included and explicitly labelled.
+Built-in exclusions cover repository administration, dependencies, build
+outputs, caches, temporary files, model state and known credential stores;
+excluded directories remain visible with stable reasons so policy is
+inspectable.
+
+Inventory records contain forward-slash logical paths, class, disposition,
+size, observed last-write time and a one-way digest of platform file identity.
+They never contain absolute paths or file content. Entry, directory, depth and
+duration budgets are independent, and cancellation throws before completion can
+be claimed. Concurrent mutation or an unsafe name produces a hashed issue and a
+Partial result. FND-034 keeps this inventory transient, so failure cannot replace
+a prior current snapshot. FND-035 owns content hashing and FND-036 owns immutable
+generation persistence and atomic current-pointer updates.
 
 The following rules should be enforced as architectural invariants:
 

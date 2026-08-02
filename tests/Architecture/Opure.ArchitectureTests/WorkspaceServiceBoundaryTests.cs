@@ -75,6 +75,30 @@ public sealed class WorkspaceServiceBoundaryTests
         Assert.DoesNotContain("IInitialWorkspaceSnapshotRequester", formerBoundary, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void WindowsInventoryUsesReviewedFilesystemBoundaryWithoutContentReads()
+    {
+        string root = Path.Combine(
+            RepositoryRoot,
+            "src",
+            "Workspace",
+            "Opure.Workspace.Windows");
+        string project = File.ReadAllText(
+            Path.Combine(root, "Opure.Workspace.Windows.csproj"));
+        string source = ReadSources(root);
+
+        Assert.Contains("Opure.Filesystem.Windows.csproj", project, StringComparison.Ordinal);
+        Assert.Contains("InspectExisting", source, StringComparison.Ordinal);
+        Assert.Contains("ResolveExisting", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("File.ReadAll", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("File.OpenRead", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("FileStream", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("Microsoft.Data.Sqlite", project, StringComparison.Ordinal);
+        Assert.DoesNotContain("Opure.Desktop", project, StringComparison.Ordinal);
+        Assert.DoesNotContain("System.Net", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("Process.Start", source, StringComparison.Ordinal);
+    }
+
     private static string ReadSources(string root)
     {
         return string.Join(

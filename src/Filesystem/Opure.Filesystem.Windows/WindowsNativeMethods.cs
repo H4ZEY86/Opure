@@ -20,6 +20,7 @@ internal static class WindowsNativeMethods
 
     internal enum FileInfoByHandleClass
     {
+        FileBasicInfo = 0,
         FileStandardInfo = 1,
         FileAttributeTagInfo = 9,
         FileIdInfo = 18
@@ -47,10 +48,20 @@ internal static class WindowsNativeMethods
     internal readonly struct FileStandardInformation
     {
         private readonly long allocationSize;
-        private readonly long endOfFile;
+        internal readonly long EndOfFile;
         internal readonly uint NumberOfLinks;
         private readonly byte deletePending;
         private readonly byte directory;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal readonly struct FileBasicInformation
+    {
+        private readonly long creationTime;
+        private readonly long lastAccessTime;
+        internal readonly long LastWriteTime;
+        private readonly long changeTime;
+        internal readonly FileAttributes FileAttributes;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -107,6 +118,18 @@ internal static class WindowsNativeMethods
         SafeFileHandle file,
         FileInfoByHandleClass informationClass,
         out FileStandardInformation information,
+        uint bufferSize);
+
+    [DllImport(
+        "kernel32.dll",
+        EntryPoint = "GetFileInformationByHandleEx",
+        SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool GetBasicInfo(
+        SafeFileHandle file,
+        FileInfoByHandleClass informationClass,
+        out FileBasicInformation information,
         uint bufferSize);
 
     [DllImport(
