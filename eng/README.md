@@ -384,7 +384,7 @@ Evidence Type verification exercises the framework-neutral
 `opure.trust-evidence-type/1` contract, immutable revision and canonical-hash
 rules, owner and Authority Class binding, safe payload indexes, explicit
 retention, support-export and redaction metadata, unknown-type refusal,
-historical revision lookup and the reviewed ten-type foundation catalogue.
+historical revision lookup and the reviewed eleven-type foundation catalogue.
 Record persistence and ingestion remain deferred to their dependency-ordered
 tickets.
 
@@ -462,5 +462,14 @@ handling. Projection failure does not reverse or misreport the Project commit:
 the bounded outbox backlog remains visible and resumes after restart. Receipt
 payloads retain only pseudonymous Project and operation identities, safe root
 class, repository state and lifecycle state; the raw project path is omitted.
+
+Repository identity verification exercises root-bound Git detection, exact
+HEAD and branch observation, clean, dirty and detached states, explicit
+non-Git handling, nested and parent-boundary policy, corrupt metadata
+degradation, move-stable and replacement-sensitive identity, credential-free
+remote fingerprinting, schema-v5 persistence and the `repository.observed`
+Verified Service receipt. Detection is local and read-only: it starts no Git
+process, invokes no credential provider, performs no network operation and
+grants no repository-write authority.
 
 Channel-specific data-root and one-time session material are passed through bounded environment variables. The session secret is not placed on command lines, written to disk or included in diagnostics.

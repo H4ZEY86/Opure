@@ -4,7 +4,7 @@ namespace Opure.Project.Sqlite;
 
 public static class ProjectDatabaseSchema
 {
-    public const int CurrentVersion = 4;
+    public const int CurrentVersion = 5;
     public const string ProjectTable = "projects";
     public const string RootTable = "project_root_references";
     public const string RepositoryTable = "project_repository_identities";
@@ -69,6 +69,29 @@ public static class ProjectDatabaseSchema
                 ]));
         }
 
+        if (targetVersion >= 5)
+        {
+            migrations.Add(new SqliteMigration(
+                "project-repository-observation-v5",
+                sourceVersion: 4,
+                targetVersion: 5,
+                "Adds bounded local repository state without granting repository-write authority.",
+                [
+                    $"ALTER TABLE {RepositoryTable} ADD COLUMN observation_state TEXT NOT NULL DEFAULT 'Ready' CHECK (observation_state IN ('NotDetected', 'Ready', 'Dirty', 'Conflicted', 'Detached', 'Degraded'))",
+                    $"ALTER TABLE {RepositoryTable} ADD COLUMN head_commit TEXT NULL CHECK (head_commit IS NULL OR length(head_commit) = 40)",
+                    $"ALTER TABLE {RepositoryTable} ADD COLUMN branch_name TEXT NULL CHECK (branch_name IS NULL OR length(branch_name) BETWEEN 1 AND 512)",
+                    $"ALTER TABLE {RepositoryTable} ADD COLUMN remote_fingerprint_sha256 TEXT NULL CHECK (remote_fingerprint_sha256 IS NULL OR length(remote_fingerprint_sha256) = 64)",
+                    $"ALTER TABLE {RepositoryTable} ADD COLUMN remote_count INTEGER NOT NULL DEFAULT 0 CHECK (remote_count >= 0)",
+                    $"ALTER TABLE {RepositoryTable} ADD COLUMN modified_count INTEGER NOT NULL DEFAULT 0 CHECK (modified_count >= 0)",
+                    $"ALTER TABLE {RepositoryTable} ADD COLUMN staged_count INTEGER NOT NULL DEFAULT 0 CHECK (staged_count >= 0)",
+                    $"ALTER TABLE {RepositoryTable} ADD COLUMN untracked_count INTEGER NOT NULL DEFAULT 0 CHECK (untracked_count >= 0)",
+                    $"ALTER TABLE {RepositoryTable} ADD COLUMN deleted_count INTEGER NOT NULL DEFAULT 0 CHECK (deleted_count >= 0)",
+                    $"ALTER TABLE {RepositoryTable} ADD COLUMN renamed_count INTEGER NOT NULL DEFAULT 0 CHECK (renamed_count >= 0)",
+                    $"ALTER TABLE {RepositoryTable} ADD COLUMN conflicted_count INTEGER NOT NULL DEFAULT 0 CHECK (conflicted_count >= 0)",
+                    $"ALTER TABLE {RepositoryTable} ADD COLUMN stable_code TEXT NOT NULL DEFAULT 'REPOSITORY_LEGACY_IDENTITY' CHECK (length(stable_code) BETWEEN 1 AND 128)"
+                ]));
+        }
+
         List<SqliteSchemaValidation> validations =
         [
             new SqliteSchemaValidation(
@@ -111,6 +134,15 @@ public static class ProjectDatabaseSchema
                 minimumSchemaVersion: 4,
                 $"SELECT COUNT(*) FROM pragma_table_info('{ProjectTable}') WHERE name = 'open_operation_id' AND \"notnull\" = 0",
                 "1"));
+        }
+
+        if (targetVersion >= 5)
+        {
+            validations.Add(new SqliteSchemaValidation(
+                "project-repository-observation-present",
+                minimumSchemaVersion: 5,
+                $"SELECT COUNT(*) FROM pragma_table_info('{RepositoryTable}') WHERE name IN ('observation_state', 'head_commit', 'branch_name', 'remote_fingerprint_sha256', 'remote_count', 'modified_count', 'staged_count', 'untracked_count', 'deleted_count', 'renamed_count', 'conflicted_count', 'stable_code')",
+                "12"));
         }
 
         return new SqliteMigrationCatalogue(migrations, validations);

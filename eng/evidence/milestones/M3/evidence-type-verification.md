@@ -14,7 +14,7 @@ and definition-hash mismatches are rejected. Historical revisions remain
 readable. A stable type cannot change owner or authority between revisions; a
 different authority requires a new type identifier.
 
-The reviewed catalogue defines ten foundation contracts, including the distinct
+The reviewed catalogue defines eleven foundation contracts, including the distinct
 `project.registered` and `project.opened` state transitions owned by Project
 Service. This catalogue does not itself publish records or claim that every
 future owner service is implemented. Record envelopes, persistence, ingestion,

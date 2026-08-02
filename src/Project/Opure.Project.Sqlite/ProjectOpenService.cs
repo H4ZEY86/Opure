@@ -4,6 +4,7 @@ using Opure.Filesystem.Windows;
 using Opure.Project.Contracts;
 using Opure.Project.Protocol;
 using Opure.Project.Protocol.Open.V1;
+using Opure.Repository.Contracts;
 using DomainIdentityCapability = Opure.Filesystem.Contracts.FileIdentityCapability;
 using DomainLifecycleState = Opure.Project.Contracts.ProjectLifecycleState;
 using DomainReleaseChannel = Opure.Project.Contracts.ProjectReleaseChannel;
@@ -20,17 +21,21 @@ public sealed class ProjectOpenService : IProjectOpenRequestHandler
     private readonly ProjectRepository repository;
     private readonly IInitialWorkspaceSnapshotRequester snapshotRequester;
     private readonly IProjectRootOpenPolicy rootPolicy;
+    private readonly IRepositoryIdentityDetector repositoryDetector;
 
     public ProjectOpenService(
         ProjectRepository repository,
         IInitialWorkspaceSnapshotRequester snapshotRequester,
-        IProjectRootOpenPolicy? rootPolicy = null)
+        IProjectRootOpenPolicy? rootPolicy = null,
+        IRepositoryIdentityDetector? repositoryDetector = null)
     {
         this.repository = repository ??
             throw new ArgumentNullException(nameof(repository));
         this.snapshotRequester = snapshotRequester ??
             throw new ArgumentNullException(nameof(snapshotRequester));
         this.rootPolicy = rootPolicy ?? new FixedLocalProjectRootOpenPolicy();
+        this.repositoryDetector = repositoryDetector ??
+            new NoRepositoryIdentityDetector();
     }
 
     public async Task<OpenProjectResponse> HandleAsync(
@@ -149,6 +154,16 @@ public sealed class ProjectOpenService : IProjectOpenRequestHandler
 
         try
         {
+            RepositoryObservation repositoryObservation = repositoryDetector.Observe(
+                new RepositoryDetectionRequest(
+                    root.DisplayPath,
+                    root.RootIdentity),
+                cancellationToken);
+            _ = repository.RecordRepositoryObservation(
+                opening.ProjectId,
+                request.OperationId,
+                repositoryObservation,
+                cancellationToken);
             initialSnapshot = await snapshotRequester.RequestAsync(
                 opening.ProjectId,
                 cancellationToken).ConfigureAwait(false);
@@ -231,6 +246,18 @@ public sealed class ProjectOpenService : IProjectOpenRequestHandler
                     recoveryRequired++;
                     continue;
                 }
+
+                RepositoryObservation repositoryObservation =
+                    repositoryDetector.Observe(
+                        new RepositoryDetectionRequest(
+                            root.DisplayPath,
+                            root.RootIdentity),
+                        cancellationToken);
+                _ = repository.RecordRepositoryObservation(
+                    project.ProjectId,
+                    operationId,
+                    repositoryObservation,
+                    cancellationToken);
 
                 _ = await snapshotRequester.RequestAsync(
                     project.ProjectId,
@@ -366,6 +393,18 @@ public sealed class ProjectOpenService : IProjectOpenRequestHandler
                 volumeClass,
                 "The volume class is unsupported.")
         };
+    }
+}
+
+public sealed class NoRepositoryIdentityDetector : IRepositoryIdentityDetector
+{
+    public RepositoryObservation Observe(
+        RepositoryDetectionRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        cancellationToken.ThrowIfCancellationRequested();
+        return RepositoryObservation.NotDetected();
     }
 }
 

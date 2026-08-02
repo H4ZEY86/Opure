@@ -33,6 +33,11 @@
           "xunit.v3.mtp-v1": "[3.2.2]"
         }
       },
+      "LibGit2Sharp.NativeBinaries": {
+        "type": "Transitive",
+        "resolved": "2.0.324",
+        "contentHash": "5YZVGNuO9nYFQfzRQGPGY9fdpSsABwlF2jSaZ7ydxCfjvt5Krbj/eHbXkvvgAQzp4lkjvgDrlAuuI4KTmqhDlA=="
+      },
       "Microsoft.ApplicationInsights": {
         "type": "Transitive",
         "resolved": "2.23.0",
@@ -225,6 +230,8 @@
           "Opure.Project.Contracts": "[1.0.0, )",
           "Opure.Project.Protocol": "[1.0.0, )",
           "Opure.Project.Sqlite": "[1.0.0, )",
+          "Opure.Repository.Contracts": "[1.0.0, )",
+          "Opure.Repository.Git": "[1.0.0, )",
           "Opure.TrustEvidence.Contracts": "[1.0.0, )"
         }
       },
@@ -235,7 +242,23 @@
           "Opure.Persistence.Sqlite": "[1.0.0, )",
           "Opure.Project.Contracts": "[1.0.0, )",
           "Opure.Project.Protocol": "[1.0.0, )",
+          "Opure.Repository.Contracts": "[1.0.0, )",
           "Opure.TrustEvidence.Contracts": "[1.0.0, )"
+        }
+      },
+      "opure.repository.contracts": {
+        "type": "Project",
+        "dependencies": {
+          "Opure.Filesystem.Contracts": "[1.0.0, )"
+        }
+      },
+      "opure.repository.git": {
+        "type": "Project",
+        "dependencies": {
+          "LibGit2Sharp": "[0.32.0, )",
+          "Opure.Filesystem.Contracts": "[1.0.0, )",
+          "Opure.Filesystem.Windows": "[1.0.0, )",
+          "Opure.Repository.Contracts": "[1.0.0, )"
         }
       },
       "opure.trustevidence.contracts": {
@@ -266,6 +289,15 @@
         "requested": "[2.80.0, )",
         "resolved": "2.80.0",
         "contentHash": "i/8s+MOrYa6n7BmZ5bilcbHk+EMJDQHm2MKLhwGAT+urQqlZ6cpjvSivYvuULjebuX+UKieLYZbLRCmVQxFRkw=="
+      },
+      "LibGit2Sharp": {
+        "type": "CentralTransitive",
+        "requested": "[0.32.0, )",
+        "resolved": "0.32.0",
+        "contentHash": "BL3eMVRnkWWS9zbz6n0H+iDVJ9ZK7hDeiuASnHlsFvwZYTJtDuBFRRVIaH//s4VlF0baOGvCeenXbobE1JLLiQ==",
+        "dependencies": {
+          "LibGit2Sharp.NativeBinaries": "[2.0.324]"
+        }
       },
       "Microsoft.Data.Sqlite": {
         "type": "CentralTransitive",

@@ -1,0 +1,14 @@
+{
+  "schema": "opure.repository-identity-design/1",
+  "result": "Passed",
+  "ownerServiceId": "opure.project",
+  "provider": "git",
+  "repositoryWriteAuthority": false,
+  "networkAuthority": false,
+  "externalProcessUsed": false,
+  "identityBasis": "sha256-windows-metadata-file-identity",
+  "moveStable": true,
+  "replacementSensitive": true,
+  "outsideProjectMetadataAllowed": false,
+  "projectAccessPreservedOnDegradation": true
+}

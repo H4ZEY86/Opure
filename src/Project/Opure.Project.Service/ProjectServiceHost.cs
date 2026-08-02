@@ -3,6 +3,7 @@ using Opure.Persistence.Sqlite;
 using Opure.Project.Contracts;
 using Opure.Project.Protocol;
 using Opure.Project.Sqlite;
+using Opure.Repository.Git;
 using Opure.TrustEvidence.Contracts;
 
 namespace Opure.Project.Service;
@@ -66,7 +67,9 @@ public sealed class ProjectServiceHost : IDisposable
         {
             ProjectOpenService openService = new(
                 database.CreateRepository(timeProvider),
-                snapshotRequester);
+                snapshotRequester,
+                rootPolicy: null,
+                repositoryDetector: new GitRepositoryIdentityDetector());
             SqliteOutboxDispatcher dispatcher =
                 database.CreateOutboxDispatcher(
                     new SqliteOutboxRetryPolicy(

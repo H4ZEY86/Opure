@@ -247,6 +247,7 @@ public sealed class EvidenceTypeContractTests
             "project.closed",
             "project.opened",
             "project.registered",
+            "repository.observed",
             "runtime.started",
             "runtime.stopped",
             "security.policy-denied",
@@ -254,7 +255,7 @@ public sealed class EvidenceTypeContractTests
             "workspace.snapshot-created"
         ];
 
-        Assert.Equal(10, catalogue.Definitions.Count);
+        Assert.Equal(11, catalogue.Definitions.Count);
         Assert.Equal(
             expectedTypeIds,
             catalogue.Definitions

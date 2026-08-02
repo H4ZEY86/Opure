@@ -63,6 +63,12 @@
           "Grpc.Core.Api": "[2.80.0, )"
         }
       },
+      "opure.repository.contracts": {
+        "type": "Project",
+        "dependencies": {
+          "Opure.Filesystem.Contracts": "[1.0.0, )"
+        }
+      },
       "opure.trustevidence.contracts": {
         "type": "Project"
       },

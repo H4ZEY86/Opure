@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LibGit2Sharp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Filesystem\Opure.Filesystem.Contracts\Opure.Filesystem.Contracts.csproj" />
+    <ProjectReference Include="..\..\Filesystem\Opure.Filesystem.Windows\Opure.Filesystem.Windows.csproj" />
+    <ProjectReference Include="..\Opure.Repository.Contracts\Opure.Repository.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

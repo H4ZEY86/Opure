@@ -7,6 +7,7 @@ using Opure.Filesystem.Contracts;
 using Opure.Filesystem.Windows;
 using Opure.Persistence.Sqlite;
 using Opure.Project.Contracts;
+using Opure.Repository.Contracts;
 
 namespace Opure.Project.Sqlite;
 
@@ -371,6 +372,58 @@ public sealed class ProjectRepository
             cancellationToken);
     }
 
+    public RepositoryObservation RecordRepositoryObservation(
+        string projectId,
+        string operationId,
+        RepositoryObservation observation,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateProjectId(projectId);
+        ValidateOperationId(operationId);
+        ValidateRepositoryObservation(observation);
+        return database.ExecuteTransaction(
+            (connection, transaction) =>
+            {
+                ProjectSnapshot project = ReadByProjectId(
+                        connection,
+                        transaction,
+                        projectId) ??
+                    throw new KeyNotFoundException(
+                        "The requested project does not exist.");
+                DateTimeOffset now = timeProvider.GetUtcNow();
+                UpsertRepositoryObservation(
+                    connection,
+                    transaction,
+                    projectId,
+                    observation,
+                    now);
+                _ = ProjectTrustEvidenceOutbox.Enqueue(
+                    outbox,
+                    connection,
+                    transaction,
+                    project,
+                    operationId,
+                    ProjectTrustEvidenceOutbox.RepositoryObservedTypeId,
+                    now,
+                    observation);
+                return observation;
+            },
+            cancellationToken);
+    }
+
+    public RepositoryObservation? ReadRepositoryObservation(
+        string projectId,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateProjectId(projectId);
+        return database.ExecuteTransaction(
+            (connection, transaction) => ReadRepositoryObservationCore(
+                connection,
+                transaction,
+                projectId),
+            cancellationToken);
+    }
+
     private ProjectRegistrationResult RegisterCore(
         SqliteConnection connection,
         SqliteTransaction transaction,
@@ -625,6 +678,119 @@ public sealed class ProjectRepository
         Add(command, "$identity", identity);
         Add(command, "$now", Format(now));
         _ = command.ExecuteNonQuery();
+    }
+
+    private static void UpsertRepositoryObservation(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        string projectId,
+        RepositoryObservation observation,
+        DateTimeOffset now)
+    {
+        using SqliteCommand command = CreateCommand(
+            connection,
+            transaction,
+            $"""
+            INSERT INTO {ProjectDatabaseSchema.RepositoryTable} (
+                project_id, repository_kind, repository_identity,
+                observed_at_utc, observation_state, head_commit,
+                branch_name, remote_fingerprint_sha256, remote_count,
+                modified_count, staged_count, untracked_count,
+                deleted_count, renamed_count, conflicted_count, stable_code)
+            VALUES (
+                $projectId, $kind, $identity, $now, $state, $head,
+                $branch, $remoteFingerprint, $remoteCount, $modified,
+                $staged, $untracked, $deleted, $renamed, $conflicted,
+                $stableCode)
+            ON CONFLICT(project_id) DO UPDATE SET
+                repository_kind = excluded.repository_kind,
+                repository_identity = excluded.repository_identity,
+                observed_at_utc = excluded.observed_at_utc,
+                observation_state = excluded.observation_state,
+                head_commit = excluded.head_commit,
+                branch_name = excluded.branch_name,
+                remote_fingerprint_sha256 = excluded.remote_fingerprint_sha256,
+                remote_count = excluded.remote_count,
+                modified_count = excluded.modified_count,
+                staged_count = excluded.staged_count,
+                untracked_count = excluded.untracked_count,
+                deleted_count = excluded.deleted_count,
+                renamed_count = excluded.renamed_count,
+                conflicted_count = excluded.conflicted_count,
+                stable_code = excluded.stable_code;
+            """);
+        Add(command, "$projectId", projectId);
+        Add(command, "$kind", observation.Kind);
+        Add(
+            command,
+            "$identity",
+            observation.RepositoryIdentity ?? observation.State.ToString());
+        Add(command, "$now", Format(now));
+        Add(command, "$state", observation.State.ToString());
+        Add(command, "$head", observation.HeadCommit ?? (object)DBNull.Value);
+        Add(command, "$branch", observation.BranchName ?? (object)DBNull.Value);
+        Add(
+            command,
+            "$remoteFingerprint",
+            observation.RemoteFingerprintSha256 ?? (object)DBNull.Value);
+        Add(command, "$remoteCount", observation.RemoteCount);
+        Add(command, "$modified", observation.WorkingTree.Modified);
+        Add(command, "$staged", observation.WorkingTree.Staged);
+        Add(command, "$untracked", observation.WorkingTree.Untracked);
+        Add(command, "$deleted", observation.WorkingTree.Deleted);
+        Add(command, "$renamed", observation.WorkingTree.Renamed);
+        Add(command, "$conflicted", observation.WorkingTree.Conflicted);
+        Add(command, "$stableCode", observation.StableCode);
+        _ = command.ExecuteNonQuery();
+    }
+
+    private static RepositoryObservation? ReadRepositoryObservationCore(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        string projectId)
+    {
+        using SqliteCommand command = CreateCommand(
+            connection,
+            transaction,
+            $"""
+            SELECT repository_kind, repository_identity, observation_state,
+                   head_commit, branch_name, remote_fingerprint_sha256,
+                   remote_count, modified_count, staged_count,
+                   untracked_count, deleted_count, renamed_count,
+                   conflicted_count, stable_code
+              FROM {ProjectDatabaseSchema.RepositoryTable}
+             WHERE project_id = $projectId;
+            """);
+        Add(command, "$projectId", projectId);
+        using SqliteDataReader reader = command.ExecuteReader();
+
+        if (!reader.Read())
+        {
+            return null;
+        }
+
+        RepositoryObservationState state =
+            Enum.Parse<RepositoryObservationState>(reader.GetString(2));
+        return new RepositoryObservation(
+            reader.GetString(0),
+            state,
+            state is RepositoryObservationState.NotDetected or
+                RepositoryObservationState.Degraded
+                ? null
+                : reader.GetString(1),
+            reader.IsDBNull(3) ? null : reader.GetString(3),
+            reader.IsDBNull(4) ? null : reader.GetString(4),
+            reader.IsDBNull(5) ? null : reader.GetString(5),
+            reader.GetInt32(6),
+            new RepositoryWorkingTreeSummary(
+                reader.GetInt32(7),
+                reader.GetInt32(8),
+                reader.GetInt32(9),
+                reader.GetInt32(10),
+                reader.GetInt32(11),
+                reader.GetInt32(12)),
+            reader.GetString(13),
+            "The persisted repository observation is available.");
     }
 
     private static void InsertLifecycle(
@@ -945,6 +1111,31 @@ public sealed class ProjectRepository
         {
             ValidateIdentifier(repositoryKind, nameof(repositoryKind));
             ValidateIdentifier(repositoryIdentity!, nameof(repositoryIdentity));
+        }
+    }
+
+    private static void ValidateRepositoryObservation(
+        RepositoryObservation observation)
+    {
+        ArgumentNullException.ThrowIfNull(observation);
+        ValidateIdentifier(observation.Kind, nameof(observation));
+        ValidateIdentifier(observation.StableCode, nameof(observation));
+
+        if (!Enum.IsDefined(observation.State) ||
+            observation.RemoteCount < 0 ||
+            observation.BranchName?.Length > 512 ||
+            observation.HeadCommit is not null &&
+                (observation.HeadCommit.Length != 40 ||
+                 observation.HeadCommit.Any(static value =>
+                    !char.IsAsciiHexDigit(value))) ||
+            observation.RemoteFingerprintSha256 is not null &&
+                (observation.RemoteFingerprintSha256.Length != 64 ||
+                 observation.RemoteFingerprintSha256.Any(static value =>
+                    !char.IsAsciiHexDigit(value))))
+        {
+            throw new ArgumentException(
+                "The repository observation contains unsupported or unbounded metadata.",
+                nameof(observation));
         }
     }
 

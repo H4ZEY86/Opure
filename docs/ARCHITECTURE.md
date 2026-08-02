@@ -2880,9 +2880,29 @@ bounded retry, while the completed Project operation remains honestly
 successful. Startup drains eligible receipts after Project or Trust restart.
 Raw root paths and project content are deliberately omitted: the inline payload
 contains only pseudonymous Project and operation identifiers, safe root class,
-repository state and lifecycle state. Repository identity detection remains
-deferred to FND-031, so the current receipt reports `not-inspected` unless
-authoritative repository metadata already exists.
+repository state and lifecycle state.
+
+FND-031 adds local read-only repository observation behind provider-neutral
+contracts. Project Service remains the owner and records the result in schema
+v5 of `projects.db`; the detector gains neither repository-write authority nor
+network authority. The initial Git adapter uses a pinned in-process Git
+implementation, revalidates the Windows root identity, accepts administrative
+data only beneath the verified project root, and starts no external process.
+Parent repositories and worktree metadata outside the project boundary are
+reported as `Degraded`, while a valid Project continues to open.
+
+Repository identity is a SHA-256 digest of the handle-derived volume and
+filesystem identity of the local `.git` administrative directory. It survives
+a same-volume move and changes when the repository is replaced. Exact local
+HEAD, bounded branch name and aggregate working-tree counts are persisted;
+paths and file names are not. Remote URLs are read only from the repository's
+local config, user information, query and fragment are removed immediately,
+and only a SHA-256 fingerprint and count are retained. No credential helper,
+prompt, fetch or push is invoked. The `repository.observed` Verified Service
+receipt shares Project and operation correlation with the Open receipt and
+contains only safe state, hashes and the stable result code. Corrupt or missing
+metadata is restart-safe: observation becomes `Degraded` or `NotDetected` and
+Project access is preserved.
 
 The following rules should be enforced as architectural invariants:
 

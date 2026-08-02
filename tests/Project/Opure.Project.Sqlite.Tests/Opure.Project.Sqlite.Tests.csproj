@@ -23,6 +23,8 @@
     <ProjectReference Include="..\..\..\src\Project\Opure.Project.Protocol\Opure.Project.Protocol.csproj" />
     <ProjectReference Include="..\..\..\src\Project\Opure.Project.Service\Opure.Project.Service.csproj" />
     <ProjectReference Include="..\..\..\src\Project\Opure.Project.Sqlite\Opure.Project.Sqlite.csproj" />
+    <ProjectReference Include="..\..\..\src\Repository\Opure.Repository.Contracts\Opure.Repository.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\src\Repository\Opure.Repository.Git\Opure.Repository.Git.csproj" />
     <ProjectReference Include="..\..\..\src\Trust\Opure.TrustEvidence.Contracts\Opure.TrustEvidence.Contracts.csproj" />
     <ProjectReference Include="..\..\..\src\Trust\Opure.TrustEvidence.Service\Opure.TrustEvidence.Service.csproj" />
   </ItemGroup>

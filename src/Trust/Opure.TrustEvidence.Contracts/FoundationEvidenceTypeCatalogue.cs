@@ -25,6 +25,7 @@ public static class FoundationEvidenceTypeCatalogue
             ConfigurationSnapshotCommitted(),
             ProjectRegistered(),
             ProjectOpened(),
+            RepositoryObserved(),
             ProjectClosed(),
             WorkspaceSnapshotCreated(),
             RecoveryPointCreated(),
@@ -209,6 +210,57 @@ public static class FoundationEvidenceTypeCatalogue
                 EvidencePayloadFieldType.String,
                 EvidenceDataClassification.Safe)
         ];
+    }
+
+    private static EvidenceTypeDefinition RepositoryObserved()
+    {
+        return Define(
+            "repository.observed",
+            "opure.project",
+            EvidenceAuthorityClass.VerifiedServiceReceipt,
+            [
+                Field(
+                    "project_id",
+                    EvidencePayloadFieldType.Identifier,
+                    EvidenceDataClassification.Pseudonymous),
+                Field(
+                    "repository_kind",
+                    EvidencePayloadFieldType.String,
+                    EvidenceDataClassification.Safe),
+                Field(
+                    "repository_state",
+                    EvidencePayloadFieldType.String,
+                    EvidenceDataClassification.Safe),
+                Field(
+                    "repository_identity_sha256",
+                    EvidencePayloadFieldType.Sha256,
+                    EvidenceDataClassification.Safe,
+                    isRequired: false),
+                Field(
+                    "head_commit",
+                    EvidencePayloadFieldType.String,
+                    EvidenceDataClassification.Safe,
+                    isRequired: false),
+                Field(
+                    "remote_fingerprint_sha256",
+                    EvidencePayloadFieldType.Sha256,
+                    EvidenceDataClassification.Safe,
+                    isRequired: false),
+                Field(
+                    "dirty",
+                    EvidencePayloadFieldType.Boolean,
+                    EvidenceDataClassification.Safe),
+                Field(
+                    "stable_code",
+                    EvidencePayloadFieldType.String,
+                    EvidenceDataClassification.Safe)
+            ],
+            ["project_id", "repository_kind", "repository_state", "stable_code"],
+            [
+                EvidenceRelationshipKind.DerivesFrom,
+                EvidenceRelationshipKind.BelongsTo,
+                EvidenceRelationshipKind.CorrelatesWith
+            ]);
     }
 
     private static EvidenceTypeDefinition ProjectClosed()

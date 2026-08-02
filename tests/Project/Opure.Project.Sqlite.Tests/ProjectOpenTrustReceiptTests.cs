@@ -76,7 +76,7 @@ public sealed class ProjectOpenTrustReceiptTests : IDisposable
         Assert.Equal(
             OpenProjectResponse.OutcomeOneofCase.Project,
             response.OutcomeCase);
-        Assert.Equal(2, ingestion.Requests.Count);
+        Assert.Equal(3, ingestion.Requests.Count);
         EvidenceIngestionRequest openedRequest = Assert.Single(
             ingestion.Requests,
             static item =>
@@ -320,7 +320,7 @@ public sealed class ProjectOpenTrustReceiptTests : IDisposable
                 unavailableProjectHost.ReadTrustReceiptBacklog(
                     TestContext.Current.CancellationToken).State);
             Assert.Equal(
-                2,
+                3,
                 unavailableProjectHost.ReadTrustReceiptBacklog(
                         TestContext.Current.CancellationToken)
                     .UndeliveredCount);

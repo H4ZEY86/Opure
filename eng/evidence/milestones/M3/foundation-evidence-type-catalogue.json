@@ -1,7 +1,7 @@
 {
   "schema": "opure.foundation-evidence-type-catalogue/1",
   "result": "Passed",
-  "typeCount": 10,
+  "typeCount": 11,
   "types": [
     {
       "evidenceTypeId": "backup.recovery-point-created",
@@ -249,6 +249,82 @@
       "supportExportEligibility": "EligibleAfterRedaction",
       "redactionProfileId": "opure.trust-evidence-redaction.1",
       "canonicalSha256": "961a3723edb9322b394288ae94b93e732f6732cfd5df30cacc6a0e029dcbb5be"
+    },
+    {
+      "evidenceTypeId": "repository.observed",
+      "revision": 1,
+      "ownerServiceId": "opure.project",
+      "authorityClass": "VerifiedServiceReceipt",
+      "payloadLocation": "Inline",
+      "payloadFields": [
+        {
+          "name": "dirty",
+          "fieldType": "Boolean",
+          "classification": "Safe",
+          "isRequired": true
+        },
+        {
+          "name": "head_commit",
+          "fieldType": "String",
+          "classification": "Safe",
+          "isRequired": false
+        },
+        {
+          "name": "project_id",
+          "fieldType": "Identifier",
+          "classification": "Pseudonymous",
+          "isRequired": true
+        },
+        {
+          "name": "remote_fingerprint_sha256",
+          "fieldType": "Sha256",
+          "classification": "Safe",
+          "isRequired": false
+        },
+        {
+          "name": "repository_identity_sha256",
+          "fieldType": "Sha256",
+          "classification": "Safe",
+          "isRequired": false
+        },
+        {
+          "name": "repository_kind",
+          "fieldType": "String",
+          "classification": "Safe",
+          "isRequired": true
+        },
+        {
+          "name": "repository_state",
+          "fieldType": "String",
+          "classification": "Safe",
+          "isRequired": true
+        },
+        {
+          "name": "stable_code",
+          "fieldType": "String",
+          "classification": "Safe",
+          "isRequired": true
+        }
+      ],
+      "safeIndexFields": [
+        "project_id",
+        "repository_kind",
+        "repository_state",
+        "stable_code"
+      ],
+      "relationshipEligibility": [
+        "DerivesFrom",
+        "BelongsTo",
+        "CorrelatesWith"
+      ],
+      "retention": {
+        "retentionClass": "AuthoritativeTrustEvidence",
+        "defaultRetentionDays": 180,
+        "dependencyExtensionAllowed": true
+      },
+      "supportExportEligibility": "EligibleAfterRedaction",
+      "redactionProfileId": "opure.trust-evidence-redaction.1",
+      "canonicalSha256": "81e176189cc32a562b4abffb0ab00aee74229e2aebb9a26ce5dca5c1d20ca907"
     },
     {
       "evidenceTypeId": "runtime.started",

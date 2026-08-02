@@ -4,6 +4,7 @@ using Microsoft.Data.Sqlite;
 using Opure.Filesystem.Contracts;
 using Opure.Persistence.Sqlite;
 using Opure.Project.Contracts;
+using Opure.Repository.Contracts;
 using Opure.TrustEvidence.Contracts;
 
 namespace Opure.Project.Sqlite;
@@ -14,6 +15,7 @@ public static class ProjectTrustEvidenceOutbox
     public const string StreamId = "project-trust-evidence";
     public const string ProjectRegisteredTypeId = "project.registered";
     public const string ProjectOpenedTypeId = "project.opened";
+    public const string RepositoryObservedTypeId = "repository.observed";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -27,7 +29,8 @@ public static class ProjectTrustEvidenceOutbox
         ProjectSnapshot project,
         string operationId,
         string evidenceTypeId,
-        DateTimeOffset occurredAtUtc)
+        DateTimeOffset occurredAtUtc,
+        RepositoryObservation? repositoryObservation = null)
     {
         ArgumentNullException.ThrowIfNull(outbox);
         ArgumentNullException.ThrowIfNull(connection);
@@ -48,7 +51,8 @@ public static class ProjectTrustEvidenceOutbox
                     project,
                     operationId,
                     checked((ulong)ownerSequence),
-                    occurredAtUtc);
+                    occurredAtUtc,
+                    repositoryObservation);
                 StoredProjectTrustReceipt stored = new(
                     PayloadSchema,
                     messageId,
@@ -246,8 +250,22 @@ public static class ProjectTrustEvidenceOutbox
         ProjectSnapshot project,
         string operationId,
         ulong ownerSequence,
-        DateTimeOffset occurredAtUtc)
+        DateTimeOffset occurredAtUtc,
+        RepositoryObservation? repositoryObservation)
     {
+        if (evidenceType.EvidenceTypeId == RepositoryObservedTypeId)
+        {
+            return CreateRepositoryObservationRecord(
+                evidenceType,
+                project,
+                operationId,
+                ownerSequence,
+                occurredAtUtc,
+                repositoryObservation ??
+                    throw new ArgumentNullException(
+                        nameof(repositoryObservation)));
+        }
+
         string lifecycleState = evidenceType.EvidenceTypeId switch
         {
             ProjectRegisteredTypeId => "registered",
@@ -272,7 +290,12 @@ public static class ProjectTrustEvidenceOutbox
                 root_class = MapRootClass(project.Root.VolumeClass),
                 repository_state = project.RepositoryKind is null
                     ? "not-inspected"
-                    : "identified",
+                    : string.Equals(
+                        project.RepositoryKind,
+                        "none",
+                        StringComparison.Ordinal)
+                        ? "not-detected"
+                        : "observed",
                 lifecycle_state = lifecycleState
             });
         EvidenceRecordPayload payload = EvidenceRecordPayload.CreateInline(
@@ -299,6 +322,79 @@ public static class ProjectTrustEvidenceOutbox
             project.ProjectId,
             action,
             "succeeded",
+            occurred,
+            occurred,
+            ownerSequence,
+            previousStreamSha256: null,
+            evidenceType.Retention.RetentionClass,
+            EvidencePreservationState.NotPreserved,
+            payload);
+    }
+
+    private static EvidenceRecord CreateRepositoryObservationRecord(
+        EvidenceTypeDefinition evidenceType,
+        ProjectSnapshot project,
+        string operationId,
+        ulong ownerSequence,
+        DateTimeOffset occurredAtUtc,
+        RepositoryObservation observation)
+    {
+        Dictionary<string, object> fields = new(StringComparer.Ordinal)
+        {
+            ["project_id"] = project.ProjectId,
+            ["repository_kind"] = observation.Kind,
+            ["repository_state"] = MapRepositoryState(observation.State),
+            ["dirty"] = observation.WorkingTree.IsDirty,
+            ["stable_code"] = observation.StableCode
+        };
+
+        if (observation.RepositoryIdentity is not null)
+        {
+            fields["repository_identity_sha256"] = observation.RepositoryIdentity;
+        }
+
+        if (observation.HeadCommit is not null)
+        {
+            fields["head_commit"] = observation.HeadCommit;
+        }
+
+        if (observation.RemoteFingerprintSha256 is not null)
+        {
+            fields["remote_fingerprint_sha256"] =
+                observation.RemoteFingerprintSha256;
+        }
+
+        string payloadJson = JsonSerializer.Serialize(fields);
+        EvidenceRecordPayload payload = EvidenceRecordPayload.CreateInline(
+            payloadJson,
+            EvidenceDataClassification.Pseudonymous);
+        DateTimeOffset occurred = occurredAtUtc.ToUniversalTime();
+        string outcome = observation.State switch
+        {
+            RepositoryObservationState.NotDetected => "not-detected",
+            RepositoryObservationState.Degraded => "degraded",
+            _ => "succeeded"
+        };
+
+        return new EvidenceRecord(
+            Guid.NewGuid().ToString("N"),
+            evidenceType,
+            ProjectDatabase.OwnerServiceId,
+            Guid.NewGuid().ToString("N"),
+            ownerRecordRevision: 1,
+            evidenceType.AuthorityClass,
+            MapReleaseChannel(project.ReleaseChannel),
+            EvidenceRecordScope.Project,
+            project.ProjectId,
+            operationId,
+            workflowInstanceId: null,
+            traceId: null,
+            spanId: null,
+            runtimeBootId: null,
+            EvidenceSubjectKind.Project,
+            project.ProjectId,
+            "repository.observe",
+            outcome,
             occurred,
             occurred,
             ownerSequence,
@@ -346,6 +442,20 @@ public static class ProjectTrustEvidenceOutbox
             FilesystemVolumeClass.Network => "network",
             FilesystemVolumeClass.Unsupported => "unsupported",
             _ => throw new ArgumentOutOfRangeException(nameof(volumeClass))
+        };
+    }
+
+    private static string MapRepositoryState(RepositoryObservationState state)
+    {
+        return state switch
+        {
+            RepositoryObservationState.NotDetected => "not-detected",
+            RepositoryObservationState.Ready => "ready",
+            RepositoryObservationState.Dirty => "dirty",
+            RepositoryObservationState.Conflicted => "conflicted",
+            RepositoryObservationState.Detached => "detached",
+            RepositoryObservationState.Degraded => "degraded",
+            _ => throw new ArgumentOutOfRangeException(nameof(state))
         };
     }
 

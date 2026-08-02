@@ -1,0 +1,14 @@
+{
+  "schema": "opure.repository-remote-privacy/1",
+  "result": "Passed",
+  "rawRemotePersisted": false,
+  "remoteUserInfoPersisted": false,
+  "remoteQueryPersisted": false,
+  "credentialProviderInvoked": false,
+  "networkOperationPerformed": false,
+  "storedMetadata": [
+    "remote-count",
+    "sha256-fingerprint"
+  ],
+  "credentialCanaryAbsent": true
+}

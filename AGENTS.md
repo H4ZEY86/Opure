@@ -190,35 +190,31 @@ Locally implemented, verified and committed; pending reviewed pushes:
 * FND-027 — Add Trusted Folder Picker Adapter.
 * FND-028 — Add Project Service Database.
 * FND-029 — Add Open Project Flow.
+* FND-030 — Add Project Open Trust Receipt.
 
 Implemented and verified by the current change:
 
-* FND-030 — Add Project Open Trust Receipt.
+* FND-031 — Add Repository Identity Detection.
 
-FND-030 includes:
+FND-031 includes:
 
-* Project-owned `project.registered` and `project.opened` Evidence Types with
-  authoritative domain state-transition classification;
-* canonical Evidence Records committed to the Project transactional outbox in
-  the same transaction as owner lifecycle state;
-* a separate Trust Evidence service host with Runtime-bound owner identity;
-* type-filtered bounded at-least-once dispatch that does not consume unrelated
-  Project outbox events;
-* idempotent duplicate acknowledgement and restart-safe pending delivery;
-* honest Project success when the Trust projection is temporarily unavailable;
-* durable Open operation identity for interrupted `Opening` reconciliation;
-* pseudonymous receipt payloads containing safe root class, repository state
-  and lifecycle state without the raw root path;
-* transaction, failure, duplicate, owner-impersonation, restart, privacy and
-  architecture verification evidence.
+* provider-neutral observation contracts and a replaceable local Git adapter;
+* verified-root and repository-admin identity binding without write authority;
+* exact HEAD, bounded branch metadata and aggregate working-tree state;
+* explicit non-Git, nested, detached, corrupt and boundary-escape handling;
+* move-stable and replacement-sensitive repository identity;
+* credential-stripped, query-free remote fingerprints with no network access;
+* schema-v5 Project persistence and restart reconciliation;
+* a Project-owned `repository.observed` Verified Service receipt;
+* adversarial privacy, recovery, persistence and architecture verification.
 
 The next planned ticket is:
 
 ```text
-FND-031 — Add Repository Identity Detection
+FND-032 — Add Project List UI
 ```
 
-Do not assume FND-030 is complete until the Project Open Trust verifier
+Do not assume FND-031 is complete until the Repository Identity verifier
 passes and the changes are reviewed, committed and pushed.
 
 ## Build policy

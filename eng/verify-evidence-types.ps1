@@ -120,6 +120,7 @@ $expectedTypeIds = @(
     'project.closed',
     'project.opened',
     'project.registered',
+    'repository.observed',
     'runtime.started',
     'runtime.stopped',
     'security.policy-denied',
@@ -129,8 +130,8 @@ $expectedTypeIds = @(
 
 if ($catalogue.schema -ne 'opure.foundation-evidence-type-catalogue/1' -or
     $catalogue.result -ne 'Passed' -or
-    $catalogue.typeCount -ne 10 -or
-    $catalogue.types.Count -ne 10 -or
+    $catalogue.typeCount -ne 11 -or
+    $catalogue.types.Count -ne 11 -or
     $catalogue.authoritative -ne $false -or
     [string]::Join(',', $catalogue.types.evidenceTypeId) -ne
         [string]::Join(',', $expectedTypeIds)) {
@@ -172,7 +173,7 @@ foreach ($type in $catalogue.types) {
 foreach ($requiredLine in @(
     'schema=opure.evidence-type-authority-review/1',
     'result=Passed',
-    'reviewedTypeCount=9',
+    'reviewedTypeCount=11',
     'missingOwnerCount=0',
     'unknownAuthorityCount=0',
     'authorityChangeWithoutNewTypeIdAllowed=False',

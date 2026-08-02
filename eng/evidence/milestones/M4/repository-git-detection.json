@@ -1,0 +1,14 @@
+{
+  "schema": "opure.repository-git-detection/1",
+  "result": "Passed",
+  "exactHeadObserved": true,
+  "branchObserved": true,
+  "dirtyStateObserved": true,
+  "detachedHeadObserved": true,
+  "nonGitExplicit": true,
+  "nestedChildDoesNotReplaceRoot": true,
+  "parentRepositoryEscapeDenied": true,
+  "corruptMetadataDegraded": true,
+  "restartObservationPersisted": true,
+  "schemaVersion": 5
+}
