@@ -532,4 +532,22 @@ Run the focused gate with:
 pwsh ./build.ps1 workspace-hashing-policy
 ```
 
+FND-036 adds the authoritative Workspace generation store. Workspace Service
+owns a separate `workspace.db`; no other service writes it. A complete inventory,
+stable identity-bound file hashes, explicit exclusions and a repository-summary
+digest are normalised into revision-one canonical SHA-256 material. Staging rows,
+committed generation rows and the per-project current pointer are promoted in one
+SQLite transaction. A failure before promotion or pointer activation therefore
+leaves the prior current generation unchanged. Committed generations, entries
+and repository summaries reject updates, earlier generations remain queryable,
+and incomplete staging debris is discarded on owner restart. The initial
+retention policy keeps all committed generations until a reviewed bounded policy
+is introduced.
+
+Run the focused gate with:
+
+```powershell
+pwsh ./build.ps1 workspace-generation-policy
+```
+
 Channel-specific data-root and one-time session material are passed through bounded environment variables. The session secret is not placed on command lines, written to disk or included in diagnostics.

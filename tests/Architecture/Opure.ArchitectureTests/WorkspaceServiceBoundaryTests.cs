@@ -126,6 +126,37 @@ public sealed class WorkspaceServiceBoundaryTests
         Assert.DoesNotContain("ILogger", source, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void WorkspaceDatabaseIsOwnedAndCommittedGenerationsAreImmutable()
+    {
+        string root = Path.Combine(
+            RepositoryRoot,
+            "src",
+            "Workspace",
+            "Opure.Workspace.Sqlite");
+        string project = File.ReadAllText(Path.Combine(
+            root,
+            "Opure.Workspace.Sqlite.csproj"));
+        string schema = File.ReadAllText(Path.Combine(
+            root,
+            "WorkspaceDatabaseSchema.cs"));
+        string store = File.ReadAllText(Path.Combine(
+            root,
+            "WorkspaceGenerationStore.cs"));
+
+        Assert.Contains("Opure.Persistence.Sqlite.csproj", project, StringComparison.Ordinal);
+        Assert.Contains("workspace_generations", schema, StringComparison.Ordinal);
+        Assert.Contains("workspace_generation_staging", schema, StringComparison.Ordinal);
+        Assert.Contains("workspace_current_generations", schema, StringComparison.Ordinal);
+        Assert.Contains("immutable", schema, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("ExecuteTransaction", store, StringComparison.Ordinal);
+        Assert.Contains("ComputeCanonicalHash", store, StringComparison.Ordinal);
+        Assert.DoesNotContain("Opure.Filesystem.Windows", project, StringComparison.Ordinal);
+        Assert.DoesNotContain("Opure.Desktop", project, StringComparison.Ordinal);
+        Assert.DoesNotContain("Opure.Project", project, StringComparison.Ordinal);
+        Assert.DoesNotContain("System.Net", store, StringComparison.Ordinal);
+    }
+
     private static string ReadSources(string root)
     {
         return string.Join(

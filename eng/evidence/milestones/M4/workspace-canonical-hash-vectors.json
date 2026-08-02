@@ -1,0 +1,12 @@
+{
+  "ticket": "FND-036",
+  "result": "Passed",
+  "algorithm": "SHA-256",
+  "canonicalRevision": 1,
+  "entryOrdering": "ordinal-logical-path",
+  "lengthEncoding": "signed-32-bit-big-endian",
+  "integerEncoding": "signed-big-endian",
+  "fixtureGenerationSha256": "1bda5987ab3295b47490c16dba1e3b0bb71f18de427f3658ca6ae487fc61aee5",
+  "generationNumberIncluded": false,
+  "creationTimeIncluded": false
+}

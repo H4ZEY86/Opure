@@ -2993,6 +2993,29 @@ proves only observed byte identity, not safety or trustworthiness. FND-036 will
 bind these transient results into an immutable generation and activate it
 atomically; until then no durable current snapshot is claimed.
 
+FND-036 introduces `workspace.db` as authoritative Workspace Service state. Its
+migration-owned schema separates staging generations and entries from committed
+generations, entries, repository summaries and per-project current pointers.
+Only a Complete inventory whose included regular files all have stable,
+identity-matching SHA-256 results is eligible. Excluded and denied inventory
+entries are retained in the committed generation; an unstable or unreadable file
+cannot silently inherit an earlier hash.
+
+Canonical generation revision one hashes the Project and opaque root authority,
+repository-summary digest and every entry in ordinal logical-path order. Strings
+are UTF-8 with signed 32-bit big-endian lengths; integers are signed big-endian.
+Generation number and creation time are excluded so identical authoritative
+content has the same digest. File bytes and absolute paths are not stored.
+
+Workspace inserts staging rows, promotes them to immutable committed rows and
+updates the current pointer within one immediate SQLite transaction. Failure at
+any point rolls back all three effects and preserves the prior current pointer.
+The single owner writer serialises concurrent requests. Startup deletes incomplete
+staging debris left outside a committed transaction, while prior committed
+generations remain queryable under the initial retain-all policy. FND-037 will
+create new generations from reconciled filesystem change; FND-038 will publish
+the authoritative current-generation receipt through the transactional outbox.
+
 The following rules should be enforced as architectural invariants:
 
 1. AI providers are accessed only through the AI Router.

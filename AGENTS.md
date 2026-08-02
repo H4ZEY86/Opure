@@ -195,28 +195,30 @@ Locally implemented, verified and committed; pending reviewed pushes:
 * FND-032 — Add Project List UI.
 * FND-033 — Define Workspace Service Contract.
 * FND-034 — Add File Inventory Generation.
+* FND-035 — Add Safe File Hashing.
 
 Implemented and verified by the current change:
 
-* FND-035 — Add Safe File Hashing.
+* FND-036 — Add Workspace Generation.
 
-FND-035 includes:
+FND-036 includes:
 
-* SHA-256 streaming from a verified no-follow Windows file handle;
-* inventory identity binding and before/after size, last-write and object-identity checks;
-* current-path revalidation that detects replacement and reparse substitution;
-* a provisional 64 MiB maximum-file policy, 64 KiB cleared buffer and two-attempt retry budget;
-* explicit Stable, Excluded, Unstable and Unreadable outcomes without prior-hash inheritance;
-* known-answer, modification, replacement, size, lock, cancellation, reparse, canary and throughput fixtures;
-* algorithm and version metadata without file content in diagnostics, evidence or traces.
+* an owner-isolated authoritative `workspace.db` with migration-owned schema;
+* staging tables for generations and entries followed by transactional promotion;
+* atomic per-project current-generation activation in the promotion transaction;
+* immutable committed generations, entries and repository summaries;
+* stable identity-bound content hashes and explicit exclusions in every complete generation;
+* canonical revision-one SHA-256 encoding with ordinal logical-path ordering;
+* current and historical generation reads with initial retain-all policy;
+* failure injection, concurrency, restart, staging-debris and immutability fixtures.
 
 The next planned ticket is:
 
 ```text
-FND-036 — Add Workspace Generation
+FND-037 — Add Change Reconciliation
 ```
 
-Do not assume FND-035 is complete until the safe Workspace file hashing verifier
+Do not assume FND-036 is complete until the immutable Workspace generation verifier
 passes and the changes are reviewed, committed and pushed.
 
 ## Build policy

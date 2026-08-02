@@ -1,0 +1,14 @@
+{
+  "ticket": "FND-036",
+  "result": "Passed",
+  "firstGeneration": true,
+  "secondGeneration": true,
+  "failedBeforePromotionPreservesCurrent": true,
+  "failedBeforePointerPreservesCurrent": true,
+  "priorGenerationQueryable": true,
+  "concurrentRequestsSerialised": true,
+  "restartRecovery": true,
+  "incompleteStagingDiscarded": true,
+  "partialInventoryRejected": true,
+  "unstableHashInherited": false
+}

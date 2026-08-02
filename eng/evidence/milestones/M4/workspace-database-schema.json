@@ -1,0 +1,17 @@
+{
+  "ticket": "FND-036",
+  "result": "Passed",
+  "ownerServiceId": "opure.workspace",
+  "databaseName": "workspace.db",
+  "schemaVersion": 1,
+  "authoritative": true,
+  "tables": [
+    "workspace_generations",
+    "workspace_generation_entries",
+    "workspace_repository_summaries",
+    "workspace_current_generations",
+    "workspace_generation_staging",
+    "workspace_entry_staging"
+  ],
+  "committedRowsImmutable": true
+}
