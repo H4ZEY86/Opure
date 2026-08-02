@@ -1,0 +1,20 @@
+{
+  "ticket": "FND-033",
+  "result": "Passed",
+  "contractRevision": 1,
+  "operations": [
+    "CreateSnapshot",
+    "GetSnapshot",
+    "InvalidateSnapshot"
+  ],
+  "maximumRequestBytes": 4096,
+  "maximumResponseBytes": 33554432,
+  "maximumFileCount": 100000,
+  "maximumObservedBytes": 4294967296,
+  "maximumDurationMilliseconds": 30000,
+  "projectRootBindingRequired": true,
+  "generationRequiredForStoredSnapshots": true,
+  "absolutePathsAllowed": false,
+  "rawFileContentAllowed": false,
+  "logicalPathSeparator": "/"
+}

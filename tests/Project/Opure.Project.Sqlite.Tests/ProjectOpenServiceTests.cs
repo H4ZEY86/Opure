@@ -5,6 +5,7 @@ using Opure.Project.Contracts;
 using Opure.Project.Protocol;
 using Opure.Project.Protocol.Open.V1;
 using Opure.Project.Sqlite;
+using Opure.Workspace.Contracts;
 using Xunit;
 using DomainLifecycleState = Opure.Project.Contracts.ProjectLifecycleState;
 using DomainReleaseChannel = Opure.Project.Contracts.ProjectReleaseChannel;
@@ -347,29 +348,41 @@ public sealed class ProjectOpenServiceTests : IDisposable
     }
 
     private sealed class ReadySnapshotRequester :
-        IInitialWorkspaceSnapshotRequester
+        IWorkspaceSnapshotRequester
     {
-        public Task<InitialWorkspaceSnapshotResult> RequestAsync(
-            string projectId,
+        public Task<WorkspaceSnapshotRequestResult> RequestAsync(
+            WorkspaceSnapshotRequest request,
             CancellationToken cancellationToken)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(projectId);
+            ArgumentNullException.ThrowIfNull(request);
+            ArgumentException.ThrowIfNullOrWhiteSpace(request.ProjectId);
+            Assert.Equal(32, request.RootReferenceId.Length);
+            Assert.Equal(
+                WorkspaceSnapshotBounds.MaximumFileCount,
+                request.MaximumFileCount);
+            Assert.Equal(
+                WorkspaceSnapshotBounds.MaximumObservedBytes,
+                request.MaximumObservedBytes);
+            Assert.Equal(
+                WorkspaceSnapshotBounds.MaximumDuration,
+                request.MaximumDuration);
             cancellationToken.ThrowIfCancellationRequested();
-            return Task.FromResult(new InitialWorkspaceSnapshotResult(
-                InitialWorkspaceSnapshotDisposition.Ready,
+            return Task.FromResult(new WorkspaceSnapshotRequestResult(
+                WorkspaceSnapshotRequestDisposition.Ready,
                 "The initial Workspace Snapshot is ready."));
         }
     }
 
     private sealed class CancellingSnapshotRequester(
         CancellationTokenSource cancellation) :
-        IInitialWorkspaceSnapshotRequester
+        IWorkspaceSnapshotRequester
     {
-        public Task<InitialWorkspaceSnapshotResult> RequestAsync(
-            string projectId,
+        public Task<WorkspaceSnapshotRequestResult> RequestAsync(
+            WorkspaceSnapshotRequest request,
             CancellationToken cancellationToken)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(projectId);
+            ArgumentNullException.ThrowIfNull(request);
+            ArgumentException.ThrowIfNullOrWhiteSpace(request.ProjectId);
             cancellation.Cancel();
             cancellationToken.ThrowIfCancellationRequested();
             throw new InvalidOperationException(

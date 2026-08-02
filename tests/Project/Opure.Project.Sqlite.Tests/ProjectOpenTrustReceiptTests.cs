@@ -11,6 +11,7 @@ using Opure.Project.Service;
 using Opure.Project.Sqlite;
 using Opure.TrustEvidence.Contracts;
 using Opure.TrustEvidence.Service;
+using Opure.Workspace.Contracts;
 using Xunit;
 using DomainReleaseChannel = Opure.Project.Contracts.ProjectReleaseChannel;
 using DomainVolumeClass = Opure.Filesystem.Contracts.FilesystemVolumeClass;
@@ -685,28 +686,30 @@ public sealed class ProjectOpenTrustReceiptTests : IDisposable
     }
 
     private sealed class ReadySnapshotRequester :
-        IInitialWorkspaceSnapshotRequester
+        IWorkspaceSnapshotRequester
     {
-        public Task<InitialWorkspaceSnapshotResult> RequestAsync(
-            string projectId,
+        public Task<WorkspaceSnapshotRequestResult> RequestAsync(
+            WorkspaceSnapshotRequest request,
             CancellationToken cancellationToken)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(projectId);
+            ArgumentNullException.ThrowIfNull(request);
+            ArgumentException.ThrowIfNullOrWhiteSpace(request.ProjectId);
             cancellationToken.ThrowIfCancellationRequested();
-            return Task.FromResult(new InitialWorkspaceSnapshotResult(
-                InitialWorkspaceSnapshotDisposition.Ready,
+            return Task.FromResult(new WorkspaceSnapshotRequestResult(
+                WorkspaceSnapshotRequestDisposition.Ready,
                 "The initial Workspace Snapshot is ready."));
         }
     }
 
     private sealed class ThrowingSnapshotRequester :
-        IInitialWorkspaceSnapshotRequester
+        IWorkspaceSnapshotRequester
     {
-        public Task<InitialWorkspaceSnapshotResult> RequestAsync(
-            string projectId,
+        public Task<WorkspaceSnapshotRequestResult> RequestAsync(
+            WorkspaceSnapshotRequest request,
             CancellationToken cancellationToken)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(projectId);
+            ArgumentNullException.ThrowIfNull(request);
+            ArgumentException.ThrowIfNullOrWhiteSpace(request.ProjectId);
             cancellationToken.ThrowIfCancellationRequested();
             throw new InvalidOperationException(
                 "The test snapshot request failed.");

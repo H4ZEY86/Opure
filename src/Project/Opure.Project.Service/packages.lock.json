@@ -76,7 +76,8 @@
           "Opure.Project.Contracts": "[1.0.0, )",
           "Opure.Project.Protocol": "[1.0.0, )",
           "Opure.Repository.Contracts": "[1.0.0, )",
-          "Opure.TrustEvidence.Contracts": "[1.0.0, )"
+          "Opure.TrustEvidence.Contracts": "[1.0.0, )",
+          "Opure.Workspace.Contracts": "[1.0.0, )"
         }
       },
       "opure.repository.contracts": {
@@ -95,6 +96,9 @@
         }
       },
       "opure.trustevidence.contracts": {
+        "type": "Project"
+      },
+      "opure.workspace.contracts": {
         "type": "Project"
       },
       "Google.Protobuf": {

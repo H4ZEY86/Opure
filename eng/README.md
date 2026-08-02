@@ -486,4 +486,18 @@ Run the focused gate with:
 pwsh ./build.ps1 project-list-ui-policy
 ```
 
+FND-033 defines the Workspace Service-owned Snapshot boundary. The revisioned
+contract binds Create, Get and Invalidate operations to one Project ID, one
+opaque verified-root reference and a generation. It carries bounded logical
+paths, metadata, hashes and repository summaries only; absolute paths and raw
+file content are excluded. Count, aggregate-byte, duration and message limits
+are explicit, and cancellation or a partial result cannot claim a current
+Complete generation. File inventory generation remains deferred to FND-034.
+
+Run the focused gate with:
+
+```powershell
+pwsh ./build.ps1 workspace-contract-policy
+```
+
 Channel-specific data-root and one-time session material are passed through bounded environment variables. The session secret is not placed on command lines, written to disk or included in diagnostics.

@@ -42,6 +42,10 @@
     <Project Path="src/Trust/Opure.TrustEvidence.Service/Opure.TrustEvidence.Service.csproj" />
     <Project Path="src/Trust/Opure.TrustEvidence.Sqlite/Opure.TrustEvidence.Sqlite.csproj" />
   </Folder>
+  <Folder Name="/src/Workspace/">
+    <Project Path="src/Workspace/Opure.Workspace.Contracts/Opure.Workspace.Contracts.csproj" />
+    <Project Path="src/Workspace/Opure.Workspace.Protocol/Opure.Workspace.Protocol.csproj" />
+  </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/Architecture/">
     <Project Path="tests/Architecture/Opure.ArchitectureTests/Opure.ArchitectureTests.csproj" />
@@ -74,5 +78,8 @@
   <Folder Name="/tests/Trust/">
     <Project Path="tests/Trust/Opure.TrustEvidence.Contracts.Tests/Opure.TrustEvidence.Contracts.Tests.csproj" />
     <Project Path="tests/Trust/Opure.TrustEvidence.Sqlite.Tests/Opure.TrustEvidence.Sqlite.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Workspace/">
+    <Project Path="tests/Workspace/Opure.Workspace.Protocol.Tests/Opure.Workspace.Protocol.Tests.csproj" />
   </Folder>
 </Solution>

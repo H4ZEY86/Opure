@@ -30,7 +30,8 @@ public enum ProjectRegistrationDisposition
 public sealed record ProjectRootMetadata(
     string DisplayPath,
     FilesystemVolumeClass VolumeClass,
-    FileObjectIdentity Identity);
+    FileObjectIdentity Identity,
+    string RootReferenceId = "");
 
 public sealed record ProjectSnapshot(
     string ProjectId,

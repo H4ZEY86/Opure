@@ -10,6 +10,7 @@
     <ProjectReference Include="..\..\Repository\Opure.Repository.Git\Opure.Repository.Git.csproj" />
     <ProjectReference Include="..\..\Repository\Opure.Repository.Contracts\Opure.Repository.Contracts.csproj" />
     <ProjectReference Include="..\..\Trust\Opure.TrustEvidence.Contracts\Opure.TrustEvidence.Contracts.csproj" />
+    <ProjectReference Include="..\..\Workspace\Opure.Workspace.Contracts\Opure.Workspace.Contracts.csproj" />
     <ProjectReference Include="..\Opure.Project.Contracts\Opure.Project.Contracts.csproj" />
     <ProjectReference Include="..\Opure.Project.Protocol\Opure.Project.Protocol.csproj" />
     <ProjectReference Include="..\Opure.Project.Sqlite\Opure.Project.Sqlite.csproj" />

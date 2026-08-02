@@ -1,0 +1,12 @@
+{
+  "ticket": "FND-033",
+  "result": "Passed",
+  "schemaRoundTrip": true,
+  "crossProjectDenied": true,
+  "limitOverflowDenied": true,
+  "cancelledGeneration": 0,
+  "cancelledCurrent": false,
+  "misleadingCompletionDenied": true,
+  "unsupportedFileClassSafe": true,
+  "unknownFileClassReturnsStableError": true
+}

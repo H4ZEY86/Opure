@@ -192,29 +192,30 @@ Locally implemented, verified and committed; pending reviewed pushes:
 * FND-029 — Add Open Project Flow.
 * FND-030 — Add Project Open Trust Receipt.
 * FND-031 — Add Repository Identity Detection.
+* FND-032 — Add Project List UI.
 
 Implemented and verified by the current change:
 
-* FND-032 — Add Project List UI.
+* FND-033 — Define Workspace Service Contract.
 
-FND-032 includes:
+FND-033 includes:
 
-* a revisioned, bounded Project List query and command contract;
-* authenticated list, registered-open and remove-registration calls on the Runtime pipe;
-* Project Service-owned path-free projections with display name, storage class, repository class, last-open time and availability;
-* schema-v6 authoritative last-successful-open persistence;
-* registered Open root re-acquisition and Windows identity comparison through the existing Open pipeline;
-* registration removal through an Archived lifecycle decision without filesystem mutation;
-* unavailable rows retained and disconnected projections explicitly labelled stale;
-* keyboard, automation, Narrator, high-contrast and 10,000-row performance verification.
+* Workspace-owned framework-neutral request contracts and a revisioned protobuf schema;
+* bounded Create, Get and Invalidate Snapshot operations;
+* Project ID, opaque verified-root reference and non-zero generation binding;
+* portable logical file paths, hashes and repository summaries without raw content;
+* explicit count, aggregate-byte, duration and message limits;
+* cancellation, partial, invalidation and Complete/current invariants;
+* cross-project denial and safe unsupported-file representation;
+* Project Open migration from a Project-owned placeholder to the Workspace-owned request seam.
 
 The next planned ticket is:
 
 ```text
-FND-033 — Define Workspace Service Contract
+FND-034 — Implement File Inventory Generation
 ```
 
-Do not assume FND-031 is complete until the Repository Identity verifier
+Do not assume FND-033 is complete until the Workspace Service contract verifier
 passes and the changes are reviewed, committed and pushed.
 
 ## Build policy

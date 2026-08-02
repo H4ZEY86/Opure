@@ -5,6 +5,7 @@ using Opure.Project.Contracts;
 using Opure.Project.Protocol;
 using Opure.Project.Protocol.Open.V1;
 using Opure.Repository.Contracts;
+using Opure.Workspace.Contracts;
 using DomainIdentityCapability = Opure.Filesystem.Contracts.FileIdentityCapability;
 using DomainLifecycleState = Opure.Project.Contracts.ProjectLifecycleState;
 using DomainReleaseChannel = Opure.Project.Contracts.ProjectReleaseChannel;
@@ -19,13 +20,13 @@ namespace Opure.Project.Sqlite;
 public sealed class ProjectOpenService : IProjectOpenRequestHandler
 {
     private readonly ProjectRepository repository;
-    private readonly IInitialWorkspaceSnapshotRequester snapshotRequester;
+    private readonly IWorkspaceSnapshotRequester snapshotRequester;
     private readonly IProjectRootOpenPolicy rootPolicy;
     private readonly IRepositoryIdentityDetector repositoryDetector;
 
     public ProjectOpenService(
         ProjectRepository repository,
-        IInitialWorkspaceSnapshotRequester snapshotRequester,
+        IWorkspaceSnapshotRequester snapshotRequester,
         IProjectRootOpenPolicy? rootPolicy = null,
         IRepositoryIdentityDetector? repositoryDetector = null)
     {
@@ -150,7 +151,7 @@ public sealed class ProjectOpenService : IProjectOpenRequestHandler
         ProjectSnapshot opening = registration.Project ??
             throw new InvalidOperationException(
                 "A committed Open Project operation returned no project.");
-        InitialWorkspaceSnapshotResult initialSnapshot;
+        WorkspaceSnapshotRequestResult initialSnapshot;
 
         try
         {
@@ -165,7 +166,9 @@ public sealed class ProjectOpenService : IProjectOpenRequestHandler
                 repositoryObservation,
                 cancellationToken);
             initialSnapshot = await snapshotRequester.RequestAsync(
-                opening.ProjectId,
+                CreateSnapshotRequest(
+                    opening.ProjectId,
+                    opening.Root.RootReferenceId),
                 cancellationToken).ConfigureAwait(false);
             ProjectSnapshot opened = repository.CompleteOpen(
                 opening.ProjectId,
@@ -260,7 +263,9 @@ public sealed class ProjectOpenService : IProjectOpenRequestHandler
                     cancellationToken);
 
                 _ = await snapshotRequester.RequestAsync(
-                    project.ProjectId,
+                    CreateSnapshotRequest(
+                        project.ProjectId,
+                        project.Root.RootReferenceId),
                     cancellationToken).ConfigureAwait(false);
                 _ = repository.CompleteOpen(
                     project.ProjectId,
@@ -291,7 +296,7 @@ public sealed class ProjectOpenService : IProjectOpenRequestHandler
         string operationId,
         ProjectSnapshot project,
         ProjectRegistrationDisposition disposition,
-        InitialWorkspaceSnapshotResult initialSnapshot)
+        WorkspaceSnapshotRequestResult initialSnapshot)
     {
         return new OpenProjectResponse
         {
@@ -309,7 +314,7 @@ public sealed class ProjectOpenService : IProjectOpenRequestHandler
                 LifecycleState = WireLifecycleState.Open,
                 RootVolumeClass = ToWire(project.Root.VolumeClass),
                 InitialSnapshotState = initialSnapshot.Disposition ==
-                    InitialWorkspaceSnapshotDisposition.Ready
+                    WorkspaceSnapshotRequestDisposition.Ready
                         ? InitialWorkspaceSnapshotState.Ready
                         : InitialWorkspaceSnapshotState.Requested,
                 SafeDetail = initialSnapshot.SafeDetail
@@ -332,6 +337,18 @@ public sealed class ProjectOpenService : IProjectOpenRequestHandler
             // The original failure remains authoritative; startup health will
             // expose a database-level recovery requirement if this write fails.
         }
+    }
+
+    private static WorkspaceSnapshotRequest CreateSnapshotRequest(
+        string projectId,
+        string rootReferenceId)
+    {
+        return new WorkspaceSnapshotRequest(
+            projectId,
+            rootReferenceId,
+            WorkspaceSnapshotBounds.MaximumFileCount,
+            WorkspaceSnapshotBounds.MaximumObservedBytes,
+            WorkspaceSnapshotBounds.MaximumDuration);
     }
 
     private static DomainReleaseChannel ToDomain(WireReleaseChannel channel)
@@ -413,16 +430,18 @@ public sealed record ProjectOpenReconciliationReport(
     int RecoveryRequired);
 
 public sealed class DeferredInitialWorkspaceSnapshotRequester :
-    IInitialWorkspaceSnapshotRequester
+    IWorkspaceSnapshotRequester
 {
-    public Task<InitialWorkspaceSnapshotResult> RequestAsync(
-        string projectId,
+    public Task<WorkspaceSnapshotRequestResult> RequestAsync(
+        WorkspaceSnapshotRequest request,
         CancellationToken cancellationToken)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(projectId);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.ProjectId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.RootReferenceId);
         cancellationToken.ThrowIfCancellationRequested();
-        return Task.FromResult(new InitialWorkspaceSnapshotResult(
-            InitialWorkspaceSnapshotDisposition.Requested,
+        return Task.FromResult(new WorkspaceSnapshotRequestResult(
+            WorkspaceSnapshotRequestDisposition.Requested,
             "The project is open; its initial Workspace Snapshot request is queued at the service boundary."));
     }
 }

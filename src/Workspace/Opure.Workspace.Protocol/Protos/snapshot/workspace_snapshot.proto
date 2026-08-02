@@ -1,0 +1,134 @@
+syntax = "proto3";
+
+package opure.workspace.snapshot.v1;
+
+option csharp_namespace = "Opure.Workspace.Protocol.Snapshot.V1";
+
+service WorkspaceSnapshotService {
+  rpc CreateSnapshot(CreateWorkspaceSnapshotRequest) returns (WorkspaceSnapshotResponse);
+  rpc GetSnapshot(GetWorkspaceSnapshotRequest) returns (WorkspaceSnapshotResponse);
+  rpc InvalidateSnapshot(InvalidateWorkspaceSnapshotRequest) returns (InvalidateWorkspaceSnapshotResponse);
+}
+
+message CreateWorkspaceSnapshotRequest {
+  uint32 minimum_contract_revision = 1;
+  uint32 maximum_contract_revision = 2;
+  string operation_id = 3;
+  string correlation_id = 4;
+  string project_id = 5;
+  string root_reference_id = 6;
+  WorkspaceSnapshotLimits limits = 7;
+}
+
+message GetWorkspaceSnapshotRequest {
+  uint32 minimum_contract_revision = 1;
+  uint32 maximum_contract_revision = 2;
+  string correlation_id = 3;
+  string project_id = 4;
+  string root_reference_id = 5;
+  uint64 generation = 6;
+}
+
+message InvalidateWorkspaceSnapshotRequest {
+  uint32 minimum_contract_revision = 1;
+  uint32 maximum_contract_revision = 2;
+  string operation_id = 3;
+  string correlation_id = 4;
+  string project_id = 5;
+  string root_reference_id = 6;
+  uint64 generation = 7;
+}
+
+message WorkspaceSnapshotLimits {
+  uint32 maximum_file_count = 1;
+  uint64 maximum_observed_bytes = 2;
+  uint32 maximum_duration_milliseconds = 3;
+}
+
+message WorkspaceSnapshotResponse {
+  uint32 contract_revision = 1;
+  oneof outcome {
+    WorkspaceSnapshot snapshot = 2;
+    WorkspaceSnapshotError error = 3;
+  }
+}
+
+message InvalidateWorkspaceSnapshotResponse {
+  uint32 contract_revision = 1;
+  oneof outcome {
+    WorkspaceSnapshotInvalidation invalidation = 2;
+    WorkspaceSnapshotError error = 3;
+  }
+}
+
+message WorkspaceSnapshot {
+  string project_id = 1;
+  string root_reference_id = 2;
+  uint64 generation = 3;
+  WorkspaceSnapshotState state = 4;
+  bool current = 5;
+  repeated WorkspaceFileEntry files = 6;
+  WorkspaceRepositorySummary repository = 7;
+  uint64 observed_file_count = 8;
+  uint64 observed_bytes = 9;
+  bool file_count_limit_reached = 10;
+  bool observed_bytes_limit_reached = 11;
+  bool duration_limit_reached = 12;
+  int64 observed_unix_time_milliseconds = 13;
+}
+
+message WorkspaceFileEntry {
+  string logical_path = 1;
+  WorkspaceFileClass file_class = 2;
+  string file_identity_sha256 = 3;
+  string content_sha256 = 4;
+  uint64 observed_size_bytes = 5;
+  string unsupported_type_code = 6;
+}
+
+message WorkspaceRepositorySummary {
+  WorkspaceRepositoryClass repository_class = 1;
+  string head_commit_sha = 2;
+  string branch_name = 3;
+  uint32 changed_file_count = 4;
+  string safe_state_code = 5;
+}
+
+message WorkspaceSnapshotInvalidation {
+  string operation_id = 1;
+  string project_id = 2;
+  string root_reference_id = 3;
+  uint64 generation = 4;
+  bool invalidated = 5;
+  string safe_detail = 6;
+}
+
+message WorkspaceSnapshotError {
+  string code = 1;
+  string safe_message = 2;
+  bool retryable = 3;
+  bool review_required = 4;
+}
+
+enum WorkspaceSnapshotState {
+  WORKSPACE_SNAPSHOT_STATE_UNSPECIFIED = 0;
+  WORKSPACE_SNAPSHOT_STATE_COMPLETE = 1;
+  WORKSPACE_SNAPSHOT_STATE_PARTIAL = 2;
+  WORKSPACE_SNAPSHOT_STATE_CANCELLED = 3;
+  WORKSPACE_SNAPSHOT_STATE_INVALIDATED = 4;
+}
+
+enum WorkspaceFileClass {
+  WORKSPACE_FILE_CLASS_UNSPECIFIED = 0;
+  WORKSPACE_FILE_CLASS_REGULAR = 1;
+  WORKSPACE_FILE_CLASS_DIRECTORY = 2;
+  WORKSPACE_FILE_CLASS_SYMBOLIC_LINK = 3;
+  WORKSPACE_FILE_CLASS_UNSUPPORTED = 4;
+}
+
+enum WorkspaceRepositoryClass {
+  WORKSPACE_REPOSITORY_CLASS_UNSPECIFIED = 0;
+  WORKSPACE_REPOSITORY_CLASS_NONE = 1;
+  WORKSPACE_REPOSITORY_CLASS_GIT = 2;
+  WORKSPACE_REPOSITORY_CLASS_UNSUPPORTED = 3;
+}

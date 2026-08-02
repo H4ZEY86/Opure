@@ -1014,6 +1014,7 @@ public sealed class ProjectRepository
                 r.volume_serial_number,
                 r.file_id,
                 r.identity_capability,
+                r.root_reference_id,
                 repo.repository_kind,
                 repo.repository_identity,
                 p.created_at_utc,
@@ -1043,19 +1044,20 @@ public sealed class ProjectRepository
                         reader.GetString(6),
                         CultureInfo.InvariantCulture),
                     reader.GetString(7),
-                    Enum.Parse<FileIdentityCapability>(reader.GetString(8)))),
-            reader.IsDBNull(9) ? null : reader.GetString(9),
+                    Enum.Parse<FileIdentityCapability>(reader.GetString(8))),
+                reader.GetString(9)),
             reader.IsDBNull(10) ? null : reader.GetString(10),
-            DateTimeOffset.Parse(
-                reader.GetString(11),
-                CultureInfo.InvariantCulture),
+            reader.IsDBNull(11) ? null : reader.GetString(11),
             DateTimeOffset.Parse(
                 reader.GetString(12),
                 CultureInfo.InvariantCulture),
-            reader.IsDBNull(13)
+            DateTimeOffset.Parse(
+                reader.GetString(13),
+                CultureInfo.InvariantCulture),
+            reader.IsDBNull(14)
                 ? null
                 : DateTimeOffset.Parse(
-                    reader.GetString(13),
+                    reader.GetString(14),
                     CultureInfo.InvariantCulture));
     }
 

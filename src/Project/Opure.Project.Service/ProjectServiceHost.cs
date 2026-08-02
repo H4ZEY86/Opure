@@ -5,6 +5,7 @@ using Opure.Project.Protocol;
 using Opure.Project.Sqlite;
 using Opure.Repository.Git;
 using Opure.TrustEvidence.Contracts;
+using Opure.Workspace.Contracts;
 
 namespace Opure.Project.Service;
 
@@ -55,7 +56,7 @@ public sealed class ProjectServiceHost : IDisposable
         string channelDataRoot,
         string releaseChannel,
         ITrustEvidenceOwnerIngestionPort trustEvidenceIngestion,
-        IInitialWorkspaceSnapshotRequester snapshotRequester,
+        IWorkspaceSnapshotRequester snapshotRequester,
         TimeProvider? timeProvider,
         CancellationToken cancellationToken)
     {

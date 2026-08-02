@@ -6,6 +6,7 @@ using Opure.Project.Protocol;
 using Opure.Project.Protocol.List.V1;
 using Opure.Project.Protocol.Open.V1;
 using Opure.Project.Sqlite;
+using Opure.Workspace.Contracts;
 using Xunit;
 using ListChannel = Opure.Project.Protocol.List.V1.ProjectListReleaseChannel;
 using OpenChannel = Opure.Project.Protocol.Open.V1.ProjectReleaseChannel;
@@ -187,15 +188,16 @@ public sealed class ProjectListProjectionServiceTests : IDisposable
             }
         };
 
-    private sealed class ReadySnapshotRequester : IInitialWorkspaceSnapshotRequester
+    private sealed class ReadySnapshotRequester : IWorkspaceSnapshotRequester
     {
-        public Task<InitialWorkspaceSnapshotResult> RequestAsync(
-            string projectId,
+        public Task<WorkspaceSnapshotRequestResult> RequestAsync(
+            WorkspaceSnapshotRequest request,
             CancellationToken cancellationToken)
         {
+            ArgumentNullException.ThrowIfNull(request);
             cancellationToken.ThrowIfCancellationRequested();
-            return Task.FromResult(new InitialWorkspaceSnapshotResult(
-                InitialWorkspaceSnapshotDisposition.Ready,
+            return Task.FromResult(new WorkspaceSnapshotRequestResult(
+                WorkspaceSnapshotRequestDisposition.Ready,
                 "The initial Workspace Snapshot is ready."));
         }
     }

@@ -2922,9 +2922,31 @@ pipeline. Removing a registration records an `Archived` Project lifecycle
 transition and hides it from the active list; it never deletes or modifies
 developer-owned files. The Avalonia view uses a virtualised list, keyboard
 selection and commands, stable automation identifiers, text availability and
-path-free Narrator labels. FND-033 will define the Workspace Service contract;
-Desktop project-file reads remain deliberately unavailable until that boundary
-exists.
+path-free Narrator labels. Desktop project-file reads remain deliberately
+unavailable while the Workspace boundary is contract-only.
+
+FND-033 establishes that Workspace Service boundary without implementing file
+enumeration. The framework-neutral owner contract accepts a Project ID, the
+Project Service's opaque verified-root reference and explicit count, aggregate
+byte and duration limits. Project Open now requests its initial snapshot through
+this Workspace-owned seam; it does not transfer a display path or filesystem
+handle into a portable contract.
+
+The revisioned protobuf surface exposes bounded Create, Get and Invalidate
+Snapshot operations. Each stored snapshot is bound to exactly one Project, one
+root reference and a non-zero generation. File entries use forward-slash
+logical paths, bounded metadata and optional hashes. Repository information is
+an aggregate summary. Absolute paths, raw file content, secrets and direct
+Desktop filesystem authority are deliberately absent.
+
+Only a non-zero generation that reached no limit may be both `Complete` and
+current. A limit-bounded generation is explicitly `Partial` and not current;
+cancellation has no generation or entries; invalidation clears currency.
+Request/response validation denies cross-project or cross-root substitution and
+handles unsupported file objects through a stable safe class. FND-034 owns the
+actual Windows inventory adapter, generation persistence, interruption recovery
+and measurement against real repositories. Trust receipts remain deferred until
+the backlog assigns an evidence-producing Workspace transition.
 
 The following rules should be enforced as architectural invariants:
 
