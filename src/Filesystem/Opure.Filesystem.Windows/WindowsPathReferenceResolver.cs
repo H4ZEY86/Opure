@@ -50,7 +50,23 @@ public sealed class WindowsPathReferenceResolver
         LogicalWorkspacePath logicalPath)
     {
         ArgumentNullException.ThrowIfNull(root);
-        return ResolveExisting(root.Root, logicalPath, allowFinalReparse: false);
+        return ResolveExisting(
+            root.Root,
+            logicalPath,
+            allowFinalReparse: false,
+            readFinalFileData: false);
+    }
+
+    public static VerifiedWindowsPathReference ResolveFileForRead(
+        VerifiedWorkspaceRootReference root,
+        LogicalWorkspacePath logicalPath)
+    {
+        ArgumentNullException.ThrowIfNull(root);
+        return ResolveExisting(
+            root.Root,
+            logicalPath,
+            allowFinalReparse: false,
+            readFinalFileData: true);
     }
 
     public static VerifiedWindowsPathReference InspectExisting(
@@ -58,20 +74,29 @@ public sealed class WindowsPathReferenceResolver
         LogicalWorkspacePath logicalPath)
     {
         ArgumentNullException.ThrowIfNull(root);
-        return ResolveExisting(root.Root, logicalPath, allowFinalReparse: true);
+        return ResolveExisting(
+            root.Root,
+            logicalPath,
+            allowFinalReparse: true,
+            readFinalFileData: false);
     }
 
     public static VerifiedWindowsPathReference ResolveExisting(
         WindowsRegisteredWorkspaceRoot root,
         LogicalWorkspacePath logicalPath)
     {
-        return ResolveExisting(root, logicalPath, allowFinalReparse: false);
+        return ResolveExisting(
+            root,
+            logicalPath,
+            allowFinalReparse: false,
+            readFinalFileData: false);
     }
 
     private static VerifiedWindowsPathReference ResolveExisting(
         WindowsRegisteredWorkspaceRoot root,
         LogicalWorkspacePath logicalPath,
-        bool allowFinalReparse)
+        bool allowFinalReparse,
+        bool readFinalFileData)
     {
         ArgumentNullException.ThrowIfNull(root);
         ArgumentNullException.ThrowIfNull(logicalPath);
@@ -84,18 +109,20 @@ public sealed class WindowsPathReferenceResolver
         {
             if (logicalPath.IsWorkspaceRoot)
             {
-                finalHandle = Open(current);
+                finalHandle = Open(current, readFinalFileData);
             }
             else
             {
                 for (int index = 0; index < logicalPath.Segments.Count; index++)
                 {
                     current = Path.Join(current, logicalPath.Segments[index]);
-                    SafeFileHandle candidate = Open(current);
-                    HandleFacts component = ReadFacts(candidate);
-
                     bool finalComponent =
                         index == logicalPath.Segments.Count - 1;
+                    SafeFileHandle candidate = Open(
+                        current,
+                        readFinalFileData && finalComponent);
+                    HandleFacts component = ReadFacts(candidate);
+
                     if (component.ReparseKind != FilesystemReparseKind.None &&
                         (!finalComponent || !allowFinalReparse))
                     {
@@ -123,6 +150,14 @@ public sealed class WindowsPathReferenceResolver
                 throw new InvalidOperationException(
                     "A protected path resolution produced no handle.");
             HandleFacts facts = ReadFacts(securedHandle);
+            if (readFinalFileData &&
+                facts.ObjectType != FilesystemObjectType.RegularFile)
+            {
+                throw new WindowsPathReferenceException(
+                    WindowsPathFailure.NativeValidationFailed,
+                    "Only a verified regular file can be opened for content reading.");
+            }
+
             string finalPath = ReadFinalPath(securedHandle);
             EnsureContained(root.FinalPath, finalPath);
             WindowsVolumeIdentity volume = ReadVolume(
@@ -154,7 +189,10 @@ public sealed class WindowsPathReferenceResolver
                 facts.Attributes,
                 facts.LastWriteTimeUtc,
                 DateTimeOffset.UtcNow);
-            VerifiedWindowsPathReference result = new(securedHandle, value);
+            VerifiedWindowsPathReference result = new(
+                securedHandle,
+                value,
+                readFinalFileData);
             finalHandle = null;
             return result;
         }
@@ -180,6 +218,40 @@ public sealed class WindowsPathReferenceResolver
                 WindowsPathFailure.IdentityChanged,
                 "The protected path now names a different filesystem object.");
         }
+    }
+
+    public static void Revalidate(
+        VerifiedWorkspaceRootReference root,
+        VerifiedWindowsPathReference reference)
+    {
+        ArgumentNullException.ThrowIfNull(root);
+        Revalidate(root.Root, reference);
+    }
+
+    public static WindowsResolvedPath RefreshMetadata(
+        VerifiedWindowsPathReference reference)
+    {
+        ArgumentNullException.ThrowIfNull(reference);
+        HandleFacts facts = ReadFacts(reference.Handle);
+        WindowsResolvedPath original = reference.Value;
+
+        if (!original.Identity.IsSameObject(facts.Identity) ||
+            facts.ReparseKind != FilesystemReparseKind.None ||
+            facts.ObjectType != original.ObjectType)
+        {
+            throw new WindowsPathReferenceException(
+                WindowsPathFailure.IdentityChanged,
+                "The protected filesystem handle identity changed during use.");
+        }
+
+        return original with
+        {
+            LinkCount = facts.LinkCount,
+            SizeBytes = facts.SizeBytes,
+            Attributes = facts.Attributes,
+            LastWriteTimeUtc = facts.LastWriteTimeUtc,
+            VerifiedAtUtc = DateTimeOffset.UtcNow
+        };
     }
 
     private static void VerifyRoot(WindowsRegisteredWorkspaceRoot root)
@@ -241,11 +313,14 @@ public sealed class WindowsPathReferenceResolver
         return Path.TrimEndingDirectorySeparator(Path.GetFullPath(value));
     }
 
-    private static SafeFileHandle Open(string path)
+    private static SafeFileHandle Open(
+        string path,
+        bool readFileData = false)
     {
         SafeFileHandle handle = WindowsNativeMethods.CreateFile(
             path,
-            WindowsNativeMethods.FileReadAttributes,
+            WindowsNativeMethods.FileReadAttributes |
+                (readFileData ? WindowsNativeMethods.FileReadData : 0),
             WindowsNativeMethods.FileShareAll,
             IntPtr.Zero,
             WindowsNativeMethods.OpenExisting,

@@ -194,29 +194,29 @@ Locally implemented, verified and committed; pending reviewed pushes:
 * FND-031 — Add Repository Identity Detection.
 * FND-032 — Add Project List UI.
 * FND-033 — Define Workspace Service Contract.
+* FND-034 — Add File Inventory Generation.
 
 Implemented and verified by the current change:
 
-* FND-034 — Add File Inventory Generation.
+* FND-035 — Add Safe File Hashing.
 
-FND-034 includes:
+FND-035 includes:
 
-* an iterative Windows Workspace inventory generator rooted in verified filesystem authority;
-* component-level no-follow inspection, handle-derived identity and final containment checks;
-* logical-path, size, last-write observation, hidden-state and opaque identity metadata;
-* explicit built-in directory, credential-store and temporary-file exclusions with stable reasons;
-* final reparse-object classification without symbolic-link or junction traversal;
-* entry-count, directory-count, depth and duration budgets with cancellable enumeration;
-* safe Partial results and hashed issues for concurrent mutation or unsupported names;
-* small, large, deep, reparse, hidden, case, cancellation, mutation and benchmark fixtures without file-content reads.
+* SHA-256 streaming from a verified no-follow Windows file handle;
+* inventory identity binding and before/after size, last-write and object-identity checks;
+* current-path revalidation that detects replacement and reparse substitution;
+* a provisional 64 MiB maximum-file policy, 64 KiB cleared buffer and two-attempt retry budget;
+* explicit Stable, Excluded, Unstable and Unreadable outcomes without prior-hash inheritance;
+* known-answer, modification, replacement, size, lock, cancellation, reparse, canary and throughput fixtures;
+* algorithm and version metadata without file content in diagnostics, evidence or traces.
 
 The next planned ticket is:
 
 ```text
-FND-035 — Add Safe File Hashing
+FND-036 — Add Workspace Generation
 ```
 
-Do not assume FND-034 is complete until the Workspace file inventory verifier
+Do not assume FND-035 is complete until the safe Workspace file hashing verifier
 passes and the changes are reviewed, committed and pushed.
 
 ## Build policy

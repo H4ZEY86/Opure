@@ -2975,6 +2975,24 @@ Partial result. FND-034 keeps this inventory transient, so failure cannot replac
 a prior current snapshot. FND-035 owns content hashing and FND-036 owns immutable
 generation persistence and atomic current-pointer updates.
 
+FND-035 implements content hashing as a Workspace-owned operation over an
+included regular-file inventory entry. The Windows filesystem boundary opens the
+final object with read-data authority and `OPEN_REPARSE_POINT`, retains the
+verified handle and exposes bounded offset reads without exposing an absolute
+path. Workspace binds that handle to the inventory file-identity digest, streams
+SHA-256 using a cleared 64 KiB buffer, then rechecks handle size and last-write
+state and reopens the logical path to prove it still names the same object.
+
+The initial policy excludes files above 64 MiB and permits at most two attempts.
+A changing file, replaced identity or reparse substitution is `Unstable`; a
+sharing lock or access failure is `Unreadable`; an oversize or ineligible entry
+is `Excluded`. None can inherit an earlier content hash. Cancellation interrupts
+streaming and returns no result. Algorithm name and version are explicit, while
+file bytes never enter logs, traces or Trust evidence. A stable SHA-256 value
+proves only observed byte identity, not safety or trustworthiness. FND-036 will
+bind these transient results into an immutable generation and activate it
+atomically; until then no durable current snapshot is claimed.
+
 The following rules should be enforced as architectural invariants:
 
 1. AI providers are accessed only through the AI Router.

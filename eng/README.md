@@ -515,4 +515,21 @@ Run the focused gate with:
 pwsh ./build.ps1 workspace-inventory-policy
 ```
 
+FND-035 adds safe Workspace file hashing. An included regular-file inventory
+entry is reopened through the no-follow Windows filesystem boundary with data
+read authority on the verified handle only. SHA-256 is streamed with a bounded
+64 KiB buffer that is cleared before return. Workspace rechecks handle identity,
+size, last-write state and the current logical-path binding after the read.
+Replacement, reparse substitution or concurrent modification cannot produce a
+stable hash. The provisional per-file maximum is 64 MiB and the retry budget is
+two attempts; exclusions, instability and unreadability remain explicit and
+never inherit an earlier hash. File content is absent from diagnostics and
+evidence, and a hash is content identity rather than a safety judgement.
+
+Run the focused gate with:
+
+```powershell
+pwsh ./build.ps1 workspace-hashing-policy
+```
+
 Channel-specific data-root and one-time session material are passed through bounded environment variables. The session secret is not placed on command lines, written to disk or included in diagnostics.

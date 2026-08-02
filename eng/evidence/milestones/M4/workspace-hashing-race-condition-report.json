@@ -1,0 +1,9 @@
+{
+  "ticket": "FND-035",
+  "result": "Passed",
+  "concurrentModificationDetected": true,
+  "replacementIdentityDetected": true,
+  "reparseSubstitutionDenied": true,
+  "boundedRetryAttempts": 2,
+  "priorHashInherited": false
+}

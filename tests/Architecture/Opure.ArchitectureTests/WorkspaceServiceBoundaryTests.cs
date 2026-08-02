@@ -85,7 +85,9 @@ public sealed class WorkspaceServiceBoundaryTests
             "Opure.Workspace.Windows");
         string project = File.ReadAllText(
             Path.Combine(root, "Opure.Workspace.Windows.csproj"));
-        string source = ReadSources(root);
+        string source = File.ReadAllText(Path.Combine(
+            root,
+            "WindowsWorkspaceInventoryGenerator.cs"));
 
         Assert.Contains("Opure.Filesystem.Windows.csproj", project, StringComparison.Ordinal);
         Assert.Contains("InspectExisting", source, StringComparison.Ordinal);
@@ -97,6 +99,31 @@ public sealed class WorkspaceServiceBoundaryTests
         Assert.DoesNotContain("Opure.Desktop", project, StringComparison.Ordinal);
         Assert.DoesNotContain("System.Net", source, StringComparison.Ordinal);
         Assert.DoesNotContain("Process.Start", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void WindowsHashingStreamsOnlyThroughVerifiedFilesystemHandle()
+    {
+        string root = Path.Combine(
+            RepositoryRoot,
+            "src",
+            "Workspace",
+            "Opure.Workspace.Windows");
+        string source = File.ReadAllText(Path.Combine(
+            root,
+            "WindowsWorkspaceFileHasher.cs"));
+
+        Assert.Contains("ResolveFileForRead", source, StringComparison.Ordinal);
+        Assert.Contains("RefreshMetadata", source, StringComparison.Ordinal);
+        Assert.Contains("Revalidate", source, StringComparison.Ordinal);
+        Assert.Contains("IncrementalHash", source, StringComparison.Ordinal);
+        Assert.Contains("ArrayPool<byte>", source, StringComparison.Ordinal);
+        Assert.Contains("ZeroMemory", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("File.ReadAll", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("File.OpenRead", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("FileStream", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("System.Net", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("ILogger", source, StringComparison.Ordinal);
     }
 
     private static string ReadSources(string root)

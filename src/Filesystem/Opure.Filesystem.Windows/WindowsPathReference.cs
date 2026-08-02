@@ -92,18 +92,41 @@ public sealed record VerifiedWorkspaceRootTransferReceipt(
 public sealed class VerifiedWindowsPathReference : IDisposable
 {
     private readonly SafeFileHandle handle;
+    private readonly bool canReadData;
 
     internal VerifiedWindowsPathReference(
         SafeFileHandle handle,
-        WindowsResolvedPath value)
+        WindowsResolvedPath value,
+        bool canReadData)
     {
         this.handle = handle;
+        this.canReadData = canReadData;
         Value = value;
     }
 
     public WindowsResolvedPath Value { get; }
 
     internal SafeFileHandle Handle => handle;
+
+    public ValueTask<int> ReadAsync(
+        Memory<byte> buffer,
+        long fileOffset,
+        CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(handle.IsClosed, this);
+        ArgumentOutOfRangeException.ThrowIfNegative(fileOffset);
+        if (!canReadData)
+        {
+            throw new InvalidOperationException(
+                "This verified filesystem handle has no file-content read authority.");
+        }
+
+        return RandomAccess.ReadAsync(
+            handle,
+            buffer,
+            fileOffset,
+            cancellationToken);
+    }
 
     public void Dispose()
     {

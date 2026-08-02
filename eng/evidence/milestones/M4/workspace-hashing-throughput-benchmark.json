@@ -1,0 +1,9 @@
+{
+  "ticket": "FND-035",
+  "result": "Passed",
+  "fixtureBytes": 8388608,
+  "bufferBytes": 65536,
+  "maximumAllowedMilliseconds": 20000,
+  "streaming": true,
+  "contentPersisted": false
+}

@@ -5,6 +5,7 @@ namespace Opure.Filesystem.Windows;
 
 internal static class WindowsNativeMethods
 {
+    internal const uint FileReadData = 0x0001;
     internal const uint FileReadAttributes = 0x80;
     internal const uint FileShareAll = 0x7;
     internal const uint OpenExisting = 3;

@@ -1,0 +1,13 @@
+{
+  "ticket": "FND-035",
+  "result": "Passed",
+  "algorithm": "SHA-256",
+  "algorithmVersion": 1,
+  "knownAnswer": true,
+  "reproducible": true,
+  "oversizedExcluded": true,
+  "lockedFileExplicit": true,
+  "cancellation": true,
+  "contentCanaryExcluded": true,
+  "contentRecorded": false
+}
