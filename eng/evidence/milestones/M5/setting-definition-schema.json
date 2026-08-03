@@ -1,0 +1,22 @@
+{
+  "ticket": "FND-039",
+  "result": "Passed",
+  "schema": "opure.setting-definition/1",
+  "catalogueSchema": "opure.setting-definition-catalogue/1",
+  "owner": "Configuration Service",
+  "stableIdentity": "setting_id+revision",
+  "canonicalHashAlgorithm": "SHA-256",
+  "requiredAuthorityFields": [
+    "allowed_scopes",
+    "allowed_sources",
+    "merge_strategy",
+    "sensitivity",
+    "secret_policy",
+    "runtime_application",
+    "restart_impact"
+  ],
+  "productInvariantRevision": "opure.setting-definition-invariants/1",
+  "ordinarySecretValuesAllowed": false,
+  "projectSourcesGrantMachineAuthority": false,
+  "remoteSchemaReferencesAllowed": false
+}

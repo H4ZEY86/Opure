@@ -1,0 +1,268 @@
+{
+  "schema": "opure.setting-definition-catalogue/1",
+  "catalogue_revision": 1,
+  "catalogue_sha256": "1426227b555a5ba138131ddf35f16c61b5212dfa55990afd2c827871e28d5cb7",
+  "product_invariant_revision": "opure.setting-definition-invariants/1",
+  "definitions": [
+    {
+      "definition": {
+        "schema": "opure.setting-definition/1",
+        "setting_id": "desktop.appearance.theme",
+        "revision": 1,
+        "owner_service": "opure.desktop",
+        "display_name": "Theme",
+        "description": "Selects the developer-visible Desktop colour theme.",
+        "value_type": {
+          "kind": "Enumeration",
+          "maximum_encoded_bytes": 128,
+          "enumeration_values": [
+            "system",
+            "light",
+            "dark"
+          ],
+          "element_enumeration_values": []
+        },
+        "default_value": "system",
+        "required_from_source": false,
+        "allowed_scopes": [
+          "User",
+          "WorkspaceSession"
+        ],
+        "allowed_sources": [
+          "ProductDefault",
+          "UserBaseProfile",
+          "NamedUserProfile",
+          "WorkspaceSession",
+          "SessionOverride"
+        ],
+        "merge_strategy": "Replace",
+        "null_semantics": "RejectNull",
+        "semantic_validator_ids": [],
+        "sensitivity": "Public",
+        "secret_policy": "NoSecret",
+        "policy_definition_ids": [],
+        "runtime_application": "Immediate",
+        "restart_impact": "None",
+        "failure_class": "Informational",
+        "ui": {
+          "category": "desktop.appearance",
+          "editor": "select",
+          "order": 40,
+          "advanced": false
+        },
+        "product_invariant_revision": "opure.setting-definition-invariants/1",
+        "created_at": "2026-08-03T00:00:00.0000000\u002B00:00",
+        "deprecated": false
+      },
+      "definition_sha256": "ff593d689972c1c3021821660400c8e2048e7ebde055a88a2ba094196bfc54c4"
+    },
+    {
+      "definition": {
+        "schema": "opure.setting-definition/1",
+        "setting_id": "logging.level.default",
+        "revision": 1,
+        "owner_service": "opure.observability",
+        "display_name": "Default log level",
+        "description": "Sets the minimum safe operational log level for newly configured services.",
+        "value_type": {
+          "kind": "Enumeration",
+          "maximum_encoded_bytes": 128,
+          "enumeration_values": [
+            "trace",
+            "debug",
+            "information",
+            "warning",
+            "error",
+            "critical"
+          ],
+          "element_enumeration_values": []
+        },
+        "default_value": "information",
+        "required_from_source": false,
+        "allowed_scopes": [
+          "Machine",
+          "User",
+          "Project",
+          "WorkspaceSession"
+        ],
+        "allowed_sources": [
+          "ProductDefault",
+          "ReleaseChannelDefault",
+          "MachinePreference",
+          "UserBaseProfile",
+          "NamedUserProfile",
+          "ProjectSharedSettings",
+          "ProjectLocalProfile",
+          "WorkspaceSession",
+          "SessionOverride"
+        ],
+        "merge_strategy": "Replace",
+        "null_semantics": "RejectNull",
+        "semantic_validator_ids": [],
+        "sensitivity": "ProductInternal",
+        "secret_policy": "NoSecret",
+        "policy_definition_ids": [],
+        "runtime_application": "Immediate",
+        "restart_impact": "ReconfigureService",
+        "failure_class": "Operational",
+        "ui": {
+          "category": "observability.logging",
+          "editor": "select",
+          "order": 30,
+          "advanced": false
+        },
+        "product_invariant_revision": "opure.setting-definition-invariants/1",
+        "created_at": "2026-08-03T00:00:00.0000000\u002B00:00",
+        "deprecated": false
+      },
+      "definition_sha256": "b05c4ad3ebe6fc1ba3b3f08a4886db5bd05dbbf5db23b997e9cf2500e5041447"
+    },
+    {
+      "definition": {
+        "schema": "opure.setting-definition/1",
+        "setting_id": "provider.credential.vault-reference",
+        "revision": 1,
+        "owner_service": "opure.provider-trust",
+        "display_name": "Provider credential",
+        "description": "References a credential held by the Secrets Vault without storing its value.",
+        "value_type": {
+          "kind": "VaultReference",
+          "maximum_encoded_bytes": 128,
+          "enumeration_values": [],
+          "element_enumeration_values": []
+        },
+        "default_value": null,
+        "required_from_source": true,
+        "allowed_scopes": [
+          "User",
+          "Project",
+          "Provider"
+        ],
+        "allowed_sources": [
+          "UserBaseProfile",
+          "NamedUserProfile",
+          "ProjectLocalProfile"
+        ],
+        "merge_strategy": "Replace",
+        "null_semantics": "RejectNull",
+        "semantic_validator_ids": [],
+        "sensitivity": "SecretReference",
+        "secret_policy": "VaultReferenceRequired",
+        "policy_definition_ids": [],
+        "runtime_application": "NextOperation",
+        "restart_impact": "None",
+        "failure_class": "SecurityCritical",
+        "ui": {
+          "category": "providers.credentials",
+          "editor": "vault-reference",
+          "order": 50,
+          "advanced": true
+        },
+        "product_invariant_revision": "opure.setting-definition-invariants/1",
+        "created_at": "2026-08-03T00:00:00.0000000\u002B00:00",
+        "deprecated": false
+      },
+      "definition_sha256": "ecdd73c48cbdf7df6108599f5f28b071684a820245dae59de519a69def38f049"
+    },
+    {
+      "definition": {
+        "schema": "opure.setting-definition/1",
+        "setting_id": "runtime.performance.default-mode",
+        "revision": 1,
+        "owner_service": "opure.runtime",
+        "display_name": "Default performance mode",
+        "description": "Selects the default bounded resource posture for a new operation.",
+        "value_type": {
+          "kind": "Enumeration",
+          "maximum_encoded_bytes": 128,
+          "enumeration_values": [
+            "eco",
+            "balanced",
+            "performance"
+          ],
+          "element_enumeration_values": []
+        },
+        "default_value": "balanced",
+        "required_from_source": false,
+        "allowed_scopes": [
+          "User",
+          "Project",
+          "WorkspaceSession",
+          "Operation"
+        ],
+        "allowed_sources": [
+          "ProductDefault",
+          "UserBaseProfile",
+          "NamedUserProfile",
+          "ProjectSharedSettings",
+          "ProjectLocalProfile",
+          "WorkspaceSession",
+          "SessionOverride",
+          "OperationOverride"
+        ],
+        "merge_strategy": "Replace",
+        "null_semantics": "RejectNull",
+        "semantic_validator_ids": [],
+        "sensitivity": "ProductInternal",
+        "secret_policy": "NoSecret",
+        "policy_definition_ids": [],
+        "runtime_application": "NextOperation",
+        "restart_impact": "None",
+        "failure_class": "Operational",
+        "ui": {
+          "category": "runtime.performance",
+          "editor": "select",
+          "order": 20,
+          "advanced": false
+        },
+        "product_invariant_revision": "opure.setting-definition-invariants/1",
+        "created_at": "2026-08-03T00:00:00.0000000\u002B00:00",
+        "deprecated": false
+      },
+      "definition_sha256": "eb6626cae4b54b06bba9734ed2fab711bb78db05ff8ad6d5687ff2b196fcec4d"
+    },
+    {
+      "definition": {
+        "schema": "opure.setting-definition/1",
+        "setting_id": "security.integrity-validation.enabled",
+        "revision": 1,
+        "owner_service": "opure.runtime",
+        "display_name": "Integrity validation",
+        "description": "Keeps mandatory product integrity validation enabled.",
+        "value_type": {
+          "kind": "Boolean",
+          "maximum_encoded_bytes": 5,
+          "enumeration_values": [],
+          "element_enumeration_values": []
+        },
+        "default_value": true,
+        "required_from_source": false,
+        "allowed_scopes": [
+          "Product"
+        ],
+        "allowed_sources": [
+          "ProductDefault"
+        ],
+        "merge_strategy": "Replace",
+        "null_semantics": "RejectNull",
+        "semantic_validator_ids": [],
+        "sensitivity": "SecuritySensitive",
+        "secret_policy": "NoSecret",
+        "policy_definition_ids": [],
+        "runtime_application": "NextApplicationStart",
+        "restart_impact": "RestartApplication",
+        "failure_class": "SecurityCritical",
+        "ui": {
+          "category": "security.integrity",
+          "editor": "toggle",
+          "order": 10,
+          "advanced": false
+        },
+        "product_invariant_revision": "opure.setting-definition-invariants/1",
+        "created_at": "2026-08-03T00:00:00.0000000\u002B00:00",
+        "deprecated": false
+      },
+      "definition_sha256": "8ebc459afbeca0edc2f7ba8eb01beb895026280dfc52e0b485de91bb46e604a7"
+    }
+  ]
+}

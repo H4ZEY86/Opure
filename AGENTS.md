@@ -198,28 +198,29 @@ Locally implemented, verified and committed; pending reviewed pushes:
 * FND-035 — Add Safe File Hashing.
 * FND-036 — Add Workspace Generation.
 * FND-037 — Add Change Reconciliation.
+* FND-038 — Add Workspace Snapshot Receipt.
 
 Implemented and verified by the current change:
 
-* FND-038 — Add Workspace Snapshot Receipt.
+* FND-039 — Add Setting Definition Schema.
 
-FND-038 includes:
+FND-039 includes:
 
-* an authoritative `workspace.snapshot-created` Evidence Type owned by Workspace Service;
-* an immutable Workspace receipt committed transactionally with generation activation;
-* generation, generation hash, aggregate counts, repository-summary hash and opaque operation binding;
-* a causal relationship to the exact deterministic Project Open evidence identity;
-* path- and content-free receipt payloads;
-* owner-bound, bounded at-least-once delivery with persisted retry backlog;
-* restart-safe recovery and idempotent duplicate acknowledgement without a second Trust projection effect.
+* an immutable, revisioned `opure.setting-definition/1` contract owned by Configuration Service;
+* typed defaults with strict canonical JSON and explicit size, range and collection bounds;
+* explicit source, scope, merge, null, sensitivity, secret, runtime and restart semantics;
+* Product Invariant restrictions against ordinary secrets, executable values and remote schema references;
+* source-authority checks that prevent Project configuration granting non-Project authority;
+* exact semantic SHA-256 identities and retained historical revisions;
+* a reviewed packaged foundation catalogue and generated developer documentation.
 
 The next planned ticket is:
 
 ```text
-FND-039 — Add Setting Definition Schema
+FND-040 — Add Policy Definition Schema
 ```
 
-Do not assume FND-038 is complete until the Workspace Snapshot receipt verifier
+Do not assume FND-039 is complete until the Setting Definition verifier
 passes and the changes are reviewed, committed and pushed.
 
 ## Build policy

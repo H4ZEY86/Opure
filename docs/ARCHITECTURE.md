@@ -3066,6 +3066,34 @@ backlog and stop delivery by stopping Runtime; permanent invalid envelopes are
 blocked rather than silently rewritten. Invalidation receipts remain deferred
 until a ticket defines their lifecycle authority.
 
+### Setting Definition catalogue (FND-039)
+
+Configuration Service owns the immutable Setting Definition contract and its
+packaged foundation catalogue. A definition binds a stable dotted identifier and
+revision to its owner, value type and validated default, permitted scopes and
+sources, definition-owned merge and null semantics, sensitivity and secret
+policy, runtime application, restart impact, failure class and UI metadata.
+The canonical UTF-8 JSON representation has a SHA-256 identity. Later catalogues
+must retain every exact historical definition revision and cannot replace the
+semantics of an existing revision.
+
+The packaged catalogue is authoritative for definition shape only. It does not
+activate mutable setting values, read configuration files, resolve profiles,
+execute merges or enforce Policy Definitions. Those behaviours remain
+deliberately deferred to FND-040 and later Configuration Service tickets.
+Product Invariant revision one prohibits executable setting values, remote
+schema references and ordinary secret values. A secret-related definition may
+carry only an opaque Vault reference or an explicitly secret-derived boolean;
+Project sources cannot grant non-Project authority.
+
+Developers can inspect the generated foundation catalogue and
+`docs/SETTING-DEFINITIONS.md`, compare their embedded canonical hashes and run
+`pwsh ./build.ps1 setting-definition-policy`. Invalid definitions fail during
+catalogue construction before any mutable state can be affected. Recovery uses
+the exact retained definition revision recorded by a future effective snapshot;
+stopping Runtime prevents later configuration operations but is not needed to
+inspect this packaged, side-effect-free contract.
+
 The following rules should be enforced as architectural invariants:
 
 1. AI providers are accessed only through the AI Router.
