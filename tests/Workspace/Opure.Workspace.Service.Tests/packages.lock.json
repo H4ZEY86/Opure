@@ -205,6 +205,23 @@
           "SQLitePCLRaw.bundle_e_sqlite3": "[2.1.12, )"
         }
       },
+      "opure.trustevidence.contracts": {
+        "type": "Project"
+      },
+      "opure.trustevidence.service": {
+        "type": "Project",
+        "dependencies": {
+          "Opure.TrustEvidence.Contracts": "[1.0.0, )",
+          "Opure.TrustEvidence.Sqlite": "[1.0.0, )"
+        }
+      },
+      "opure.trustevidence.sqlite": {
+        "type": "Project",
+        "dependencies": {
+          "Opure.Persistence.Sqlite": "[1.0.0, )",
+          "Opure.TrustEvidence.Contracts": "[1.0.0, )"
+        }
+      },
       "opure.workspace.contracts": {
         "type": "Project"
       },
@@ -212,6 +229,8 @@
         "type": "Project",
         "dependencies": {
           "Opure.Filesystem.Windows": "[1.0.0, )",
+          "Opure.Persistence.Sqlite": "[1.0.0, )",
+          "Opure.TrustEvidence.Contracts": "[1.0.0, )",
           "Opure.Workspace.Contracts": "[1.0.0, )",
           "Opure.Workspace.Sqlite": "[1.0.0, )",
           "Opure.Workspace.Windows": "[1.0.0, )"
@@ -221,6 +240,7 @@
         "type": "Project",
         "dependencies": {
           "Opure.Persistence.Sqlite": "[1.0.0, )",
+          "Opure.TrustEvidence.Contracts": "[1.0.0, )",
           "Opure.Workspace.Contracts": "[1.0.0, )"
         }
       },

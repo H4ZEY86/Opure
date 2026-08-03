@@ -61,12 +61,13 @@ public sealed class ProjectOpenTrustReceiptTests : IDisposable
                 TestContext.Current.CancellationToken);
         RecordingIngestionPort ingestion = new(
             trustHost.BindOwner(ProjectDatabase.OwnerServiceId));
+        CapturingReadySnapshotRequester snapshotRequester = new();
         using ProjectServiceHost projectHost =
             await ProjectServiceHost.StartAsync(
                 channelRoot,
                 "Development",
                 ingestion,
-                new ReadySnapshotRequester(),
+                snapshotRequester,
                 timeProvider,
                 TestContext.Current.CancellationToken);
 
@@ -90,6 +91,13 @@ public sealed class ProjectOpenTrustReceiptTests : IDisposable
             EvidenceAuthorityClass.AuthoritativeDomainStateTransition,
             openedRequest.Record.AuthorityClass);
         Assert.Equal(request.OperationId, openedRequest.Record.OperationId);
+        WorkspaceSnapshotRequest snapshotRequest = Assert.IsType<WorkspaceSnapshotRequest>(
+            snapshotRequester.Request);
+        Assert.Equal(request.OperationId, snapshotRequest.OperationId);
+        Assert.Equal(openedRequest.Record.EvidenceId, snapshotRequest.ProjectOpenEvidenceId);
+        Assert.Equal(
+            WorkspaceReleaseChannel.Development,
+            snapshotRequest.ReleaseChannel);
         Assert.Equal(
             response.Project.ProjectId,
             openedRequest.Record.ProjectId);
@@ -695,6 +703,24 @@ public sealed class ProjectOpenTrustReceiptTests : IDisposable
             ArgumentNullException.ThrowIfNull(request);
             ArgumentException.ThrowIfNullOrWhiteSpace(request.ProjectId);
             cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(new WorkspaceSnapshotRequestResult(
+                WorkspaceSnapshotRequestDisposition.Ready,
+                "The initial Workspace Snapshot is ready."));
+        }
+    }
+
+    private sealed class CapturingReadySnapshotRequester :
+        IWorkspaceSnapshotRequester
+    {
+        public WorkspaceSnapshotRequest? Request { get; private set; }
+
+        public Task<WorkspaceSnapshotRequestResult> RequestAsync(
+            WorkspaceSnapshotRequest request,
+            CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+            cancellationToken.ThrowIfCancellationRequested();
+            Request = request;
             return Task.FromResult(new WorkspaceSnapshotRequestResult(
                 WorkspaceSnapshotRequestDisposition.Ready,
                 "The initial Workspace Snapshot is ready."));

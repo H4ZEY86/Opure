@@ -1,0 +1,11 @@
+{
+  "ticket": "FND-038",
+  "result": "Passed",
+  "ownerServiceId": "opure.workspace",
+  "databaseSchemaVersion": 2,
+  "receiptCommitsWithCurrentPointer": true,
+  "generationHashMatchesCurrentDatabaseRow": true,
+  "receiptInsertFailureRollsBackGeneration": true,
+  "failedGenerationCreatesReceipt": false,
+  "rawProjectMaterialPersistedInReceipt": false
+}

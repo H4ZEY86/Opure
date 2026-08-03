@@ -1,5 +1,8 @@
 using System.Globalization;
+using System.Text.Json;
 using Microsoft.Data.Sqlite;
+using Opure.Persistence.Sqlite;
+using Opure.TrustEvidence.Contracts;
 using Opure.Workspace.Contracts;
 using Xunit;
 
@@ -15,6 +18,10 @@ public sealed class WorkspaceGenerationStoreTests : IDisposable
     private const string RepositoryHash = "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
     private static readonly DateTimeOffset ObservedAt =
         new(2026, 8, 2, 12, 0, 0, TimeSpan.Zero);
+    private static readonly WorkspaceGenerationCommitContext CommitContext = new(
+        "33333333333333333333333333333333",
+        "44444444444444444444444444444444",
+        WorkspaceReleaseChannel.Development);
     private readonly string testRoot = Path.Combine(
         Path.GetTempPath(),
         "Opure.Workspace.Sqlite.Tests",
@@ -44,6 +51,43 @@ public sealed class WorkspaceGenerationStoreTests : IDisposable
     }
 
     [Fact]
+    public void VersionOneMigratesToTransactionalOutboxSchema()
+    {
+        ServiceDatabaseAuthority authority = ServiceDatabaseAuthority.Create(
+            ChannelRoot,
+            WorkspaceDatabase.OwnerServiceId);
+        ServiceDatabaseDescriptor descriptor = authority.Describe(
+            WorkspaceDatabase.DatabaseName,
+            WorkspaceDatabase.ApplicationId,
+            ServiceDatabaseDurability.Authoritative);
+        SqliteMigrationCatalogue current = WorkspaceDatabaseSchema.CreateCatalogue();
+        SqliteMigrationCatalogue versionOneCatalogue = new(
+            current.Migrations.Take(1),
+            current.SchemaValidations.Where(static validation =>
+                validation.MinimumSchemaVersion <= 1));
+        using (SqliteServiceDatabase versionOne =
+               new SqliteServiceDatabaseConnectionFactory(authority).Open(descriptor))
+        {
+            SqliteMigrationReport report = new SqliteMigrationRunner().Apply(
+                versionOne,
+                versionOneCatalogue,
+                cancellationToken: TestContext.Current.CancellationToken);
+            Assert.Equal(1, report.CurrentVersion);
+        }
+
+        using WorkspaceDatabase upgraded = WorkspaceDatabase.Open(
+            ChannelRoot,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, upgraded.MigrationReport.StartingVersion);
+        Assert.Equal(WorkspaceDatabaseSchema.CurrentVersion, upgraded.MigrationReport.CurrentVersion);
+        Assert.Single(upgraded.MigrationReport.AppliedMigrations);
+        Assert.All(
+            upgraded.MigrationReport.SchemaValidations,
+            static validation => Assert.True(validation.Passed));
+    }
+
+    [Fact]
     public void FirstAndSecondGenerationRemainImmutableAndQueryable()
     {
         using WorkspaceDatabase database = WorkspaceDatabase.Open(
@@ -53,9 +97,11 @@ public sealed class WorkspaceGenerationStoreTests : IDisposable
 
         WorkspaceGenerationSnapshot first = store.Commit(
             CreateCandidate(reverseEntries: false),
+            CommitContext,
             TestContext.Current.CancellationToken);
         WorkspaceGenerationSnapshot second = store.Commit(
             CreateCandidate(reverseEntries: true),
+            CommitContext,
             TestContext.Current.CancellationToken);
 
         Assert.Equal(1, first.Generation);
@@ -83,9 +129,96 @@ public sealed class WorkspaceGenerationStoreTests : IDisposable
             entry.Disposition == WorkspaceInventoryDisposition.Excluded);
     }
 
+    [Fact]
+    public void CommitAtomicallyQueuesPathSafeSnapshotReceiptBoundToCurrentGeneration()
+    {
+        using WorkspaceDatabase database = WorkspaceDatabase.Open(
+            ChannelRoot,
+            TestContext.Current.CancellationToken);
+        WorkspaceGenerationSnapshot snapshot = database.CreateGenerationStore().Commit(
+            CreateCandidate(reverseEntries: false),
+            CommitContext,
+            TestContext.Current.CancellationToken);
+        CapturingPublisher publisher = new();
+
+        SqliteOutboxDispatchResult dispatch = database.CreateOutboxDispatcher().DispatchNextOfType(
+            EvidenceIngestionRequest.MessageType,
+            publisher,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(SqliteOutboxDispatchOutcome.Delivered, dispatch.Outcome);
+        EvidenceIngestionRequest request = WorkspaceTrustEvidenceOutbox.CreateIngestionRequest(
+            Assert.IsType<SqliteOutboxMessage>(publisher.Message));
+        WorkspaceGenerationSnapshot current = Assert.IsType<WorkspaceGenerationSnapshot>(
+            database.CreateGenerationStore().GetCurrent(
+                ProjectId,
+                TestContext.Current.CancellationToken));
+        Assert.Equal(WorkspaceTrustEvidenceOutbox.SnapshotCreatedTypeId, request.Record.EvidenceTypeId);
+        Assert.Equal(WorkspaceDatabase.OwnerServiceId, request.Record.OwnerServiceId);
+        Assert.Equal(
+            EvidenceAuthorityClass.AuthoritativeDomainStateTransition,
+            request.Record.AuthorityClass);
+        Assert.Equal(ProjectId, request.Record.ProjectId);
+        Assert.Equal(CommitContext.OperationId, request.Record.OperationId);
+        Assert.Equal(snapshot.GenerationSha256, current.GenerationSha256);
+        EvidenceIngestionRelationship relationship = Assert.Single(request.Relationships);
+        Assert.Equal(EvidenceRelationshipKind.CausedBy, relationship.Kind);
+        Assert.Equal(CommitContext.ProjectOpenEvidenceId, relationship.TargetEvidenceId);
+
+        string payload = Assert.IsType<string>(request.Record.Payload.InlineCanonicalJson);
+        using JsonDocument document = JsonDocument.Parse(payload);
+        JsonElement root = document.RootElement;
+        Assert.Equal(ProjectId, root.GetProperty("project_id").GetString());
+        Assert.Equal(CommitContext.OperationId, root.GetProperty("operation_id").GetString());
+        Assert.Equal(snapshot.Generation, root.GetProperty("generation").GetInt64());
+        Assert.Equal(current.GenerationSha256, root.GetProperty("generation_sha256").GetString());
+        Assert.Equal(snapshot.Entries.Count, root.GetProperty("entry_count").GetInt32());
+        Assert.Equal(snapshot.ExclusionCount, root.GetProperty("exclusion_count").GetInt32());
+        Assert.Equal(RepositoryHash, root.GetProperty("repository_summary_sha256").GetString());
+        Assert.DoesNotContain("path", payload, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("content", payload, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("src/app.cs", payload, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ReceiptInsertFailureRollsBackGenerationAndCurrentPointer()
+    {
+        using WorkspaceDatabase database = WorkspaceDatabase.Open(
+            ChannelRoot,
+            TestContext.Current.CancellationToken);
+        ExecuteNonQuery(
+            database.Descriptor.DatabasePath,
+            $"""
+            CREATE TRIGGER reject_workspace_trust_receipt
+            BEFORE INSERT ON {SqliteOutboxSchema.MessageTableName}
+            WHEN NEW.event_type = '{EvidenceIngestionRequest.MessageType}'
+            BEGIN
+                SELECT RAISE(ABORT, 'test-workspace-trust-receipt-rejected');
+            END;
+            """);
+
+        SqlitePersistenceException exception = Assert.Throws<SqlitePersistenceException>(() =>
+            database.CreateGenerationStore().Commit(
+                CreateCandidate(reverseEntries: false),
+                CommitContext,
+                TestContext.Current.CancellationToken));
+
+        Assert.Equal(SqlitePersistenceErrorCodes.OutboxSchemaUnavailable, exception.ErrorCode);
+        Assert.Null(database.CreateGenerationStore().GetCurrent(
+            ProjectId,
+            TestContext.Current.CancellationToken));
+        Assert.Equal(0, CountRows(
+            database.Descriptor.DatabasePath,
+            WorkspaceDatabaseSchema.GenerationTable));
+        Assert.Equal(0, CountRows(
+            database.Descriptor.DatabasePath,
+            SqliteOutboxSchema.MessageTableName));
+    }
+
     [Theory]
     [InlineData((int)WorkspaceGenerationCommitPoint.AfterStaging)]
     [InlineData((int)WorkspaceGenerationCommitPoint.BeforeCurrentPointer)]
+    [InlineData((int)WorkspaceGenerationCommitPoint.AfterCurrentPointer)]
     public void FailedGenerationNeverReplacesCurrent(int failurePointValue)
     {
         WorkspaceGenerationCommitPoint failurePoint =
@@ -95,6 +228,7 @@ public sealed class WorkspaceGenerationStoreTests : IDisposable
             TestContext.Current.CancellationToken);
         WorkspaceGenerationSnapshot first = database.CreateGenerationStore().Commit(
             CreateCandidate(reverseEntries: false),
+            CommitContext,
             TestContext.Current.CancellationToken);
         WorkspaceGenerationStore failing = new(
             database.ServiceDatabase,
@@ -111,6 +245,7 @@ public sealed class WorkspaceGenerationStoreTests : IDisposable
 
         _ = Assert.Throws<InjectedGenerationFailure>(() => failing.Commit(
             CreateCandidate(reverseEntries: true),
+            CommitContext,
             TestContext.Current.CancellationToken));
 
         AssertSnapshotEqual(first, database.CreateGenerationStore().GetCurrent(
@@ -123,6 +258,9 @@ public sealed class WorkspaceGenerationStoreTests : IDisposable
         Assert.Equal(0, CountRows(
             database.Descriptor.DatabasePath,
             WorkspaceDatabaseSchema.StagingGenerationTable));
+        Assert.Equal(1, CountRows(
+            database.Descriptor.DatabasePath,
+            SqliteOutboxSchema.MessageTableName));
     }
 
     [Fact]
@@ -134,6 +272,7 @@ public sealed class WorkspaceGenerationStoreTests : IDisposable
         WorkspaceGenerationStore store = database.CreateGenerationStore();
         WorkspaceGenerationSnapshot first = store.Commit(
             CreateCandidate(reverseEntries: false),
+            CommitContext,
             TestContext.Current.CancellationToken);
         WorkspaceGenerationCandidate candidate = CreateCandidate(reverseEntries: false);
         WorkspaceFileHashResult unstable = candidate.FileHashes[0] with
@@ -145,6 +284,7 @@ public sealed class WorkspaceGenerationStoreTests : IDisposable
 
         _ = Assert.Throws<ArgumentException>(() => store.Commit(
             candidate with { FileHashes = new[] { unstable } },
+            CommitContext,
             TestContext.Current.CancellationToken));
 
         AssertSnapshotEqual(first, store.GetCurrent(
@@ -161,6 +301,7 @@ public sealed class WorkspaceGenerationStoreTests : IDisposable
         WorkspaceGenerationStore store = database.CreateGenerationStore();
         WorkspaceGenerationSnapshot first = store.Commit(
             CreateCandidate(reverseEntries: false),
+            CommitContext,
             TestContext.Current.CancellationToken);
         WorkspaceGenerationCandidate candidate = CreateCandidate(reverseEntries: false);
         WorkspaceInventoryResult partial = candidate.Inventory with
@@ -171,6 +312,7 @@ public sealed class WorkspaceGenerationStoreTests : IDisposable
 
         _ = Assert.Throws<ArgumentException>(() => store.Commit(
             candidate with { Inventory = partial },
+            CommitContext,
             TestContext.Current.CancellationToken));
 
         AssertSnapshotEqual(first, store.GetCurrent(
@@ -189,8 +331,8 @@ public sealed class WorkspaceGenerationStoreTests : IDisposable
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
 
         WorkspaceGenerationSnapshot[] results = await Task.WhenAll(
-            Task.Run(() => store.Commit(candidate, cancellationToken), cancellationToken),
-            Task.Run(() => store.Commit(candidate, cancellationToken), cancellationToken));
+            Task.Run(() => store.Commit(candidate, CommitContext, cancellationToken), cancellationToken),
+            Task.Run(() => store.Commit(candidate, CommitContext, cancellationToken), cancellationToken));
 
         Assert.Equal(new long[] { 1, 2 }, results.Select(
             static result => result.Generation).Order().ToArray());
@@ -207,6 +349,7 @@ public sealed class WorkspaceGenerationStoreTests : IDisposable
         {
             committed = first.CreateGenerationStore().Commit(
                 CreateCandidate(reverseEntries: false),
+                CommitContext,
                 TestContext.Current.CancellationToken);
         }
 
@@ -230,6 +373,7 @@ public sealed class WorkspaceGenerationStoreTests : IDisposable
         {
             committed = first.CreateGenerationStore().Commit(
                 CreateCandidate(reverseEntries: false),
+                CommitContext,
                 TestContext.Current.CancellationToken);
             databasePath = first.Descriptor.DatabasePath;
         }
@@ -257,6 +401,7 @@ public sealed class WorkspaceGenerationStoreTests : IDisposable
         {
             _ = database.CreateGenerationStore().Commit(
                 CreateCandidate(reverseEntries: false),
+                CommitContext,
                 TestContext.Current.CancellationToken);
             databasePath = database.Descriptor.DatabasePath;
         }
@@ -396,4 +541,18 @@ public sealed class WorkspaceGenerationStoreTests : IDisposable
     }
 
     private sealed class InjectedGenerationFailure : Exception;
+
+    private sealed class CapturingPublisher : ISqliteOutboxPublisher
+    {
+        public SqliteOutboxMessage? Message { get; private set; }
+
+        public SqliteOutboxPublishResult Publish(
+            SqliteOutboxMessage message,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            Message = message;
+            return SqliteOutboxPublishResult.Delivered("test-receipt");
+        }
+    }
 }

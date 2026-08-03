@@ -1,0 +1,17 @@
+{
+  "ticket": "FND-038",
+  "result": "Passed",
+  "evidenceTypeId": "workspace.snapshot-created",
+  "ownerServiceId": "opure.workspace",
+  "authorityClass": "AuthoritativeDomainStateTransition",
+  "evidenceId": "9379176b6cbfac0b62981d135ec71552",
+  "projectId": "11111111111111111111111111111111",
+  "operationId": "33333333333333333333333333333333",
+  "generation": 1,
+  "generationSha256": "1bda5987ab3295b47490c16dba1e3b0bb71f18de427f3658ca6ae487fc61aee5",
+  "entryCount": 2,
+  "exclusionCount": 1,
+  "repositorySummarySha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "relationshipKind": "CausedBy",
+  "projectOpenEvidenceId": "44444444444444444444444444444444"
+}

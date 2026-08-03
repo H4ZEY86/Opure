@@ -50,11 +50,13 @@ public sealed class WorkspaceReconciliationService
         string rootReferenceId,
         VerifiedWorkspaceRootReference root,
         string repositorySummarySha256,
+        WorkspaceGenerationCommitContext commitContext,
         WorkspaceReconciliationQueue queue,
         WorkspaceReconciliationTrigger trigger,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(root);
+        ArgumentNullException.ThrowIfNull(commitContext);
         ArgumentNullException.ThrowIfNull(queue);
         await serialiser.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -134,6 +136,7 @@ public sealed class WorkspaceReconciliationService
 
             WorkspaceGenerationSnapshot committed = generationStore.Commit(
                 candidate,
+                commitContext,
                 cancellationToken);
             IReadOnlyList<WorkspaceGenerationChange> changes = Compare(
                 current,

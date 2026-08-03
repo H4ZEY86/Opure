@@ -195,6 +195,45 @@ public sealed class WorkspaceServiceBoundaryTests
         Assert.DoesNotContain("System.Net", service, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void WorkspaceSnapshotReceiptIsAtomicOwnerBoundAndPathSafe()
+    {
+        string sqliteRoot = Path.Combine(
+            RepositoryRoot,
+            "src",
+            "Workspace",
+            "Opure.Workspace.Sqlite");
+        string serviceRoot = Path.Combine(
+            RepositoryRoot,
+            "src",
+            "Workspace",
+            "Opure.Workspace.Service");
+        string sqliteProject = File.ReadAllText(Path.Combine(
+            sqliteRoot,
+            "Opure.Workspace.Sqlite.csproj"));
+        string store = File.ReadAllText(Path.Combine(
+            sqliteRoot,
+            "WorkspaceGenerationStore.cs"));
+        string outbox = File.ReadAllText(Path.Combine(
+            sqliteRoot,
+            "WorkspaceTrustEvidenceOutbox.cs"));
+        string delivery = File.ReadAllText(Path.Combine(
+            serviceRoot,
+            "WorkspaceTrustEvidenceDelivery.cs"));
+
+        Assert.Contains("Opure.TrustEvidence.Contracts.csproj", sqliteProject, StringComparison.Ordinal);
+        Assert.Contains("ActivateCurrent", store, StringComparison.Ordinal);
+        Assert.Contains("WorkspaceTrustEvidenceOutbox.Enqueue", store, StringComparison.Ordinal);
+        Assert.Contains("workspace.snapshot-created", outbox, StringComparison.Ordinal);
+        Assert.Contains("EvidenceRelationshipKind.CausedBy", outbox, StringComparison.Ordinal);
+        Assert.Contains("WorkspaceDatabase.OwnerServiceId", delivery, StringComparison.Ordinal);
+        Assert.DoesNotContain("LogicalPath", outbox, StringComparison.Ordinal);
+        Assert.DoesNotContain("DisplayPath", outbox, StringComparison.Ordinal);
+        Assert.DoesNotContain("FileContent", outbox, StringComparison.Ordinal);
+        Assert.DoesNotContain("Opure.Desktop", sqliteProject, StringComparison.Ordinal);
+        Assert.DoesNotContain("Opure.Project", sqliteProject, StringComparison.Ordinal);
+    }
+
     private static string ReadSources(string root)
     {
         return string.Join(

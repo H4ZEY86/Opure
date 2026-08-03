@@ -1,0 +1,21 @@
+{
+  "ticket": "FND-038",
+  "result": "Passed",
+  "evidenceTypeId": "workspace.snapshot-created",
+  "ownerServiceId": "opure.workspace",
+  "authorityClass": "AuthoritativeDomainStateTransition",
+  "payloadFields": [
+    "project_id",
+    "operation_id",
+    "generation",
+    "generation_sha256",
+    "entry_count",
+    "exclusion_count",
+    "repository_summary_sha256"
+  ],
+  "relationshipEligibility": [
+    "CausedBy",
+    "DerivesFrom",
+    "BelongsTo"
+  ]
+}

@@ -197,28 +197,29 @@ Locally implemented, verified and committed; pending reviewed pushes:
 * FND-034 — Add File Inventory Generation.
 * FND-035 — Add Safe File Hashing.
 * FND-036 — Add Workspace Generation.
+* FND-037 — Add Change Reconciliation.
 
 Implemented and verified by the current change:
 
-* FND-037 — Add Change Reconciliation.
+* FND-038 — Add Workspace Snapshot Receipt.
 
-FND-037 includes:
+FND-038 includes:
 
-* a Windows filesystem watcher that provides hints but has no persistence authority;
-* a bounded, coalescing reconciliation queue that collapses overflow and uncertainty to full rescan;
-* fresh handle-verified inventory and hashing before every authoritative comparison;
-* atomic promotion only when the canonical complete generation changed;
-* additions, modifications, deletions and explicitly labelled deterministic or heuristic renames;
-* restart, watcher-disabled, missed-event, edit-storm, overflow and directory-replacement recovery fixtures;
-* privacy-safe reconciliation, watcher-loss and bounded edit-storm evidence.
+* an authoritative `workspace.snapshot-created` Evidence Type owned by Workspace Service;
+* an immutable Workspace receipt committed transactionally with generation activation;
+* generation, generation hash, aggregate counts, repository-summary hash and opaque operation binding;
+* a causal relationship to the exact deterministic Project Open evidence identity;
+* path- and content-free receipt payloads;
+* owner-bound, bounded at-least-once delivery with persisted retry backlog;
+* restart-safe recovery and idempotent duplicate acknowledgement without a second Trust projection effect.
 
 The next planned ticket is:
 
 ```text
-FND-038 — Add Workspace Snapshot Receipt
+FND-039 — Add Setting Definition Schema
 ```
 
-Do not assume FND-037 is complete until the Workspace change reconciliation verifier
+Do not assume FND-038 is complete until the Workspace Snapshot receipt verifier
 passes and the changes are reviewed, committed and pushed.
 
 ## Build policy

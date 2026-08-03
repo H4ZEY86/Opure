@@ -7,6 +7,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Filesystem\Opure.Filesystem.Windows\Opure.Filesystem.Windows.csproj" />
+    <ProjectReference Include="..\..\Persistence\Opure.Persistence.Sqlite\Opure.Persistence.Sqlite.csproj" />
+    <ProjectReference Include="..\..\Trust\Opure.TrustEvidence.Contracts\Opure.TrustEvidence.Contracts.csproj" />
     <ProjectReference Include="..\Opure.Workspace.Contracts\Opure.Workspace.Contracts.csproj" />
     <ProjectReference Include="..\Opure.Workspace.Sqlite\Opure.Workspace.Sqlite.csproj" />
     <ProjectReference Include="..\Opure.Workspace.Windows\Opure.Workspace.Windows.csproj" />

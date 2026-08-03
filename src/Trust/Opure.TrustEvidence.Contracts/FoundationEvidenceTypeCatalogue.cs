@@ -291,26 +291,38 @@ public static class FoundationEvidenceTypeCatalogue
         return Define(
             "workspace.snapshot-created",
             "opure.workspace",
-            EvidenceAuthorityClass.VerifiedServiceReceipt,
+            EvidenceAuthorityClass.AuthoritativeDomainStateTransition,
             [
                 Field(
                     "project_id",
                     EvidencePayloadFieldType.Identifier,
                     EvidenceDataClassification.Pseudonymous),
                 Field(
-                    "workspace_generation_id",
+                    "operation_id",
                     EvidencePayloadFieldType.Identifier,
                     EvidenceDataClassification.Pseudonymous),
                 Field(
-                    "manifest_sha256",
+                    "generation",
+                    EvidencePayloadFieldType.Integer,
+                    EvidenceDataClassification.Safe),
+                Field(
+                    "generation_sha256",
                     EvidencePayloadFieldType.Sha256,
                     EvidenceDataClassification.Safe),
                 Field(
-                    "file_count",
+                    "entry_count",
                     EvidencePayloadFieldType.Integer,
+                    EvidenceDataClassification.Safe),
+                Field(
+                    "exclusion_count",
+                    EvidencePayloadFieldType.Integer,
+                    EvidenceDataClassification.Safe),
+                Field(
+                    "repository_summary_sha256",
+                    EvidencePayloadFieldType.Sha256,
                     EvidenceDataClassification.Safe)
             ],
-            ["project_id", "workspace_generation_id"],
+            ["generation_sha256", "operation_id", "project_id"],
             [
                 EvidenceRelationshipKind.CausedBy,
                 EvidenceRelationshipKind.DerivesFrom,

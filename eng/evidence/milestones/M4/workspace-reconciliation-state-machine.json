@@ -18,5 +18,5 @@
     "DeterministicIdentity",
     "HeuristicContent"
   ],
-  "receiptPublication": "DeferredToFND038"
+  "receiptPublication": "ImplementedByFND038"
 }

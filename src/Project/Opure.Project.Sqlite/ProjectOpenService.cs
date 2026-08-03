@@ -168,7 +168,9 @@ public sealed class ProjectOpenService : IProjectOpenRequestHandler
             initialSnapshot = await snapshotRequester.RequestAsync(
                 CreateSnapshotRequest(
                     opening.ProjectId,
-                    opening.Root.RootReferenceId),
+                    opening.Root.RootReferenceId,
+                    request.OperationId,
+                    opening.ReleaseChannel),
                 cancellationToken).ConfigureAwait(false);
             ProjectSnapshot opened = repository.CompleteOpen(
                 opening.ProjectId,
@@ -265,7 +267,9 @@ public sealed class ProjectOpenService : IProjectOpenRequestHandler
                 _ = await snapshotRequester.RequestAsync(
                     CreateSnapshotRequest(
                         project.ProjectId,
-                        project.Root.RootReferenceId),
+                        project.Root.RootReferenceId,
+                        operationId,
+                        project.ReleaseChannel),
                     cancellationToken).ConfigureAwait(false);
                 _ = repository.CompleteOpen(
                     project.ProjectId,
@@ -341,14 +345,28 @@ public sealed class ProjectOpenService : IProjectOpenRequestHandler
 
     private static WorkspaceSnapshotRequest CreateSnapshotRequest(
         string projectId,
-        string rootReferenceId)
+        string rootReferenceId,
+        string operationId,
+        DomainReleaseChannel releaseChannel)
     {
         return new WorkspaceSnapshotRequest(
             projectId,
             rootReferenceId,
             WorkspaceSnapshotBounds.MaximumFileCount,
             WorkspaceSnapshotBounds.MaximumObservedBytes,
-            WorkspaceSnapshotBounds.MaximumDuration);
+            WorkspaceSnapshotBounds.MaximumDuration,
+            operationId,
+            ProjectTrustEvidenceOutbox.CreateProjectOpenedEvidenceId(
+                projectId,
+                operationId),
+            releaseChannel switch
+            {
+                DomainReleaseChannel.Development =>
+                    WorkspaceReleaseChannel.Development,
+                DomainReleaseChannel.Preview => WorkspaceReleaseChannel.Preview,
+                DomainReleaseChannel.Stable => WorkspaceReleaseChannel.Stable,
+                _ => throw new ArgumentOutOfRangeException(nameof(releaseChannel))
+            });
     }
 
     private static DomainReleaseChannel ToDomain(WireReleaseChannel channel)

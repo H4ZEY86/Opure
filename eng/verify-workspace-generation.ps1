@@ -59,7 +59,7 @@ $database = [System.IO.File]::ReadAllText($evidencePaths[0]) | ConvertFrom-Json
 $atomic = [System.IO.File]::ReadAllText($evidencePaths[1]) | ConvertFrom-Json
 $canonical = [System.IO.File]::ReadAllText($evidencePaths[2]) | ConvertFrom-Json
 if ($database.result -ne 'Passed' -or $database.ownerServiceId -ne 'opure.workspace' -or `
-    $database.schemaVersion -ne 1 -or $database.committedRowsImmutable -ne $true -or `
+    $database.schemaVersion -ne 2 -or $database.committedRowsImmutable -ne $true -or `
     $atomic.result -ne 'Passed' -or $atomic.failedBeforePromotionPreservesCurrent -ne $true -or `
     $atomic.failedBeforePointerPreservesCurrent -ne $true -or $atomic.priorGenerationQueryable -ne $true -or `
     $atomic.concurrentRequestsSerialised -ne $true -or $atomic.incompleteStagingDiscarded -ne $true -or `

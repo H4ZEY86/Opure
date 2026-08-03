@@ -7,6 +7,18 @@ public sealed record WorkspaceGenerationCandidate(
     IReadOnlyList<WorkspaceFileHashResult> FileHashes,
     string RepositorySummarySha256);
 
+public enum WorkspaceReleaseChannel
+{
+    Development = 0,
+    Preview = 1,
+    Stable = 2
+}
+
+public sealed record WorkspaceGenerationCommitContext(
+    string OperationId,
+    string ProjectOpenEvidenceId,
+    WorkspaceReleaseChannel ReleaseChannel);
+
 public sealed record WorkspaceGenerationEntry(
     string LogicalPath,
     WorkspaceInventoryEntryClass EntryClass,

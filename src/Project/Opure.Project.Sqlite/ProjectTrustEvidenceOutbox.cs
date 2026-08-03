@@ -1,4 +1,6 @@
 using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using Microsoft.Data.Sqlite;
 using Opure.Filesystem.Contracts;
@@ -21,6 +23,21 @@ public static class ProjectTrustEvidenceOutbox
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
+
+    public static string CreateProjectOpenedEvidenceId(
+        string projectId,
+        string operationId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(projectId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(operationId);
+        byte[] digest = SHA256.HashData(Encoding.UTF8.GetBytes(
+            string.Concat(
+                "opure-project-open-evidence/1:",
+                projectId,
+                ":",
+                operationId)));
+        return Convert.ToHexStringLower(digest.AsSpan(0, 16));
+    }
 
     internal static SqliteOutboxWriteResult Enqueue(
         SqliteOutboxWriter outbox,
@@ -304,7 +321,9 @@ public static class ProjectTrustEvidenceOutbox
         DateTimeOffset occurred = occurredAtUtc.ToUniversalTime();
 
         return new EvidenceRecord(
-            Guid.NewGuid().ToString("N"),
+            evidenceType.EvidenceTypeId == ProjectOpenedTypeId
+                ? CreateProjectOpenedEvidenceId(project.ProjectId, operationId)
+                : Guid.NewGuid().ToString("N"),
             evidenceType,
             ProjectDatabase.OwnerServiceId,
             Guid.NewGuid().ToString("N"),

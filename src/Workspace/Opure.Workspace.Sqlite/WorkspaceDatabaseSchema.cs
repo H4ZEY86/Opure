@@ -4,7 +4,7 @@ namespace Opure.Workspace.Sqlite;
 
 public static class WorkspaceDatabaseSchema
 {
-    public const int CurrentVersion = 1;
+    public const int CurrentVersion = 2;
     public const string GenerationTable = "workspace_generations";
     public const string EntryTable = "workspace_generation_entries";
     public const string RepositorySummaryTable = "workspace_repository_summaries";
@@ -17,7 +17,7 @@ public static class WorkspaceDatabaseSchema
 
     public static SqliteMigrationCatalogue CreateCatalogue()
     {
-        return new SqliteMigrationCatalogue(
+        List<SqliteMigration> migrations =
         [
             new SqliteMigration(
                 "workspace-generations-v1",
@@ -25,7 +25,12 @@ public static class WorkspaceDatabaseSchema
                 targetVersion: 1,
                 "Creates immutable Workspace generations, staging rows and atomic current pointers.",
                 CreateCommands())
-        ],
+        ];
+        migrations.Add(SqliteOutboxSchema.CreateMigration(
+            "workspace-trust-outbox-v2",
+            sourceVersion: 1,
+            targetVersion: 2));
+        List<SqliteSchemaValidation> validations =
         [
             new SqliteSchemaValidation(
                 "workspace-generation-tables-present",
@@ -42,7 +47,11 @@ public static class WorkspaceDatabaseSchema
                 minimumSchemaVersion: 1,
                 $"SELECT COUNT(*) FROM pragma_foreign_key_list('{CurrentTable}') WHERE \"table\" = '{GenerationTable}'",
                 "2")
-        ]);
+        ];
+        validations.AddRange(
+            SqliteOutboxSchema.CreateSchemaValidations(
+                minimumSchemaVersion: 2));
+        return new SqliteMigrationCatalogue(migrations, validations);
     }
 
     public static IReadOnlyList<string> GetExpectedSchemaObjects() =>
@@ -55,7 +64,12 @@ public static class WorkspaceDatabaseSchema
         StagingEntryTable,
         GenerationImmutableTrigger,
         EntryImmutableTrigger,
-        RepositoryImmutableTrigger
+        RepositoryImmutableTrigger,
+        SqliteOutboxSchema.StreamTableName,
+        SqliteOutboxSchema.MessageTableName,
+        SqliteOutboxSchema.DeliveryTableName,
+        "__opure_outbox_messages_immutable",
+        "__opure_outbox_messages_retained"
     ];
 
     private static string[] CreateCommands() =>

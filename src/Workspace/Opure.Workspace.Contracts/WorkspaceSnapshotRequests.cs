@@ -12,7 +12,10 @@ public sealed record WorkspaceSnapshotRequest(
     string RootReferenceId,
     int MaximumFileCount,
     long MaximumObservedBytes,
-    TimeSpan MaximumDuration);
+    TimeSpan MaximumDuration,
+    string OperationId = "",
+    string ProjectOpenEvidenceId = "",
+    WorkspaceReleaseChannel ReleaseChannel = WorkspaceReleaseChannel.Development);
 
 public enum WorkspaceSnapshotRequestDisposition
 {

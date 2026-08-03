@@ -511,19 +511,37 @@
       "evidenceTypeId": "workspace.snapshot-created",
       "revision": 1,
       "ownerServiceId": "opure.workspace",
-      "authorityClass": "VerifiedServiceReceipt",
+      "authorityClass": "AuthoritativeDomainStateTransition",
       "payloadLocation": "Inline",
       "payloadFields": [
         {
-          "name": "file_count",
+          "name": "entry_count",
           "fieldType": "Integer",
           "classification": "Safe",
           "isRequired": true
         },
         {
-          "name": "manifest_sha256",
+          "name": "exclusion_count",
+          "fieldType": "Integer",
+          "classification": "Safe",
+          "isRequired": true
+        },
+        {
+          "name": "generation",
+          "fieldType": "Integer",
+          "classification": "Safe",
+          "isRequired": true
+        },
+        {
+          "name": "generation_sha256",
           "fieldType": "Sha256",
           "classification": "Safe",
+          "isRequired": true
+        },
+        {
+          "name": "operation_id",
+          "fieldType": "Identifier",
+          "classification": "Pseudonymous",
           "isRequired": true
         },
         {
@@ -533,15 +551,16 @@
           "isRequired": true
         },
         {
-          "name": "workspace_generation_id",
-          "fieldType": "Identifier",
-          "classification": "Pseudonymous",
+          "name": "repository_summary_sha256",
+          "fieldType": "Sha256",
+          "classification": "Safe",
           "isRequired": true
         }
       ],
       "safeIndexFields": [
-        "project_id",
-        "workspace_generation_id"
+        "generation_sha256",
+        "operation_id",
+        "project_id"
       ],
       "relationshipEligibility": [
         "CausedBy",
@@ -555,7 +574,7 @@
       },
       "supportExportEligibility": "EligibleAfterRedaction",
       "redactionProfileId": "opure.trust-evidence-redaction.1",
-      "canonicalSha256": "e8b0d47f76b35640190acc40110f35fb788ac0e0c0f681f484a00f6b971e9faf"
+      "canonicalSha256": "3870b08cf2791e756ad73f7830dad5c9660f1d41f649ac8ff6f2476d526ea15a"
     }
   ],
   "authoritative": false

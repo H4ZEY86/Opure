@@ -16,6 +16,10 @@ public sealed class WorkspaceReconciliationServiceTests : IDisposable
     private const string RootReferenceId = "22222222222222222222222222222222";
     private const string RepositoryHash =
         "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
+    private static readonly WorkspaceGenerationCommitContext CommitContext = new(
+        "33333333333333333333333333333333",
+        "44444444444444444444444444444444",
+        WorkspaceReleaseChannel.Development);
     private readonly string testRoot = Path.Combine(
         Path.GetTempPath(),
         "Opure.Workspace.Reconciliation.Tests",
@@ -245,6 +249,7 @@ public sealed class WorkspaceReconciliationServiceTests : IDisposable
                 RootReferenceId,
                 AcquireRoot(),
                 RepositoryHash,
+                CommitContext,
                 queue,
                 WorkspaceReconciliationTrigger.WatcherHints,
                 cancellation.Token));
@@ -352,6 +357,7 @@ public sealed class WorkspaceReconciliationServiceTests : IDisposable
             RootReferenceId,
             registered,
             RepositoryHash,
+            CommitContext,
             service.CreateQueue(),
             WorkspaceReconciliationTrigger.WatcherUncertain,
             TestContext.Current.CancellationToken);
@@ -418,6 +424,7 @@ public sealed class WorkspaceReconciliationServiceTests : IDisposable
             RootReferenceId,
             AcquireRoot(),
             RepositoryHash,
+            CommitContext,
             queue ?? service.CreateQueue(),
             trigger,
             TestContext.Current.CancellationToken);

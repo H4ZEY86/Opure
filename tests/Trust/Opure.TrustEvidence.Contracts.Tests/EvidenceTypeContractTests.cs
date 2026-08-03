@@ -324,6 +324,42 @@ public sealed class EvidenceTypeContractTests
         }
     }
 
+    [Fact]
+    public void Workspace_snapshot_type_binds_authority_aggregates_and_causation()
+    {
+        EvidenceTypeDefinition definition = Assert.Single(
+            FoundationEvidenceTypeCatalogue.Current.Definitions,
+            static candidate =>
+                candidate.EvidenceTypeId == "workspace.snapshot-created");
+        string[] expectedFields =
+        [
+            "entry_count",
+            "exclusion_count",
+            "generation",
+            "generation_sha256",
+            "operation_id",
+            "project_id",
+            "repository_summary_sha256"
+        ];
+
+        Assert.Equal("opure.workspace", definition.OwnerServiceId);
+        Assert.Equal(
+            EvidenceAuthorityClass.AuthoritativeDomainStateTransition,
+            definition.AuthorityClass);
+        Assert.Equal(
+            expectedFields,
+            definition.PayloadFields
+                .Select(static field => field.Name)
+                .Order(StringComparer.Ordinal)
+                .ToArray());
+        Assert.Contains(EvidenceRelationshipKind.CausedBy, definition.RelationshipEligibility);
+        Assert.DoesNotContain(
+            definition.PayloadFields,
+            static field =>
+                field.Name.Contains("path", StringComparison.OrdinalIgnoreCase) ||
+                field.Name.Contains("content", StringComparison.OrdinalIgnoreCase));
+    }
+
     private static EvidenceTypeDefinition CreateDefinition(
         uint revision = 1,
         string ownerServiceId = "opure.test-owner",

@@ -1,0 +1,11 @@
+{
+  "ticket": "FND-038",
+  "result": "Passed",
+  "delivery": "AtLeastOnce",
+  "pendingDeliveryResumesAfterRestart": true,
+  "stableReceiptIdentityPreserved": true,
+  "identicalDuplicateAcknowledged": true,
+  "identicalDuplicateAppliesSecondDomainEffect": false,
+  "missingProjectOpenTargetRetries": true,
+  "projectOpenRelationshipPreserved": true
+}

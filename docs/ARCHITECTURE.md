@@ -3012,9 +3012,9 @@ updates the current pointer within one immediate SQLite transaction. Failure at
 any point rolls back all three effects and preserves the prior current pointer.
 The single owner writer serialises concurrent requests. Startup deletes incomplete
 staging debris left outside a committed transaction, while prior committed
-generations remain queryable under the initial retain-all policy. FND-037 will
-create new generations from reconciled filesystem change; FND-038 will publish
-the authoritative current-generation receipt through the transactional outbox.
+generations remain queryable under the initial retain-all policy. FND-037 creates
+new generations from reconciled filesystem change; FND-038 publishes the
+authoritative current-generation receipt through the transactional outbox.
 
 FND-037 adds change reconciliation under a dedicated Workspace Service
 orchestration boundary. `FileSystemWatcher` is a Windows hint adapter only: it
@@ -3039,8 +3039,32 @@ modifications and deletions. A unique retained file identity labels a rename as
 deterministic; a unique matching content hash after identity loss labels it as
 heuristic. Ambiguous matches remain explicit additions and deletions. File paths
 stay in authoritative Workspace state and test results, while checked-in Trust
-evidence contains aggregate outcomes only. FND-038 still owns publication of new
-generation and invalidation receipts through the transactional outbox.
+evidence contains aggregate outcomes only.
+
+FND-038 registers `workspace.snapshot-created` as an authoritative Workspace
+domain-state transition. Generation activation and the Workspace-owned outbox
+message commit in the same `workspace.db` transaction: neither the current
+pointer nor its receipt can survive alone. The receipt records only opaque
+project and operation identities, generation number and SHA-256, aggregate entry
+and exclusion counts, and the repository-summary SHA-256. It contains no file
+bytes, logical paths, display paths or root paths.
+
+Project Open supplies a deterministic evidence identity with the Workspace
+snapshot request. The Workspace receipt binds a `CausedBy` relationship to that
+exact `project.opened` record without copying Project-owned state. Runtime
+composition must deliver the Project Open record before the dependent Workspace
+receipt; the current Project-to-Workspace adapter remains explicit and does not
+grant Workspace authority to Project or Desktop.
+
+The Workspace Service reconstructs the immutable Evidence Record from the
+outbox envelope and publishes through an owner-bound Trust ingestion port.
+Delivery is bounded and at least once. A Trust outage leaves the receipt pending;
+restart reopens the same channel-isolated outbox and resumes delivery. Stable
+evidence and message identities make identical replay a Trust-ingestion duplicate
+with no second projection effect. The developer can inspect the Workspace outbox
+backlog and stop delivery by stopping Runtime; permanent invalid envelopes are
+blocked rather than silently rewritten. Invalidation receipts remain deferred
+until a ticket defines their lifecycle authority.
 
 The following rules should be enforced as architectural invariants:
 

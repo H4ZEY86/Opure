@@ -18,4 +18,4 @@ runtime.started@1=opure.runtime|AuthoritativeDomainStateTransition
 runtime.stopped@1=opure.runtime|AuthoritativeDomainStateTransition
 security.policy-denied@1=opure.product-policy|AuthoritativeDomainDecision
 service.state-changed@1=opure.service-registry|AuthoritativeDomainStateTransition
-workspace.snapshot-created@1=opure.workspace|VerifiedServiceReceipt
+workspace.snapshot-created@1=opure.workspace|AuthoritativeDomainStateTransition

@@ -12,12 +12,14 @@ namespace Opure.Workspace.Sqlite;
 internal enum WorkspaceGenerationCommitPoint
 {
     AfterStaging = 0,
-    BeforeCurrentPointer = 1
+    BeforeCurrentPointer = 1,
+    AfterCurrentPointer = 2
 }
 
 public sealed class WorkspaceGenerationStore
 {
     private readonly SqliteServiceDatabase database;
+    private readonly SqliteOutboxWriter outbox;
     private readonly TimeProvider timeProvider;
 
     internal WorkspaceGenerationStore(
@@ -26,15 +28,18 @@ public sealed class WorkspaceGenerationStore
     {
         this.database = database ?? throw new ArgumentNullException(nameof(database));
         this.timeProvider = timeProvider ?? TimeProvider.System;
+        outbox = new SqliteOutboxWriter(database.Descriptor, this.timeProvider);
     }
 
     internal Action<WorkspaceGenerationCommitPoint>? FailureInjector { get; init; }
 
     public WorkspaceGenerationSnapshot Commit(
         WorkspaceGenerationCandidate candidate,
+        WorkspaceGenerationCommitContext context,
         CancellationToken cancellationToken = default)
     {
         ReadOnlyCollection<WorkspaceGenerationEntry> entries = ValidateAndBind(candidate);
+        WorkspaceTrustEvidenceOutbox.ValidateContext(context);
         string generationSha256 = ComputeCanonicalHash(
             candidate.ProjectId,
             candidate.RootReferenceId,
@@ -47,6 +52,7 @@ public sealed class WorkspaceGenerationStore
                 connection,
                 transaction,
                 candidate,
+                context,
                 entries,
                 generationSha256,
                 now),
@@ -144,6 +150,7 @@ public sealed class WorkspaceGenerationStore
         SqliteConnection connection,
         SqliteTransaction transaction,
         WorkspaceGenerationCandidate candidate,
+        WorkspaceGenerationCommitContext context,
         ReadOnlyCollection<WorkspaceGenerationEntry> entries,
         string generationSha256,
         DateTimeOffset now)
@@ -182,15 +189,22 @@ public sealed class WorkspaceGenerationStore
             generation,
             generationSha256,
             now);
-        DeleteStaging(connection, transaction, operationId);
-
-        return ReadSnapshot(
+        FailureInjector?.Invoke(WorkspaceGenerationCommitPoint.AfterCurrentPointer);
+        WorkspaceGenerationSnapshot snapshot = ReadSnapshot(
                 connection,
                 transaction,
                 candidate.ProjectId,
                 generation) ??
             throw new InvalidOperationException(
                 "The committed Workspace generation could not be read back.");
+        _ = WorkspaceTrustEvidenceOutbox.Enqueue(
+            outbox,
+            connection,
+            transaction,
+            snapshot,
+            context);
+        DeleteStaging(connection, transaction, operationId);
+        return snapshot;
     }
 
     private static ReadOnlyCollection<WorkspaceGenerationEntry> ValidateAndBind(

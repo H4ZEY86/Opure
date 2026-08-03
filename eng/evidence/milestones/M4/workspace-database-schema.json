@@ -3,7 +3,7 @@
   "result": "Passed",
   "ownerServiceId": "opure.workspace",
   "databaseName": "workspace.db",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "authoritative": true,
   "tables": [
     "workspace_generations",
@@ -11,7 +11,11 @@
     "workspace_repository_summaries",
     "workspace_current_generations",
     "workspace_generation_staging",
-    "workspace_entry_staging"
+    "workspace_entry_staging",
+    "outbox_stream_sequences",
+    "outbox_messages",
+    "outbox_delivery_attempts",
+    "outbox_dead_letters"
   ],
   "committedRowsImmutable": true
 }

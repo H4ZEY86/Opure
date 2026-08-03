@@ -18,6 +18,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Filesystem\Opure.Filesystem.Contracts\Opure.Filesystem.Contracts.csproj" />
     <ProjectReference Include="..\..\..\src\Filesystem\Opure.Filesystem.Windows\Opure.Filesystem.Windows.csproj" />
+    <ProjectReference Include="..\..\..\src\Trust\Opure.TrustEvidence.Contracts\Opure.TrustEvidence.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\src\Trust\Opure.TrustEvidence.Service\Opure.TrustEvidence.Service.csproj" />
     <ProjectReference Include="..\..\..\src\Workspace\Opure.Workspace.Contracts\Opure.Workspace.Contracts.csproj" />
     <ProjectReference Include="..\..\..\src\Workspace\Opure.Workspace.Service\Opure.Workspace.Service.csproj" />
     <ProjectReference Include="..\..\..\src\Workspace\Opure.Workspace.Sqlite\Opure.Workspace.Sqlite.csproj" />

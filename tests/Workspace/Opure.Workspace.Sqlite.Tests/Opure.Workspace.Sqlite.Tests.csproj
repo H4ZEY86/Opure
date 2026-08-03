@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Persistence\Opure.Persistence.Sqlite\Opure.Persistence.Sqlite.csproj" />
+    <ProjectReference Include="..\..\..\src\Trust\Opure.TrustEvidence.Contracts\Opure.TrustEvidence.Contracts.csproj" />
     <ProjectReference Include="..\..\..\src\Workspace\Opure.Workspace.Contracts\Opure.Workspace.Contracts.csproj" />
     <ProjectReference Include="..\..\..\src\Workspace\Opure.Workspace.Sqlite\Opure.Workspace.Sqlite.csproj" />
   </ItemGroup>
