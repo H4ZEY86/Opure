@@ -1,0 +1,11 @@
+{
+  "ticket": "FND-037",
+  "result": "Passed",
+  "watcherIsAuthoritative": false,
+  "overflowForcesFullScan": true,
+  "uncertaintyForcesFullScan": true,
+  "missedEventRepaired": true,
+  "watcherDisabledSupported": true,
+  "restartRequiresFreshScan": true,
+  "staleUntilComplete": true
+}

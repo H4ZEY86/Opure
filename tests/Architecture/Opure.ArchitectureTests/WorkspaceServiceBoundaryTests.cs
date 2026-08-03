@@ -157,6 +157,44 @@ public sealed class WorkspaceServiceBoundaryTests
         Assert.DoesNotContain("System.Net", store, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void WorkspaceReconciliationKeepsWatcherAdvisoryAndAuthorityInService()
+    {
+        string serviceRoot = Path.Combine(
+            RepositoryRoot,
+            "src",
+            "Workspace",
+            "Opure.Workspace.Service");
+        string serviceProject = File.ReadAllText(Path.Combine(
+            serviceRoot,
+            "Opure.Workspace.Service.csproj"));
+        string service = File.ReadAllText(Path.Combine(
+            serviceRoot,
+            "WorkspaceReconciliationService.cs"));
+        string queue = File.ReadAllText(Path.Combine(
+            serviceRoot,
+            "WorkspaceReconciliationQueue.cs"));
+        string watcher = File.ReadAllText(Path.Combine(
+            RepositoryRoot,
+            "src",
+            "Workspace",
+            "Opure.Workspace.Windows",
+            "WindowsWorkspaceChangeWatcher.cs"));
+
+        Assert.Contains("Opure.Workspace.Windows.csproj", serviceProject, StringComparison.Ordinal);
+        Assert.Contains("Opure.Workspace.Sqlite.csproj", serviceProject, StringComparison.Ordinal);
+        Assert.Contains("inventoryGenerator.Generate", service, StringComparison.Ordinal);
+        Assert.Contains("fileHasher.HashAsync", service, StringComparison.Ordinal);
+        Assert.Contains("generationStore.Commit", service, StringComparison.Ordinal);
+        Assert.Contains("MaximumPendingHints", queue, StringComparison.Ordinal);
+        Assert.Contains("WatcherOverflow", watcher, StringComparison.Ordinal);
+        Assert.DoesNotContain("WorkspaceGenerationStore", watcher, StringComparison.Ordinal);
+        Assert.DoesNotContain("Microsoft.Data.Sqlite", watcher, StringComparison.Ordinal);
+        Assert.DoesNotContain("Opure.Desktop", serviceProject, StringComparison.Ordinal);
+        Assert.DoesNotContain("Opure.Project", serviceProject, StringComparison.Ordinal);
+        Assert.DoesNotContain("System.Net", service, StringComparison.Ordinal);
+    }
+
     private static string ReadSources(string root)
     {
         return string.Join(

@@ -92,6 +92,17 @@ public sealed class WorkspaceGenerationStore
     }
 
     public static string ComputeCanonicalHash(
+        WorkspaceGenerationCandidate candidate)
+    {
+        ReadOnlyCollection<WorkspaceGenerationEntry> entries = ValidateAndBind(candidate);
+        return ComputeCanonicalHash(
+            candidate.ProjectId,
+            candidate.RootReferenceId,
+            candidate.RepositorySummarySha256,
+            entries);
+    }
+
+    public static string ComputeCanonicalHash(
         string projectId,
         string rootReferenceId,
         string repositorySummarySha256,

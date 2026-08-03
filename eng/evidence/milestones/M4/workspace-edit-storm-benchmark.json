@@ -1,0 +1,9 @@
+{
+  "ticket": "FND-037",
+  "result": "Passed",
+  "inputHintCount": 10000,
+  "maximumPendingHintCount": 8,
+  "observedPeakPendingHintCount": 8,
+  "overflowCollapsesToFullScan": true,
+  "unboundedQueueGrowthObserved": false
+}

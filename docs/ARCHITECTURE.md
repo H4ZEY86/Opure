@@ -3016,6 +3016,32 @@ generations remain queryable under the initial retain-all policy. FND-037 will
 create new generations from reconciled filesystem change; FND-038 will publish
 the authoritative current-generation receipt through the transactional outbox.
 
+FND-037 adds change reconciliation under a dedicated Workspace Service
+orchestration boundary. `FileSystemWatcher` is a Windows hint adapter only: it
+can enqueue created, modified, deleted and rename hints, but it cannot read the
+Workspace database or promote a generation. The bounded queue coalesces repeat
+hints and, on overflow, watcher error or capacity exhaustion, collapses its
+contents into one explicit authoritative-rescan requirement.
+
+Every reconciliation performs a fresh bounded inventory and rehashes all
+included regular files through verified handles. This initial complete-scan
+strategy deliberately favours correctness over incremental performance. A
+Partial inventory, unreadable file or unstable identity leaves the prior current
+generation untouched and the view marked not fresh. Startup, watcher-disabled
+operation and manual reconciliation use the same path, so a missed event is
+repaired before freshness can be claimed after restart. A hint that arrives
+during a scan remains queued and prevents that scan from claiming freshness.
+Cancellation, failure or an incomplete scan re-arms one bounded full-rescan
+requirement, so consuming a hint batch cannot silently lose durable correctness.
+
+Only a changed canonical generation is promoted. Comparison reports additions,
+modifications and deletions. A unique retained file identity labels a rename as
+deterministic; a unique matching content hash after identity loss labels it as
+heuristic. Ambiguous matches remain explicit additions and deletions. File paths
+stay in authoritative Workspace state and test results, while checked-in Trust
+evidence contains aggregate outcomes only. FND-038 still owns publication of new
+generation and invalidation receipts through the transactional outbox.
+
 The following rules should be enforced as architectural invariants:
 
 1. AI providers are accessed only through the AI Router.

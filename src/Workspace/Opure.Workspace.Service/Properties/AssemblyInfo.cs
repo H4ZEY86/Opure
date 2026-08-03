@@ -1,4 +1,3 @@
 using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("Opure.Workspace.Windows.Tests")]
 [assembly: InternalsVisibleTo("Opure.Workspace.Service.Tests")]

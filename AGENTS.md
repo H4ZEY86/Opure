@@ -196,29 +196,29 @@ Locally implemented, verified and committed; pending reviewed pushes:
 * FND-033 — Define Workspace Service Contract.
 * FND-034 — Add File Inventory Generation.
 * FND-035 — Add Safe File Hashing.
+* FND-036 — Add Workspace Generation.
 
 Implemented and verified by the current change:
 
-* FND-036 — Add Workspace Generation.
+* FND-037 — Add Change Reconciliation.
 
-FND-036 includes:
+FND-037 includes:
 
-* an owner-isolated authoritative `workspace.db` with migration-owned schema;
-* staging tables for generations and entries followed by transactional promotion;
-* atomic per-project current-generation activation in the promotion transaction;
-* immutable committed generations, entries and repository summaries;
-* stable identity-bound content hashes and explicit exclusions in every complete generation;
-* canonical revision-one SHA-256 encoding with ordinal logical-path ordering;
-* current and historical generation reads with initial retain-all policy;
-* failure injection, concurrency, restart, staging-debris and immutability fixtures.
+* a Windows filesystem watcher that provides hints but has no persistence authority;
+* a bounded, coalescing reconciliation queue that collapses overflow and uncertainty to full rescan;
+* fresh handle-verified inventory and hashing before every authoritative comparison;
+* atomic promotion only when the canonical complete generation changed;
+* additions, modifications, deletions and explicitly labelled deterministic or heuristic renames;
+* restart, watcher-disabled, missed-event, edit-storm, overflow and directory-replacement recovery fixtures;
+* privacy-safe reconciliation, watcher-loss and bounded edit-storm evidence.
 
 The next planned ticket is:
 
 ```text
-FND-037 — Add Change Reconciliation
+FND-038 — Add Workspace Snapshot Receipt
 ```
 
-Do not assume FND-036 is complete until the immutable Workspace generation verifier
+Do not assume FND-037 is complete until the Workspace change reconciliation verifier
 passes and the changes are reviewed, committed and pushed.
 
 ## Build policy

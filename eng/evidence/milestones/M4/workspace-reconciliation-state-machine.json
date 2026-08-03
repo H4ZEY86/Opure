@@ -1,0 +1,22 @@
+{
+  "ticket": "FND-037",
+  "result": "Passed",
+  "ownerServiceId": "opure.workspace",
+  "watcherAuthority": "HintOnly",
+  "authoritativePath": [
+    "BoundedHintDrain",
+    "VerifiedFullInventory",
+    "VerifiedStableHashing",
+    "CanonicalComparison",
+    "AtomicGenerationPromotion"
+  ],
+  "partialScanPromotesGeneration": false,
+  "currentGenerationRemainsComplete": true,
+  "concurrentHintPreventsFreshnessClaim": true,
+  "failedAttemptRearmsFullScan": true,
+  "renameEvidence": [
+    "DeterministicIdentity",
+    "HeuristicContent"
+  ],
+  "receiptPublication": "DeferredToFND038"
+}

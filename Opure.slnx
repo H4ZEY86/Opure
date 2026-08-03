@@ -45,6 +45,7 @@
   <Folder Name="/src/Workspace/">
     <Project Path="src/Workspace/Opure.Workspace.Contracts/Opure.Workspace.Contracts.csproj" />
     <Project Path="src/Workspace/Opure.Workspace.Protocol/Opure.Workspace.Protocol.csproj" />
+    <Project Path="src/Workspace/Opure.Workspace.Service/Opure.Workspace.Service.csproj" />
     <Project Path="src/Workspace/Opure.Workspace.Sqlite/Opure.Workspace.Sqlite.csproj" />
     <Project Path="src/Workspace/Opure.Workspace.Windows/Opure.Workspace.Windows.csproj" />
   </Folder>
@@ -83,6 +84,7 @@
   </Folder>
   <Folder Name="/tests/Workspace/">
     <Project Path="tests/Workspace/Opure.Workspace.Protocol.Tests/Opure.Workspace.Protocol.Tests.csproj" />
+    <Project Path="tests/Workspace/Opure.Workspace.Service.Tests/Opure.Workspace.Service.Tests.csproj" />
     <Project Path="tests/Workspace/Opure.Workspace.Sqlite.Tests/Opure.Workspace.Sqlite.Tests.csproj" />
     <Project Path="tests/Workspace/Opure.Workspace.Windows.Tests/Opure.Workspace.Windows.Tests.csproj" />
   </Folder>
