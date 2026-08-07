@@ -213,17 +213,60 @@
         "dependencies": {
           "JsonSchema.Net": "[7.3.0, )",
           "Opure.Configuration.Contracts": "[1.0.0, )",
-          "Opure.Persistence.Sqlite": "[1.0.0, )"
+          "Opure.Persistence.Sqlite": "[1.0.0, )",
+          "Opure.Workspace.Contracts": "[1.0.0, )"
         }
       },
       "opure.configuration.contracts": {
         "type": "Project"
+      },
+      "opure.filesystem.contracts": {
+        "type": "Project"
+      },
+      "opure.filesystem.windows": {
+        "type": "Project",
+        "dependencies": {
+          "Opure.Filesystem.Contracts": "[1.0.0, )"
+        }
       },
       "opure.persistence.sqlite": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Data.Sqlite": "[10.0.10, )",
           "SQLitePCLRaw.bundle_e_sqlite3": "[2.1.12, )"
+        }
+      },
+      "opure.trustevidence.contracts": {
+        "type": "Project"
+      },
+      "opure.workspace.contracts": {
+        "type": "Project"
+      },
+      "opure.workspace.service": {
+        "type": "Project",
+        "dependencies": {
+          "Opure.Filesystem.Windows": "[1.0.0, )",
+          "Opure.Persistence.Sqlite": "[1.0.0, )",
+          "Opure.TrustEvidence.Contracts": "[1.0.0, )",
+          "Opure.Workspace.Contracts": "[1.0.0, )",
+          "Opure.Workspace.Sqlite": "[1.0.0, )",
+          "Opure.Workspace.Windows": "[1.0.0, )"
+        }
+      },
+      "opure.workspace.sqlite": {
+        "type": "Project",
+        "dependencies": {
+          "Opure.Persistence.Sqlite": "[1.0.0, )",
+          "Opure.TrustEvidence.Contracts": "[1.0.0, )",
+          "Opure.Workspace.Contracts": "[1.0.0, )"
+        }
+      },
+      "opure.workspace.windows": {
+        "type": "Project",
+        "dependencies": {
+          "Opure.Filesystem.Contracts": "[1.0.0, )",
+          "Opure.Filesystem.Windows": "[1.0.0, )",
+          "Opure.Workspace.Contracts": "[1.0.0, )"
         }
       },
       "JsonSchema.Net": {
