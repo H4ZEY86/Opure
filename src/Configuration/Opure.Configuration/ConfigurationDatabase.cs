@@ -360,4 +360,217 @@ public sealed class ConfigurationDatabase : IDisposable
             },
             cancellationToken);
     }
+
+    public void SaveSnapshot(
+        EffectiveConfigurationSnapshot snapshot,
+        string scope = "Runtime",
+        CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        ArgumentNullException.ThrowIfNull(snapshot);
+        ArgumentException.ThrowIfNullOrWhiteSpace(scope);
+
+        _ = database.ExecuteTransaction(
+            (connection, transaction) =>
+            {
+                // 1. Insert snapshot header
+                using SqliteCommand headerCmd = connection.CreateCommand();
+                headerCmd.Transaction = transaction;
+                headerCmd.CommandText = $"""
+                    INSERT INTO {ConfigurationDatabaseSchema.EffectiveSnapshotTable} (
+                        snapshot_id, generation, created_at_utc, setting_catalogue_revision,
+                        setting_catalogue_sha256, product_defaults_revision, product_defaults_sha256,
+                        policy_catalogue_revision, policy_catalogue_sha256, user_profile_id,
+                        user_profile_revision, project_id, project_generation, project_content_hash,
+                        policy_receipt_hash, canonical_sha256
+                    ) VALUES (
+                        $snapshot_id, $generation, $created_at_utc, $setting_catalogue_revision,
+                        $setting_catalogue_sha256, $product_defaults_revision, $product_defaults_sha256,
+                        $policy_catalogue_revision, $policy_catalogue_sha256, $user_profile_id,
+                        $user_profile_revision, $project_id, $project_generation, $project_content_hash,
+                        $policy_receipt_hash, $canonical_sha256
+                    );
+                    """;
+                headerCmd.Parameters.AddWithValue("$snapshot_id", snapshot.SnapshotId);
+                headerCmd.Parameters.AddWithValue("$generation", snapshot.SnapshotGeneration);
+                headerCmd.Parameters.AddWithValue("$created_at_utc", snapshot.CreatedAtUtc.ToString("O", CultureInfo.InvariantCulture));
+                headerCmd.Parameters.AddWithValue("$setting_catalogue_revision", snapshot.SettingCatalogueRevision);
+                headerCmd.Parameters.AddWithValue("$setting_catalogue_sha256", snapshot.SettingCatalogueSha256);
+                headerCmd.Parameters.AddWithValue("$product_defaults_revision", snapshot.ProductDefaultsRevision);
+                headerCmd.Parameters.AddWithValue("$product_defaults_sha256", snapshot.ProductDefaultsSha256);
+                headerCmd.Parameters.AddWithValue("$policy_catalogue_revision", snapshot.PolicyCatalogueRevision);
+                headerCmd.Parameters.AddWithValue("$policy_catalogue_sha256", snapshot.PolicyCatalogueSha256);
+                headerCmd.Parameters.AddWithValue("$user_profile_id", (object?)snapshot.UserProfileId ?? DBNull.Value);
+                headerCmd.Parameters.AddWithValue("$user_profile_revision", (object?)snapshot.UserProfileRevision ?? DBNull.Value);
+                headerCmd.Parameters.AddWithValue("$project_id", (object?)snapshot.ProjectId ?? DBNull.Value);
+                headerCmd.Parameters.AddWithValue("$project_generation", (object?)snapshot.ProjectGeneration ?? DBNull.Value);
+                headerCmd.Parameters.AddWithValue("$project_content_hash", (object?)snapshot.ProjectContentHash ?? DBNull.Value);
+                headerCmd.Parameters.AddWithValue("$policy_receipt_hash", snapshot.PolicyReceiptHash);
+                headerCmd.Parameters.AddWithValue("$canonical_sha256", snapshot.CanonicalSha256);
+                _ = headerCmd.ExecuteNonQuery();
+
+                // 2. Insert entries
+                foreach (EffectiveSettingEntry entry in snapshot.Entries.Values)
+                {
+                    using SqliteCommand entryCmd = connection.CreateCommand();
+                    entryCmd.Transaction = transaction;
+                    entryCmd.CommandText = $"""
+                        INSERT INTO {ConfigurationDatabaseSchema.EffectiveEntryTable} (
+                            snapshot_id, setting_id, definition_revision, requested_value_json,
+                            effective_value_json, winning_source, constrained_by_policy, policy_id
+                        ) VALUES (
+                            $snapshot_id, $setting_id, $definition_revision, $requested_value_json,
+                            $effective_value_json, $winning_source, $constrained_by_policy, $policy_id
+                        );
+                        """;
+                    entryCmd.Parameters.AddWithValue("$snapshot_id", snapshot.SnapshotId);
+                    entryCmd.Parameters.AddWithValue("$setting_id", entry.SettingId);
+                    entryCmd.Parameters.AddWithValue("$definition_revision", entry.DefinitionRevision);
+                    entryCmd.Parameters.AddWithValue("$requested_value_json", entry.RequestedValueJson);
+                    entryCmd.Parameters.AddWithValue("$effective_value_json", entry.EffectiveValueJson);
+                    entryCmd.Parameters.AddWithValue("$winning_source", entry.WinningSource.ToString());
+                    entryCmd.Parameters.AddWithValue("$constrained_by_policy", entry.ConstrainedByPolicy ? 1 : 0);
+                    entryCmd.Parameters.AddWithValue("$policy_id", (object?)entry.PolicyId ?? DBNull.Value);
+                    _ = entryCmd.ExecuteNonQuery();
+                }
+
+                // 3. Atomically update current pointer
+                using SqliteCommand pointerCmd = connection.CreateCommand();
+                pointerCmd.Transaction = transaction;
+                pointerCmd.CommandText = $"""
+                    INSERT INTO {ConfigurationDatabaseSchema.CurrentSnapshotPointerTable} (
+                        scope, snapshot_id, updated_at_utc
+                    ) VALUES (
+                        $scope, $snapshot_id, $updated_at_utc
+                    ) ON CONFLICT(scope) DO UPDATE SET
+                        snapshot_id = excluded.snapshot_id,
+                        updated_at_utc = excluded.updated_at_utc;
+                    """;
+                pointerCmd.Parameters.AddWithValue("$scope", scope);
+                pointerCmd.Parameters.AddWithValue("$snapshot_id", snapshot.SnapshotId);
+                pointerCmd.Parameters.AddWithValue("$updated_at_utc", DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture));
+                _ = pointerCmd.ExecuteNonQuery();
+
+                return true;
+            },
+            cancellationToken);
+    }
+
+    public EffectiveConfigurationSnapshot? GetCurrentSnapshot(
+        string scope = "Runtime",
+        CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        ArgumentException.ThrowIfNullOrWhiteSpace(scope);
+
+        string? snapshotId = database.ExecuteTransaction(
+            (connection, transaction) =>
+            {
+                using SqliteCommand cmd = connection.CreateCommand();
+                cmd.Transaction = transaction;
+                cmd.CommandText = $"""
+                    SELECT snapshot_id
+                      FROM {ConfigurationDatabaseSchema.CurrentSnapshotPointerTable}
+                     WHERE scope = $scope;
+                    """;
+                cmd.Parameters.AddWithValue("$scope", scope);
+                object? res = cmd.ExecuteScalar();
+                return res is DBNull or null ? null : (string)res;
+            },
+            cancellationToken);
+
+        return snapshotId is not null
+            ? ReadSnapshot(snapshotId, cancellationToken)
+            : null;
+    }
+
+    public EffectiveConfigurationSnapshot? ReadSnapshot(
+        string snapshotId,
+        CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        ArgumentException.ThrowIfNullOrWhiteSpace(snapshotId);
+
+        return database.ExecuteTransaction(
+            (connection, transaction) =>
+            {
+                using SqliteCommand cmd = connection.CreateCommand();
+                cmd.Transaction = transaction;
+                cmd.CommandText = $"""
+                    SELECT snapshot_id, generation, created_at_utc, setting_catalogue_revision,
+                           setting_catalogue_sha256, product_defaults_revision, product_defaults_sha256,
+                           policy_catalogue_revision, policy_catalogue_sha256, user_profile_id,
+                           user_profile_revision, project_id, project_generation, project_content_hash,
+                           policy_receipt_hash
+                      FROM {ConfigurationDatabaseSchema.EffectiveSnapshotTable}
+                     WHERE snapshot_id = $snapshot_id;
+                    """;
+                cmd.Parameters.AddWithValue("$snapshot_id", snapshotId);
+
+                using SqliteDataReader reader = cmd.ExecuteReader();
+                if (!reader.Read())
+                {
+                    return null;
+                }
+
+                string id = reader.GetString(0);
+                uint gen = (uint)reader.GetInt64(1);
+                DateTimeOffset created = DateTimeOffset.Parse(reader.GetString(2), CultureInfo.InvariantCulture);
+                uint setRev = (uint)reader.GetInt64(3);
+                string setSha = reader.GetString(4);
+                uint defRev = (uint)reader.GetInt64(5);
+                string defSha = reader.GetString(6);
+                uint polRev = (uint)reader.GetInt64(7);
+                string polSha = reader.GetString(8);
+                string? userProfId = reader.IsDBNull(9) ? null : reader.GetString(9);
+                uint? userProfRev = reader.IsDBNull(10) ? null : (uint?)reader.GetInt64(10);
+                string? projId = reader.IsDBNull(11) ? null : reader.GetString(11);
+                uint? projGen = reader.IsDBNull(12) ? null : (uint?)reader.GetInt64(12);
+                string? projHash = reader.IsDBNull(13) ? null : reader.GetString(13);
+                string receiptHash = reader.GetString(14);
+
+                List<EffectiveSettingEntry> entries = [];
+                using SqliteCommand entriesCmd = connection.CreateCommand();
+                entriesCmd.Transaction = transaction;
+                entriesCmd.CommandText = $"""
+                    SELECT setting_id, definition_revision, requested_value_json,
+                           effective_value_json, winning_source, constrained_by_policy, policy_id
+                      FROM {ConfigurationDatabaseSchema.EffectiveEntryTable}
+                     WHERE snapshot_id = $snapshot_id;
+                    """;
+                entriesCmd.Parameters.AddWithValue("$snapshot_id", snapshotId);
+
+                using SqliteDataReader entriesReader = entriesCmd.ExecuteReader();
+                while (entriesReader.Read())
+                {
+                    entries.Add(new EffectiveSettingEntry(
+                        entriesReader.GetString(0),
+                        (uint)entriesReader.GetInt64(1),
+                        entriesReader.GetString(2),
+                        entriesReader.GetString(3),
+                        Enum.Parse<SettingSource>(entriesReader.GetString(4)),
+                        entriesReader.GetInt32(5) == 1,
+                        entriesReader.IsDBNull(6) ? null : entriesReader.GetString(6)));
+                }
+
+                return new EffectiveConfigurationSnapshot(
+                    id,
+                    gen,
+                    created,
+                    setRev,
+                    setSha,
+                    defRev,
+                    defSha,
+                    polRev,
+                    polSha,
+                    userProfId,
+                    userProfRev,
+                    projId,
+                    projGen,
+                    projHash,
+                    entries,
+                    receiptHash);
+            },
+            cancellationToken);
+    }
 }
