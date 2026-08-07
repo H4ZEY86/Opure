@@ -47,9 +47,9 @@ public sealed record SettingUiMetadata
     public bool Advanced { get; }
 }
 
-internal static class SettingDefinitionContract
+public static class SettingDefinitionContract
 {
-    internal static void ValidateDottedId(string value, string parameterName)
+    public static void ValidateDottedId(string value, string parameterName)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(value, parameterName);
         if (value.Length > 128)
@@ -72,7 +72,7 @@ internal static class SettingDefinitionContract
         }
     }
 
-    internal static bool IsStableToken(string? value)
+    public static bool IsStableToken(string? value)
     {
         return value is not null && value.Length is >= 1 and <= 64 &&
             char.IsAsciiLetterLower(value[0]) &&
@@ -82,7 +82,7 @@ internal static class SettingDefinitionContract
                 character is '-' or '_');
     }
 
-    internal static string ValidateAndCanonicaliseDefault(
+    public static string ValidateAndCanonicaliseDefault(
         string value,
         SettingValueTypeDefinition valueType,
         SettingNullSemantics nullSemantics)

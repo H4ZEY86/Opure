@@ -5,6 +5,7 @@
   </Folder>
   <Folder Name="/src/Configuration/">
     <Project Path="src/Configuration/Opure.Configuration.Contracts/Opure.Configuration.Contracts.csproj" />
+    <Project Path="src/Configuration/Opure.Configuration/Opure.Configuration.csproj" />
   </Folder>
   <Folder Name="/src/Desktop/">
     <Project Path="src/Desktop/Opure.Desktop.Contracts/Opure.Desktop.Contracts.csproj" />
@@ -61,6 +62,7 @@
   </Folder>
   <Folder Name="/tests/Configuration/">
     <Project Path="tests/Configuration/Opure.Configuration.Contracts.Tests/Opure.Configuration.Contracts.Tests.csproj" />
+    <Project Path="tests/Configuration/Opure.Configuration.Tests/Opure.Configuration.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Desktop/">
     <Project Path="tests/Desktop/Opure.Desktop.GatewayClient.Tests/Opure.Desktop.GatewayClient.Tests.csproj" />
