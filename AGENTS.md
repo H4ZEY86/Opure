@@ -1,4 +1,4 @@
-# Opure — Codex Project Context
+# Opure — Project Context
 
 ## Product
 
