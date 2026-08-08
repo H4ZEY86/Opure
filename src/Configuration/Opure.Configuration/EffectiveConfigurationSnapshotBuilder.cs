@@ -5,11 +5,18 @@ using Opure.Configuration.Contracts;
 namespace Opure.Configuration;
 
 /// <summary>
+/// Container holding the built snapshot and its full provenance traces.
+/// </summary>
+public sealed record EffectiveConfigurationSnapshotBuildResult(
+    EffectiveConfigurationSnapshot Snapshot,
+    IReadOnlyDictionary<string, EffectiveSettingProvenance> Provenances);
+
+/// <summary>
 /// Constructs immutable EffectiveConfigurationSnapshots from evaluated configuration state.
 /// </summary>
 public static class EffectiveConfigurationSnapshotBuilder
 {
-    public static EffectiveConfigurationSnapshot Build(
+    public static EffectiveConfigurationSnapshotBuildResult Build(
         SettingDefinitionCatalogue settingCatalogue,
         ProductDefaultsCatalogue productDefaults,
         PolicyDefinitionCatalogue policyCatalogue,
@@ -45,6 +52,7 @@ public static class EffectiveConfigurationSnapshotBuilder
             .ToDictionary(static d => d.SettingId, StringComparer.Ordinal);
 
         List<EffectiveSettingEntry> entries = [];
+        Dictionary<string, EffectiveSettingProvenance> provenances = [];
 
         foreach (KeyValuePair<string, KeyMergeResult> kvp in mergeResult.MergedSettings)
         {
@@ -72,9 +80,44 @@ public static class EffectiveConfigurationSnapshotBuilder
                 keyResult.WinningSource ?? SettingSource.ProductDefault,
                 constrained,
                 policyId));
+
+            List<EffectiveSettingProvenanceStep> mergeSteps = [];
+            foreach (MergeTraceEntry step in keyResult.Trace)
+            {
+                mergeSteps.Add(new EffectiveSettingProvenanceStep(
+                    step.Source,
+                    step.SourceIdentifier,
+                    step.ValueJson,
+                    step.Applied,
+                    step.Explanation));
+            }
+
+            List<EffectiveSettingPolicyDecision> policyDecisions = [];
+            if (keyEval is not null)
+            {
+                foreach (PolicyDecisionEntry decision in keyEval.AppliedDecisions)
+                {
+                    policyDecisions.Add(new EffectiveSettingPolicyDecision(
+                        decision.PolicyId,
+                        decision.ResultKind.ToString(),
+                        decision.Explanation));
+                }
+            }
+
+            provenances[settingId] = new EffectiveSettingProvenance(
+                settingId,
+                snapshotId,
+                keyResult.WinningSource ?? SettingSource.ProductDefault,
+                defRevision,
+                requestedVal,
+                effectiveVal,
+                mergeSteps,
+                policyDecisions,
+                constrained,
+                explanation: constrained ? "Constrained by policy" : "Applied by merge strategy");
         }
 
-        return new EffectiveConfigurationSnapshot(
+        EffectiveConfigurationSnapshot snapshot = new EffectiveConfigurationSnapshot(
             snapshotId,
             snapshotGeneration,
             DateTimeOffset.UtcNow,
@@ -91,6 +134,8 @@ public static class EffectiveConfigurationSnapshotBuilder
             projectSettings?.ContentHash,
             entries,
             policyReceipt.ReceiptHash);
+
+        return new EffectiveConfigurationSnapshotBuildResult(snapshot, provenances);
     }
 
     private static string GenerateSnapshotId(uint generation, string settingSha, string policyReceiptHash)

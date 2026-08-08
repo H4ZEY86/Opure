@@ -162,4 +162,58 @@ public sealed class ConfigurationService
 
         return items;
     }
+
+    /// <summary>
+    /// Retrieves the provenance trace for a specific setting from a snapshot, masking sensitive values.
+    /// </summary>
+    public EffectiveSettingProvenance? GetSettingProvenance(
+        string snapshotId,
+        string settingId,
+        CancellationToken cancellationToken = default)
+    {
+        EffectiveSettingProvenance? provenance = database.GetSettingProvenance(snapshotId, settingId, cancellationToken);
+        if (provenance is null)
+        {
+            return null;
+        }
+
+        // Retrieve setting definition to check sensitivity
+        SettingDefinition? def = settingCatalogue.Definitions.FirstOrDefault(d => d.SettingId == settingId);
+        bool isSensitive = def is not null &&
+                           (def.Sensitivity == SettingSensitivity.Confidential ||
+                            def.Sensitivity == SettingSensitivity.SecuritySensitive ||
+                            def.Sensitivity == SettingSensitivity.SecretReference ||
+                            def.Sensitivity == SettingSensitivity.ProhibitedSecretValue);
+
+        if (!isSensitive)
+        {
+            return provenance;
+        }
+
+        // Redact values
+        const string redacted = "\"***\"";
+
+        List<EffectiveSettingProvenanceStep> redactedMergeSteps = [];
+        foreach (EffectiveSettingProvenanceStep step in provenance.MergeSteps)
+        {
+            redactedMergeSteps.Add(new EffectiveSettingProvenanceStep(
+                step.Source,
+                step.SourceIdentifier,
+                redacted,
+                step.Applied,
+                step.Explanation));
+        }
+
+        return new EffectiveSettingProvenance(
+            provenance.SettingId,
+            provenance.SnapshotId,
+            provenance.RequestedSource,
+            provenance.DefinitionRevision,
+            redacted,
+            redacted,
+            redactedMergeSteps,
+            provenance.PolicyDecisions,
+            provenance.IsConstrainedByPolicy,
+            provenance.Explanation);
+    }
 }

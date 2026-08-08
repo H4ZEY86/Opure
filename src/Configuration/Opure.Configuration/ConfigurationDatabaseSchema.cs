@@ -26,7 +26,13 @@ public static class ConfigurationDatabaseSchema
                 sourceVersion: 1,
                 targetVersion: 2,
                 "Creates tables for effective configuration snapshots and current pointer.",
-                CreateV2SnapshotCommands())
+                CreateV2SnapshotCommands()),
+            new SqliteMigration(
+                "effective-provenance-v3",
+                sourceVersion: 2,
+                targetVersion: 3,
+                "Adds trace JSON columns to effective configuration entries.",
+                CreateV3ProvenanceCommands())
         ];
 
         List<SqliteSchemaValidation> validations =
@@ -40,7 +46,12 @@ public static class ConfigurationDatabaseSchema
                 "effective-snapshot-tables-present",
                 minimumSchemaVersion: 2,
                 $"SELECT COUNT(*) FROM sqlite_schema WHERE type = 'table' AND name IN ('{EffectiveSnapshotTable}', '{EffectiveEntryTable}', '{CurrentSnapshotPointerTable}')",
-                "3")
+                "3"),
+            new SqliteSchemaValidation(
+                "effective-provenance-columns-present",
+                minimumSchemaVersion: 3,
+                $"SELECT COUNT(*) FROM pragma_table_info('{EffectiveEntryTable}') WHERE name IN ('merge_trace_json', 'policy_trace_json')",
+                "2")
         ];
 
         return new SqliteMigrationCatalogue(migrations, validations);
@@ -130,5 +141,11 @@ public static class ConfigurationDatabaseSchema
             FOREIGN KEY (snapshot_id) REFERENCES {EffectiveSnapshotTable} (snapshot_id)
         ) STRICT
         """
+    ];
+
+    private static string[] CreateV3ProvenanceCommands() =>
+    [
+        $"ALTER TABLE {EffectiveEntryTable} ADD COLUMN merge_trace_json TEXT NULL",
+        $"ALTER TABLE {EffectiveEntryTable} ADD COLUMN policy_trace_json TEXT NULL"
     ];
 }

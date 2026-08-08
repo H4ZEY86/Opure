@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.Data.Sqlite;
 using Opure.Configuration.Contracts;
 using Opure.Persistence.Sqlite;
+using System.Text.Json;
 
 namespace Opure.Configuration;
 
@@ -362,13 +363,15 @@ public sealed class ConfigurationDatabase : IDisposable
     }
 
     public void SaveSnapshot(
-        EffectiveConfigurationSnapshot snapshot,
+        EffectiveConfigurationSnapshotBuildResult buildResult,
         string scope = "Runtime",
         CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(disposed, this);
-        ArgumentNullException.ThrowIfNull(snapshot);
+        ArgumentNullException.ThrowIfNull(buildResult);
         ArgumentException.ThrowIfNullOrWhiteSpace(scope);
+
+        EffectiveConfigurationSnapshot snapshot = buildResult.Snapshot;
 
         _ = database.ExecuteTransaction(
             (connection, transaction) =>
@@ -417,10 +420,12 @@ public sealed class ConfigurationDatabase : IDisposable
                     entryCmd.CommandText = $"""
                         INSERT INTO {ConfigurationDatabaseSchema.EffectiveEntryTable} (
                             snapshot_id, setting_id, definition_revision, requested_value_json,
-                            effective_value_json, winning_source, constrained_by_policy, policy_id
+                            effective_value_json, winning_source, constrained_by_policy, policy_id,
+                            merge_trace_json, policy_trace_json
                         ) VALUES (
                             $snapshot_id, $setting_id, $definition_revision, $requested_value_json,
-                            $effective_value_json, $winning_source, $constrained_by_policy, $policy_id
+                            $effective_value_json, $winning_source, $constrained_by_policy, $policy_id,
+                            $merge_trace_json, $policy_trace_json
                         );
                         """;
                     entryCmd.Parameters.AddWithValue("$snapshot_id", snapshot.SnapshotId);
@@ -431,6 +436,18 @@ public sealed class ConfigurationDatabase : IDisposable
                     entryCmd.Parameters.AddWithValue("$winning_source", entry.WinningSource.ToString());
                     entryCmd.Parameters.AddWithValue("$constrained_by_policy", entry.ConstrainedByPolicy ? 1 : 0);
                     entryCmd.Parameters.AddWithValue("$policy_id", (object?)entry.PolicyId ?? DBNull.Value);
+
+                    if (buildResult.Provenances.TryGetValue(entry.SettingId, out EffectiveSettingProvenance? prov))
+                    {
+                        entryCmd.Parameters.AddWithValue("$merge_trace_json", JsonSerializer.Serialize(prov.MergeSteps));
+                        entryCmd.Parameters.AddWithValue("$policy_trace_json", JsonSerializer.Serialize(prov.PolicyDecisions));
+                    }
+                    else
+                    {
+                        entryCmd.Parameters.AddWithValue("$merge_trace_json", DBNull.Value);
+                        entryCmd.Parameters.AddWithValue("$policy_trace_json", DBNull.Value);
+                    }
+
                     _ = entryCmd.ExecuteNonQuery();
                 }
 
@@ -570,6 +587,78 @@ public sealed class ConfigurationDatabase : IDisposable
                     projHash,
                     entries,
                     receiptHash);
+            },
+            cancellationToken);
+    }
+
+    public EffectiveSettingProvenance? GetSettingProvenance(
+        string snapshotId,
+        string settingId,
+        CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        ArgumentException.ThrowIfNullOrWhiteSpace(snapshotId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(settingId);
+
+        return database.ExecuteTransaction(
+            (connection, transaction) =>
+            {
+                using SqliteCommand cmd = connection.CreateCommand();
+                cmd.Transaction = transaction;
+                cmd.CommandText = $"""
+                    SELECT definition_revision, requested_value_json, effective_value_json,
+                           winning_source, constrained_by_policy, merge_trace_json, policy_trace_json
+                      FROM {ConfigurationDatabaseSchema.EffectiveEntryTable}
+                     WHERE snapshot_id = $snapshot_id AND setting_id = $setting_id;
+                    """;
+                cmd.Parameters.AddWithValue("$snapshot_id", snapshotId);
+                cmd.Parameters.AddWithValue("$setting_id", settingId);
+
+                using SqliteDataReader reader = cmd.ExecuteReader();
+                if (!reader.Read())
+                {
+                    return null;
+                }
+
+                uint defRev = (uint)reader.GetInt64(0);
+                string reqVal = reader.GetString(1);
+                string effVal = reader.GetString(2);
+                SettingSource winSource = Enum.Parse<SettingSource>(reader.GetString(3));
+                bool constrained = reader.GetInt32(4) == 1;
+
+                List<EffectiveSettingProvenanceStep> mergeSteps = [];
+                if (!reader.IsDBNull(5))
+                {
+                    string mergeJson = reader.GetString(5);
+                    List<EffectiveSettingProvenanceStep>? steps = JsonSerializer.Deserialize<List<EffectiveSettingProvenanceStep>>(mergeJson);
+                    if (steps is not null)
+                    {
+                        mergeSteps.AddRange(steps);
+                    }
+                }
+
+                List<EffectiveSettingPolicyDecision> policyDecisions = [];
+                if (!reader.IsDBNull(6))
+                {
+                    string policyJson = reader.GetString(6);
+                    List<EffectiveSettingPolicyDecision>? decisions = JsonSerializer.Deserialize<List<EffectiveSettingPolicyDecision>>(policyJson);
+                    if (decisions is not null)
+                    {
+                        policyDecisions.AddRange(decisions);
+                    }
+                }
+
+                return new EffectiveSettingProvenance(
+                    settingId,
+                    snapshotId,
+                    winSource,
+                    defRev,
+                    reqVal,
+                    effVal,
+                    mergeSteps,
+                    policyDecisions,
+                    constrained,
+                    explanation: constrained ? "Constrained by policy" : "Applied by merge strategy");
             },
             cancellationToken);
     }

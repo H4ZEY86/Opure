@@ -64,7 +64,7 @@ public sealed class EffectiveConfigurationSnapshotTests : IDisposable
         SettingMergeResult mergeResult = SettingMerger.Merge(settingCatalogue, productDefaults, userProfile);
         ProductPolicyEvaluationReceipt policyReceipt = ProductPolicyEvaluator.Evaluate(policyCatalogue, settingCatalogue, mergeResult);
 
-        EffectiveConfigurationSnapshot snapshot = EffectiveConfigurationSnapshotBuilder.Build(
+        var buildResult = EffectiveConfigurationSnapshotBuilder.Build(
             settingCatalogue,
             productDefaults,
             policyCatalogue,
@@ -72,14 +72,14 @@ public sealed class EffectiveConfigurationSnapshotTests : IDisposable
             policyReceipt,
             userProfile);
 
-        Assert.Equal(32, snapshot.SnapshotId.Length);
-        Assert.Equal(1u, snapshot.SnapshotGeneration);
-        Assert.Equal(settingCatalogue.CatalogueRevision, snapshot.SettingCatalogueRevision);
-        Assert.Equal(productDefaults.CatalogueRevision, snapshot.ProductDefaultsRevision);
-        Assert.Equal(policyCatalogue.CatalogueRevision, snapshot.PolicyCatalogueRevision);
-        Assert.Equal("user.base", snapshot.UserProfileId);
-        Assert.NotEmpty(snapshot.CanonicalSha256);
-        Assert.NotEmpty(snapshot.Entries);
+        Assert.Equal(32, buildResult.Snapshot.SnapshotId.Length);
+        Assert.Equal(1u, buildResult.Snapshot.SnapshotGeneration);
+        Assert.Equal(settingCatalogue.CatalogueRevision, buildResult.Snapshot.SettingCatalogueRevision);
+        Assert.Equal(productDefaults.CatalogueRevision, buildResult.Snapshot.ProductDefaultsRevision);
+        Assert.Equal(policyCatalogue.CatalogueRevision, buildResult.Snapshot.PolicyCatalogueRevision);
+        Assert.Equal("user.base", buildResult.Snapshot.UserProfileId);
+        Assert.NotEmpty(buildResult.Snapshot.CanonicalSha256);
+        Assert.NotEmpty(buildResult.Snapshot.Entries);
     }
 
     [Fact]
@@ -94,7 +94,7 @@ public sealed class EffectiveConfigurationSnapshotTests : IDisposable
         SettingMergeResult mergeResult = SettingMerger.Merge(settingCatalogue, productDefaults, userProfile);
         ProductPolicyEvaluationReceipt policyReceipt = ProductPolicyEvaluator.Evaluate(policyCatalogue, settingCatalogue, mergeResult);
 
-        EffectiveConfigurationSnapshot snapshot = EffectiveConfigurationSnapshotBuilder.Build(
+        var buildResult = EffectiveConfigurationSnapshotBuilder.Build(
             settingCatalogue,
             productDefaults,
             policyCatalogue,
@@ -102,7 +102,7 @@ public sealed class EffectiveConfigurationSnapshotTests : IDisposable
             policyReceipt,
             userProfile);
 
-        Assert.True(snapshot.Entries.TryGetValue("runtime.performance.default-mode", out EffectiveSettingEntry? entry));
+        Assert.True(buildResult.Snapshot.Entries.TryGetValue("runtime.performance.default-mode", out EffectiveSettingEntry? entry));
         Assert.NotNull(entry);
         Assert.Equal("\"unsupported-cloud-mode\"", entry.RequestedValueJson);
         Assert.Equal("\"balanced\"", entry.EffectiveValueJson);
@@ -118,7 +118,7 @@ public sealed class EffectiveConfigurationSnapshotTests : IDisposable
         SettingMergeResult mergeResult = SettingMerger.Merge(settingCatalogue, productDefaults, userProfile);
         ProductPolicyEvaluationReceipt policyReceipt = ProductPolicyEvaluator.Evaluate(policyCatalogue, settingCatalogue, mergeResult);
 
-        EffectiveConfigurationSnapshot snapshot = EffectiveConfigurationSnapshotBuilder.Build(
+        var buildResult = EffectiveConfigurationSnapshotBuilder.Build(
             settingCatalogue,
             productDefaults,
             policyCatalogue,
@@ -126,13 +126,13 @@ public sealed class EffectiveConfigurationSnapshotTests : IDisposable
             policyReceipt,
             userProfile);
 
-        db.SaveSnapshot(snapshot, scope: "Runtime", cancellationToken: TestContext.Current.CancellationToken);
+        db.SaveSnapshot(buildResult, scope: "Runtime", cancellationToken: TestContext.Current.CancellationToken);
 
         EffectiveConfigurationSnapshot? current = db.GetCurrentSnapshot(scope: "Runtime", cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotNull(current);
-        Assert.Equal(snapshot.SnapshotId, current.SnapshotId);
-        Assert.Equal(snapshot.CanonicalSha256, current.CanonicalSha256);
-        Assert.Equal(snapshot.Entries.Count, current.Entries.Count);
+        Assert.Equal(buildResult.Snapshot.SnapshotId, current.SnapshotId);
+        Assert.Equal(buildResult.Snapshot.CanonicalSha256, current.CanonicalSha256);
+        Assert.Equal(buildResult.Snapshot.Entries.Count, current.Entries.Count);
     }
 
     [Fact]
@@ -145,7 +145,7 @@ public sealed class EffectiveConfigurationSnapshotTests : IDisposable
         SettingMergeResult mergeResult = SettingMerger.Merge(settingCatalogue, productDefaults, userProfile);
         ProductPolicyEvaluationReceipt policyReceipt = ProductPolicyEvaluator.Evaluate(policyCatalogue, settingCatalogue, mergeResult);
 
-        EffectiveConfigurationSnapshot initialSnapshot = EffectiveConfigurationSnapshotBuilder.Build(
+        var initialBuildResult = EffectiveConfigurationSnapshotBuilder.Build(
             settingCatalogue,
             productDefaults,
             policyCatalogue,
@@ -153,7 +153,7 @@ public sealed class EffectiveConfigurationSnapshotTests : IDisposable
             policyReceipt,
             userProfile);
 
-        db.SaveSnapshot(initialSnapshot, scope: "Runtime", cancellationToken: TestContext.Current.CancellationToken);
+        db.SaveSnapshot(initialBuildResult, scope: "Runtime", cancellationToken: TestContext.Current.CancellationToken);
 
         // 2. Attempt failed policy evaluation (secret in config violation)
         var invalidProfile = CreateProfile(new Dictionary<string, string>
@@ -178,7 +178,7 @@ public sealed class EffectiveConfigurationSnapshotTests : IDisposable
         // Current snapshot in database MUST remain initialSnapshot
         EffectiveConfigurationSnapshot? current = db.GetCurrentSnapshot(scope: "Runtime", cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotNull(current);
-        Assert.Equal(initialSnapshot.SnapshotId, current.SnapshotId);
+        Assert.Equal(initialBuildResult.Snapshot.SnapshotId, current.SnapshotId);
     }
 
     [Fact]
@@ -188,7 +188,7 @@ public sealed class EffectiveConfigurationSnapshotTests : IDisposable
         SettingMergeResult mergeResult = SettingMerger.Merge(settingCatalogue, productDefaults, userProfile);
         ProductPolicyEvaluationReceipt policyReceipt = ProductPolicyEvaluator.Evaluate(policyCatalogue, settingCatalogue, mergeResult);
 
-        EffectiveConfigurationSnapshot s1 = EffectiveConfigurationSnapshotBuilder.Build(
+        var buildResult1 = EffectiveConfigurationSnapshotBuilder.Build(
             settingCatalogue,
             productDefaults,
             policyCatalogue,
@@ -197,7 +197,7 @@ public sealed class EffectiveConfigurationSnapshotTests : IDisposable
             userProfile,
             customSnapshotId: "11111111111111111111111111111111");
 
-        EffectiveConfigurationSnapshot s2 = EffectiveConfigurationSnapshotBuilder.Build(
+        var buildResult2 = EffectiveConfigurationSnapshotBuilder.Build(
             settingCatalogue,
             productDefaults,
             policyCatalogue,
@@ -206,7 +206,7 @@ public sealed class EffectiveConfigurationSnapshotTests : IDisposable
             userProfile,
             customSnapshotId: "11111111111111111111111111111111");
 
-        Assert.Equal(s1.CanonicalSha256, s2.CanonicalSha256);
+        Assert.Equal(buildResult1.Snapshot.CanonicalSha256, buildResult2.Snapshot.CanonicalSha256);
     }
 
     [Fact]
@@ -221,7 +221,7 @@ public sealed class EffectiveConfigurationSnapshotTests : IDisposable
             SettingMergeResult mergeResult = SettingMerger.Merge(settingCatalogue, productDefaults, userProfile);
             ProductPolicyEvaluationReceipt policyReceipt = ProductPolicyEvaluator.Evaluate(policyCatalogue, settingCatalogue, mergeResult);
 
-            EffectiveConfigurationSnapshot snapshot = EffectiveConfigurationSnapshotBuilder.Build(
+            var buildResult = EffectiveConfigurationSnapshotBuilder.Build(
                 settingCatalogue,
                 productDefaults,
                 policyCatalogue,
@@ -229,10 +229,10 @@ public sealed class EffectiveConfigurationSnapshotTests : IDisposable
                 policyReceipt,
                 userProfile);
 
-            snapshotId = snapshot.SnapshotId;
-            canonicalHash = snapshot.CanonicalSha256;
+            snapshotId = buildResult.Snapshot.SnapshotId;
+            canonicalHash = buildResult.Snapshot.CanonicalSha256;
 
-            db1.SaveSnapshot(snapshot, scope: "Runtime", cancellationToken: TestContext.Current.CancellationToken);
+            db1.SaveSnapshot(buildResult, scope: "Runtime", cancellationToken: TestContext.Current.CancellationToken);
         }
 
         // Re-open database (simulating restart)
