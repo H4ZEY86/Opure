@@ -21,7 +21,7 @@ public sealed class NamedPipeProjectListTransportTests
             Guid.NewGuid().ToString("N"));
         RuntimeHealthSessionMaterial material = RuntimeHealthSessionMaterial.Create();
         StaticProjectListHandler handler = new();
-        await using NamedPipeRuntimeHealthServer server = await NamedPipeRuntimeHealthServer.StartAsync(
+        await using NamedPipeGatewayServer server = await NamedPipeGatewayServer.StartAsync(
             endpoint,
             new StaticHealthHandler(endpoint.RuntimeBootId),
             new RuntimeHealthSessionPolicy(material, DateTimeOffset.UtcNow.AddMinutes(5)),

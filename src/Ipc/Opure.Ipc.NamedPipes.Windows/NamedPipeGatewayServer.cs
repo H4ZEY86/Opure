@@ -14,17 +14,21 @@ using Opure.Observability.Contracts;
 using Opure.Project.Protocol;
 using Opure.Project.Protocol.Open.V1;
 using Opure.Project.Protocol.List.V1;
+using Opure.TrustEvidence.Protocol;
+using Opure.TrustEvidence.Protocol.Overview.V1;
+using Opure.TrustEvidence.Protocol.Project.V1;
+using Opure.TrustEvidence.Protocol.Configuration.V1;
 using Opure.Runtime.Contracts;
 using Opure.Runtime.Contracts.Health.V1;
 using Opure.Runtime.Contracts.Registry.V1;
 
 namespace Opure.Ipc.NamedPipes.Windows;
 
-public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
+public sealed class NamedPipeGatewayServer : IRuntimeHealthTransportHost
 {
     private readonly WebApplication application;
 
-    private NamedPipeRuntimeHealthServer(
+    private NamedPipeGatewayServer(
         RuntimeHealthEndpoint endpoint,
         WebApplication application)
     {
@@ -34,7 +38,7 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
 
     public RuntimeHealthEndpoint Endpoint { get; }
 
-    public static async Task<NamedPipeRuntimeHealthServer> StartAsync(
+    public static async Task<NamedPipeGatewayServer> StartAsync(
         RuntimeHealthEndpoint endpoint,
         IRuntimeHealthRequestHandler requestHandler,
         RuntimeHealthSessionPolicy sessionPolicy,
@@ -44,7 +48,10 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
         IRuntimeServiceRegistryRequestHandler? registryRequestHandler = null,
         Func<RuntimeHealthTraceCompletion, ValueTask>? traceEventSink = null,
         IProjectOpenRequestHandler? projectOpenRequestHandler = null,
-        IProjectListRequestHandler? projectListRequestHandler = null)
+        IProjectListRequestHandler? projectListRequestHandler = null,
+        ITrustOverviewRequestHandler? trustOverviewRequestHandler = null,
+        ITrustProjectRequestHandler? trustProjectRequestHandler = null,
+        ITrustConfigurationRequestHandler? trustConfigurationRequestHandler = null)
     {
         ArgumentNullException.ThrowIfNull(endpoint);
         ArgumentNullException.ThrowIfNull(requestHandler);
@@ -80,15 +87,27 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
                     RuntimeHealthContractPolicy.MaximumRequestBytes,
                     RuntimeServiceRegistryContractPolicy.MaximumRequestBytes),
                 Math.Max(
-                    ProjectOpenContractPolicy.MaximumRequestBytes,
-                    ProjectListContractPolicy.MaximumRequestBytes));
+                    Math.Max(
+                        ProjectOpenContractPolicy.MaximumRequestBytes,
+                        ProjectListContractPolicy.MaximumRequestBytes),
+                    Math.Max(
+                        TrustOverviewContractPolicy.MaximumRequestBytes,
+                        Math.Max(
+                            TrustProjectContractPolicy.MaximumRequestBytes,
+                            TrustConfigurationContractPolicy.MaximumRequestBytes))));
             options.MaxWriteBufferSize = Math.Max(
                 Math.Max(
                     RuntimeHealthContractPolicy.MaximumResponseBytes,
                     RuntimeServiceRegistryContractPolicy.MaximumResponseBytes),
                 Math.Max(
-                    ProjectOpenContractPolicy.MaximumResponseBytes,
-                    ProjectListContractPolicy.MaximumResponseBytes));
+                    Math.Max(
+                        ProjectOpenContractPolicy.MaximumResponseBytes,
+                        ProjectListContractPolicy.MaximumResponseBytes),
+                    Math.Max(
+                        TrustOverviewContractPolicy.MaximumResponseBytes,
+                        Math.Max(
+                            TrustProjectContractPolicy.MaximumResponseBytes,
+                            TrustConfigurationContractPolicy.MaximumResponseBytes))));
         });
         builder.WebHost.UseKestrel(options =>
         {
@@ -111,6 +130,18 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
         {
             builder.Services.AddSingleton(projectListRequestHandler);
         }
+        if (trustOverviewRequestHandler is not null)
+        {
+            builder.Services.AddSingleton(trustOverviewRequestHandler);
+        }
+        if (trustProjectRequestHandler is not null)
+        {
+            builder.Services.AddSingleton(trustProjectRequestHandler);
+        }
+        if (trustConfigurationRequestHandler is not null)
+        {
+            builder.Services.AddSingleton(trustConfigurationRequestHandler);
+        }
         builder.Services.AddSingleton(new RuntimeHealthSessionAuthenticator(
             endpoint,
             sessionPolicy,
@@ -125,15 +156,27 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
                     RuntimeHealthContractPolicy.MaximumRequestBytes,
                     RuntimeServiceRegistryContractPolicy.MaximumRequestBytes),
                 Math.Max(
-                    ProjectOpenContractPolicy.MaximumRequestBytes,
-                    ProjectListContractPolicy.MaximumRequestBytes));
+                    Math.Max(
+                        ProjectOpenContractPolicy.MaximumRequestBytes,
+                        ProjectListContractPolicy.MaximumRequestBytes),
+                    Math.Max(
+                        TrustOverviewContractPolicy.MaximumRequestBytes,
+                        Math.Max(
+                            TrustProjectContractPolicy.MaximumRequestBytes,
+                            TrustConfigurationContractPolicy.MaximumRequestBytes))));
             options.MaxSendMessageSize = Math.Max(
                 Math.Max(
                     RuntimeHealthContractPolicy.MaximumResponseBytes,
                     RuntimeServiceRegistryContractPolicy.MaximumResponseBytes),
                 Math.Max(
-                    ProjectOpenContractPolicy.MaximumResponseBytes,
-                    ProjectListContractPolicy.MaximumResponseBytes));
+                    Math.Max(
+                        ProjectOpenContractPolicy.MaximumResponseBytes,
+                        ProjectListContractPolicy.MaximumResponseBytes),
+                    Math.Max(
+                        TrustOverviewContractPolicy.MaximumResponseBytes,
+                        Math.Max(
+                            TrustProjectContractPolicy.MaximumResponseBytes,
+                            TrustConfigurationContractPolicy.MaximumResponseBytes))));
             options.Interceptors.Add<RuntimeHealthAuthenticationInterceptor>();
         });
 
@@ -153,11 +196,23 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
         {
             application.MapGrpcService<ProjectListGrpcService>();
         }
+        if (trustOverviewRequestHandler is not null)
+        {
+            application.MapGrpcService<TrustOverviewGrpcService>();
+        }
+        if (trustProjectRequestHandler is not null)
+        {
+            application.MapGrpcService<TrustProjectGrpcService>();
+        }
+        if (trustConfigurationRequestHandler is not null)
+        {
+            application.MapGrpcService<TrustConfigurationGrpcService>();
+        }
 
         try
         {
             await application.StartAsync(cancellationToken).ConfigureAwait(false);
-            return new NamedPipeRuntimeHealthServer(endpoint, application);
+            return new NamedPipeGatewayServer(endpoint, application);
         }
         catch
         {
@@ -556,6 +611,63 @@ public sealed class NamedPipeRuntimeHealthServer : IRuntimeHealthTransportHost
                     StatusCode.ResourceExhausted,
                     "The Project List request exceeded its transport limit."));
             }
+        }
+    }
+
+    private sealed class TrustOverviewGrpcService(
+        ITrustOverviewRequestHandler requestHandler)
+        : TrustOverviewService.TrustOverviewServiceBase
+    {
+        public override Task<TrustOverviewResponseMessage> QueryOverview(
+            TrustOverviewRequestMessage request,
+            ServerCallContext context)
+        {
+            if (request.CalculateSize() > TrustOverviewContractPolicy.MaximumRequestBytes)
+            {
+                throw new RpcException(new Status(
+                    StatusCode.ResourceExhausted,
+                    "The Trust Overview request exceeded its transport limit."));
+            }
+
+            return requestHandler.HandleAsync(request, context.CancellationToken);
+        }
+    }
+
+    private sealed class TrustProjectGrpcService(
+        ITrustProjectRequestHandler requestHandler)
+        : TrustProjectService.TrustProjectServiceBase
+    {
+        public override Task<TrustProjectResponseMessage> QueryProject(
+            TrustProjectRequestMessage request,
+            ServerCallContext context)
+        {
+            if (request.CalculateSize() > TrustProjectContractPolicy.MaximumRequestBytes)
+            {
+                throw new RpcException(new Status(
+                    StatusCode.ResourceExhausted,
+                    "The Trust Project request exceeded its transport limit."));
+            }
+
+            return requestHandler.HandleAsync(request, context.CancellationToken);
+        }
+    }
+
+    private sealed class TrustConfigurationGrpcService(
+        ITrustConfigurationRequestHandler requestHandler)
+        : TrustConfigurationService.TrustConfigurationServiceBase
+    {
+        public override Task<TrustConfigurationResponseMessage> QueryConfiguration(
+            TrustConfigurationRequestMessage request,
+            ServerCallContext context)
+        {
+            if (request.CalculateSize() > TrustConfigurationContractPolicy.MaximumRequestBytes)
+            {
+                throw new RpcException(new Status(
+                    StatusCode.ResourceExhausted,
+                    "The Trust Configuration request exceeded its transport limit."));
+            }
+
+            return requestHandler.HandleAsync(request, context.CancellationToken);
         }
     }
 

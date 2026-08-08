@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+package opure.trust.overview.v1;
+
+option csharp_namespace = "Opure.TrustEvidence.Protocol.Overview.V1";
+
+service TrustOverviewService {
+  rpc QueryOverview(TrustOverviewRequestMessage) returns (TrustOverviewResponseMessage);
+}
+
+message TrustOverviewRequestMessage {
+  uint32 contract_revision = 1;
+  string query_id = 2;
+  TrustEvidenceReleaseChannel release_channel = 3;
+  string project_id = 4;
+  int64 from_unix_time_milliseconds = 5;
+  int64 to_unix_time_milliseconds = 6;
+}
+
+message TrustOverviewResponseMessage {
+  uint32 contract_revision = 1;
+  TrustEvidenceQueryDisposition disposition = 2;
+  TrustOverviewSnapshotMessage snapshot = 3;
+  string stable_code = 4;
+  string safe_detail = 5;
+}
+
+message TrustOverviewSnapshotMessage {
+  string query_id = 1;
+  int64 calculated_at_unix_time_milliseconds = 2;
+  string projection_generation = 3;
+  int64 projection_updated_at_unix_time_milliseconds = 4;
+  TrustEvidenceOwnerAvailability owner_availability = 5;
+  TrustEvidenceQueryCompleteness completeness = 6;
+  string effective_filters_sha256 = 7;
+  int32 total_record_count = 8;
+  int32 unique_project_count = 9;
+  int32 unique_service_count = 10;
+  int32 unverified_record_count = 11;
+  int32 known_gap_count = 12;
+  repeated TrustOverviewMetricMessage metrics = 13;
+}
+
+message TrustOverviewMetricMessage {
+  EvidenceAuthorityClass authority_class = 1;
+  int32 record_count = 2;
+}
+
+enum TrustEvidenceReleaseChannel {
+  TRUST_EVIDENCE_RELEASE_CHANNEL_UNSPECIFIED = 0;
+  TRUST_EVIDENCE_RELEASE_CHANNEL_DEVELOPMENT = 1;
+  TRUST_EVIDENCE_RELEASE_CHANNEL_PREVIEW = 2;
+  TRUST_EVIDENCE_RELEASE_CHANNEL_STABLE = 3;
+}
+
+enum TrustEvidenceQueryDisposition {
+  TRUST_EVIDENCE_QUERY_DISPOSITION_UNSPECIFIED = 0;
+  TRUST_EVIDENCE_QUERY_DISPOSITION_COMPUTED = 1;
+  TRUST_EVIDENCE_QUERY_DISPOSITION_REJECTED = 2;
+  TRUST_EVIDENCE_QUERY_DISPOSITION_NOT_READY = 3;
+  TRUST_EVIDENCE_QUERY_DISPOSITION_NO_AUTHORITATIVE_EVIDENCE = 4;
+}
+
+enum TrustEvidenceOwnerAvailability {
+  TRUST_EVIDENCE_OWNER_AVAILABILITY_UNSPECIFIED = 0;
+  TRUST_EVIDENCE_OWNER_AVAILABILITY_AVAILABLE = 1;
+  TRUST_EVIDENCE_OWNER_AVAILABILITY_UNAVAILABLE = 2;
+  TRUST_EVIDENCE_OWNER_AVAILABILITY_PROCESSING = 3;
+}
+
+enum TrustEvidenceQueryCompleteness {
+  TRUST_EVIDENCE_QUERY_COMPLETENESS_UNSPECIFIED = 0;
+  TRUST_EVIDENCE_QUERY_COMPLETENESS_COMPLETE = 1;
+  TRUST_EVIDENCE_QUERY_COMPLETENESS_PARTIAL = 2;
+  TRUST_EVIDENCE_QUERY_COMPLETENESS_UNKNOWN = 3;
+}
+
+enum EvidenceAuthorityClass {
+  EVIDENCE_AUTHORITY_CLASS_UNSPECIFIED = 0;
+  EVIDENCE_AUTHORITY_CLASS_LOCAL_USER = 1;
+  EVIDENCE_AUTHORITY_CLASS_LOCAL_SERVICE = 2;
+  EVIDENCE_AUTHORITY_CLASS_REMOTE_PROVIDER = 3;
+  EVIDENCE_AUTHORITY_CLASS_SYSTEM = 4;
+}

@@ -13,6 +13,12 @@ public static class RuntimeHealthGatewayClient
         return new ProjectListGatewaySource(releaseChannel);
     }
 
+    public static IDesktopConfigurationSource CreateTrustConfigurationSource(string releaseChannel)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(releaseChannel);
+        return new TrustConfigurationGatewaySource(releaseChannel);
+    }
+
     public static IVerifiedWorkspaceRootReceiver CreateProjectRootReceiver(
         string releaseChannel)
     {

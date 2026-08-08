@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" />
+    <PackageReference Include="Grpc.Core.Api" />
+    <PackageReference Include="Grpc.Tools">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Protobuf
+      Include="Protos\overview\trust_overview.proto"
+      ProtoRoot="Protos"
+      GrpcServices="Both" />
+    <Protobuf
+      Include="Protos\project\trust_project.proto"
+      ProtoRoot="Protos"
+      GrpcServices="Both" />
+    <Protobuf
+      Include="Protos\configuration\trust_configuration.proto"
+      ProtoRoot="Protos"
+      GrpcServices="Both" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Opure.TrustEvidence.Contracts\Opure.TrustEvidence.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

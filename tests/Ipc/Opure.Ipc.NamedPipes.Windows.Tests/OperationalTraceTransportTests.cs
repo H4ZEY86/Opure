@@ -32,8 +32,8 @@ public sealed class OperationalTraceTransportTests
             OperationalTracePolicy.ForReleaseChannel("Development"));
         using ActivityListener collector = CreateCollector(stoppedActivities);
 
-        await using NamedPipeRuntimeHealthServer server =
-            await NamedPipeRuntimeHealthServer.StartAsync(
+        await using NamedPipeGatewayServer server =
+            await NamedPipeGatewayServer.StartAsync(
                 endpoint,
                 new StaticHealthHandler(endpoint.RuntimeBootId),
                 CreatePolicy(material),
@@ -113,8 +113,8 @@ public sealed class OperationalTraceTransportTests
         using OperationalTraceSession traceSession = new(
             OperationalTracePolicy.ForReleaseChannel("Development"));
 
-        await using NamedPipeRuntimeHealthServer server =
-            await NamedPipeRuntimeHealthServer.StartAsync(
+        await using NamedPipeGatewayServer server =
+            await NamedPipeGatewayServer.StartAsync(
                 endpoint,
                 new DelayedHealthHandler(),
                 CreatePolicy(material),
@@ -155,8 +155,8 @@ public sealed class OperationalTraceTransportTests
         using OperationalTraceSession traceSession = new(
             OperationalTracePolicy.ForReleaseChannel("Development"));
 
-        await using NamedPipeRuntimeHealthServer server =
-            await NamedPipeRuntimeHealthServer.StartAsync(
+        await using NamedPipeGatewayServer server =
+            await NamedPipeGatewayServer.StartAsync(
                 endpoint,
                 new ThrowingHealthHandler(),
                 CreatePolicy(material),
@@ -194,8 +194,8 @@ public sealed class OperationalTraceTransportTests
         using OperationalTraceSession traceSession = new(
             OperationalTracePolicy.ForReleaseChannel("Development"));
 
-        await using NamedPipeRuntimeHealthServer server =
-            await NamedPipeRuntimeHealthServer.StartAsync(
+        await using NamedPipeGatewayServer server =
+            await NamedPipeGatewayServer.StartAsync(
                 endpoint,
                 new StaticHealthHandler(endpoint.RuntimeBootId),
                 CreatePolicy(material),
@@ -227,8 +227,8 @@ public sealed class OperationalTraceTransportTests
         RuntimeHealthEndpoint endpoint = CreateEndpoint();
         RuntimeHealthSessionMaterial material = RuntimeHealthSessionMaterial.Create();
 
-        await using NamedPipeRuntimeHealthServer server =
-            await NamedPipeRuntimeHealthServer.StartAsync(
+        await using NamedPipeGatewayServer server =
+            await NamedPipeGatewayServer.StartAsync(
                 endpoint,
                 new StaticHealthHandler(endpoint.RuntimeBootId),
                 CreatePolicy(material),

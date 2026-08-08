@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package opure.trust.configuration.v1;
+
+import "overview/trust_overview.proto"; // for enums like TrustEvidenceReleaseChannel, TrustEvidenceQueryDisposition
+
+option csharp_namespace = "Opure.TrustEvidence.Protocol.Configuration.V1";
+
+service TrustConfigurationService {
+  rpc QueryConfiguration(TrustConfigurationRequestMessage) returns (TrustConfigurationResponseMessage);
+}
+
+message TrustConfigurationRequestMessage {
+  uint32 contract_revision = 1;
+  string query_id = 2;
+  opure.trust.overview.v1.TrustEvidenceReleaseChannel release_channel = 3;
+  string scope = 4;
+  string snapshot_id = 5;
+}
+
+message TrustConfigurationResponseMessage {
+  uint32 contract_revision = 1;
+  opure.trust.overview.v1.TrustEvidenceQueryDisposition disposition = 2;
+  TrustConfigurationSnapshotMessage snapshot = 3;
+  string stable_code = 4;
+  string safe_detail = 5;
+}
+
+message TrustConfigurationSnapshotMessage {
+  string query_id = 1;
+  string scope = 2;
+  string snapshot_id = 3;
+  int64 generation = 4;
+  int64 created_at_unix_time_milliseconds = 5;
+  int32 setting_catalogue_revision = 6;
+  string setting_catalogue_sha256 = 7;
+  int32 product_defaults_revision = 8;
+  string product_defaults_sha256 = 9;
+  int32 policy_catalogue_revision = 10;
+  string policy_catalogue_sha256 = 11;
+  string user_profile_id = 12;
+  int32 user_profile_revision = 13;
+  string project_id = 14;
+  int64 project_generation = 15;
+  string project_content_hash = 16;
+  string policy_receipt_hash = 17;
+  int64 latest_observed_generation = 18;
+  string latest_observed_content_hash = 19;
+  int64 latest_observed_at_unix_time_milliseconds = 20;
+  int64 latest_valid_generation = 21;
+  string latest_valid_content_hash = 22;
+  string latest_valid_snapshot_id = 23;
+  string last_error = 24;
+  repeated TrustConfigurationEntryMessage entries = 25;
+}
+
+message TrustConfigurationEntryMessage {
+  string setting_id = 1;
+  int32 definition_revision = 2;
+  string requested_value_json = 3;
+  string effective_value_json = 4;
+  string winning_source = 5;
+  bool constrained_by_policy = 6;
+  string policy_id = 7;
+  string merge_trace_json = 8;
+  string policy_trace_json = 9;
+}

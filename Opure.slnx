@@ -49,6 +49,7 @@
   </Folder>
   <Folder Name="/src/Trust/">
     <Project Path="src/Trust/Opure.TrustEvidence.Contracts/Opure.TrustEvidence.Contracts.csproj" />
+    <Project Path="src/Trust/Opure.TrustEvidence.Protocol/Opure.TrustEvidence.Protocol.csproj" />
     <Project Path="src/Trust/Opure.TrustEvidence.Service/Opure.TrustEvidence.Service.csproj" />
     <Project Path="src/Trust/Opure.TrustEvidence.Sqlite/Opure.TrustEvidence.Sqlite.csproj" />
   </Folder>

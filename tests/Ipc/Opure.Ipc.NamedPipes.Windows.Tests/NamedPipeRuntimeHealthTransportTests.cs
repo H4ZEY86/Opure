@@ -46,8 +46,8 @@ public sealed class NamedPipeRuntimeHealthTransportTests
         RuntimeHealthSessionMaterial material = RuntimeHealthSessionMaterial.Create();
         StaticHealthHandler requestHandler = new(endpoint.RuntimeBootId);
 
-        await using NamedPipeRuntimeHealthServer server =
-            await NamedPipeRuntimeHealthServer.StartAsync(
+        await using NamedPipeGatewayServer server =
+            await NamedPipeGatewayServer.StartAsync(
                 endpoint,
                 requestHandler,
                 CreatePolicy(material),
@@ -73,8 +73,8 @@ public sealed class NamedPipeRuntimeHealthTransportTests
         RuntimeHealthEndpoint endpoint = CreateEndpoint();
         RuntimeHealthSessionMaterial material = RuntimeHealthSessionMaterial.Create();
 
-        await using NamedPipeRuntimeHealthServer server =
-            await NamedPipeRuntimeHealthServer.StartAsync(
+        await using NamedPipeGatewayServer server =
+            await NamedPipeGatewayServer.StartAsync(
                 endpoint,
                 new StaticHealthHandler(endpoint.RuntimeBootId),
                 CreatePolicy(material),
@@ -110,8 +110,8 @@ public sealed class NamedPipeRuntimeHealthTransportTests
             DesktopSupervisorProjection.Disconnected,
             () => currentEndpoint,
             () => currentMaterial);
-        NamedPipeRuntimeHealthServer firstServer =
-            await NamedPipeRuntimeHealthServer.StartAsync(
+        NamedPipeGatewayServer firstServer =
+            await NamedPipeGatewayServer.StartAsync(
                 currentEndpoint,
                 new StaticHealthHandler(currentEndpoint.RuntimeBootId),
                 CreatePolicy(currentMaterial),
@@ -126,8 +126,8 @@ public sealed class NamedPipeRuntimeHealthTransportTests
         currentEndpoint = CreateEndpoint();
         currentMaterial = RuntimeHealthSessionMaterial.Create();
 
-        await using NamedPipeRuntimeHealthServer secondServer =
-            await NamedPipeRuntimeHealthServer.StartAsync(
+        await using NamedPipeGatewayServer secondServer =
+            await NamedPipeGatewayServer.StartAsync(
                 currentEndpoint,
                 new StaticHealthHandler(currentEndpoint.RuntimeBootId),
                 CreatePolicy(currentMaterial),
@@ -162,8 +162,8 @@ public sealed class NamedPipeRuntimeHealthTransportTests
         };
         expected.Registry.Services.Add(CreateRegistryDescriptor());
 
-        await using NamedPipeRuntimeHealthServer server =
-            await NamedPipeRuntimeHealthServer.StartAsync(
+        await using NamedPipeGatewayServer server =
+            await NamedPipeGatewayServer.StartAsync(
                 endpoint,
                 new StaticHealthHandler(endpoint.RuntimeBootId),
                 CreatePolicy(material),
@@ -247,8 +247,8 @@ public sealed class NamedPipeRuntimeHealthTransportTests
         RuntimeHealthSessionMaterial material = RuntimeHealthSessionMaterial.Create();
         DelayedHealthHandler requestHandler = new(TimeSpan.FromSeconds(5));
 
-        await using NamedPipeRuntimeHealthServer server =
-            await NamedPipeRuntimeHealthServer.StartAsync(
+        await using NamedPipeGatewayServer server =
+            await NamedPipeGatewayServer.StartAsync(
                 endpoint,
                 requestHandler,
                 CreatePolicy(material),
@@ -274,8 +274,8 @@ public sealed class NamedPipeRuntimeHealthTransportTests
         RuntimeHealthEndpoint endpoint = CreateEndpoint();
         RuntimeHealthSessionMaterial material = RuntimeHealthSessionMaterial.Create();
 
-        await using NamedPipeRuntimeHealthServer server =
-            await NamedPipeRuntimeHealthServer.StartAsync(
+        await using NamedPipeGatewayServer server =
+            await NamedPipeGatewayServer.StartAsync(
                 endpoint,
                 new ThrowingHealthHandler(),
                 CreatePolicy(material),
@@ -302,8 +302,8 @@ public sealed class NamedPipeRuntimeHealthTransportTests
         RuntimeHealthSessionMaterial material = RuntimeHealthSessionMaterial.Create();
         DelayedHealthHandler requestHandler = new(TimeSpan.FromSeconds(5));
 
-        await using NamedPipeRuntimeHealthServer server =
-            await NamedPipeRuntimeHealthServer.StartAsync(
+        await using NamedPipeGatewayServer server =
+            await NamedPipeGatewayServer.StartAsync(
                 endpoint,
                 requestHandler,
                 CreatePolicy(material),
@@ -334,8 +334,8 @@ public sealed class NamedPipeRuntimeHealthTransportTests
             firstEndpoint,
             firstMaterial);
 
-        await using (NamedPipeRuntimeHealthServer firstServer =
-            await NamedPipeRuntimeHealthServer.StartAsync(
+        await using (NamedPipeGatewayServer firstServer =
+            await NamedPipeGatewayServer.StartAsync(
                 firstEndpoint,
                 new StaticHealthHandler(firstEndpoint.RuntimeBootId),
                 CreatePolicy(firstMaterial),
@@ -352,8 +352,8 @@ public sealed class NamedPipeRuntimeHealthTransportTests
         RuntimeHealthSessionMaterial secondMaterial =
             RuntimeHealthSessionMaterial.Create();
 
-        await using NamedPipeRuntimeHealthServer secondServer =
-            await NamedPipeRuntimeHealthServer.StartAsync(
+        await using NamedPipeGatewayServer secondServer =
+            await NamedPipeGatewayServer.StartAsync(
                 secondEndpoint,
                 new StaticHealthHandler(secondEndpoint.RuntimeBootId),
                 CreatePolicy(secondMaterial),
@@ -451,8 +451,8 @@ public sealed class NamedPipeRuntimeHealthTransportTests
         RuntimeHealthEndpoint endpoint = CreateEndpoint();
         RuntimeHealthSessionMaterial material = RuntimeHealthSessionMaterial.Create();
 
-        await using NamedPipeRuntimeHealthServer server =
-            await NamedPipeRuntimeHealthServer.StartAsync(
+        await using NamedPipeGatewayServer server =
+            await NamedPipeGatewayServer.StartAsync(
                 endpoint,
                 new StaticHealthHandler(endpoint.RuntimeBootId),
                 CreatePolicy(material),
@@ -475,8 +475,8 @@ public sealed class NamedPipeRuntimeHealthTransportTests
         RuntimeHealthEndpoint endpoint = CreateEndpoint();
         RuntimeHealthSessionMaterial material = RuntimeHealthSessionMaterial.Create();
 
-        await using NamedPipeRuntimeHealthServer server =
-            await NamedPipeRuntimeHealthServer.StartAsync(
+        await using NamedPipeGatewayServer server =
+            await NamedPipeGatewayServer.StartAsync(
                 endpoint,
                 new StaticHealthHandler(endpoint.RuntimeBootId),
                 CreatePolicy(material),
@@ -503,8 +503,8 @@ public sealed class NamedPipeRuntimeHealthTransportTests
         RuntimeHealthSessionMaterial material = RuntimeHealthSessionMaterial.Create();
         const string fixedNonce = "AAAAAAAAAAAAAAAAAAAAAA";
 
-        await using NamedPipeRuntimeHealthServer server =
-            await NamedPipeRuntimeHealthServer.StartAsync(
+        await using NamedPipeGatewayServer server =
+            await NamedPipeGatewayServer.StartAsync(
                 endpoint,
                 new StaticHealthHandler(endpoint.RuntimeBootId),
                 CreatePolicy(material),
@@ -540,8 +540,8 @@ public sealed class NamedPipeRuntimeHealthTransportTests
             RuntimeHealthSessionMaterial.Create();
         List<RuntimeHealthAuthenticationEvent> events = [];
 
-        await using NamedPipeRuntimeHealthServer server =
-            await NamedPipeRuntimeHealthServer.StartAsync(
+        await using NamedPipeGatewayServer server =
+            await NamedPipeGatewayServer.StartAsync(
                 endpoint,
                 new StaticHealthHandler(endpoint.RuntimeBootId),
                 new RuntimeHealthSessionPolicy(
@@ -582,8 +582,8 @@ public sealed class NamedPipeRuntimeHealthTransportTests
         RuntimeHealthSessionMaterial currentMaterial =
             RuntimeHealthSessionMaterial.Create();
 
-        await using NamedPipeRuntimeHealthServer server =
-            await NamedPipeRuntimeHealthServer.StartAsync(
+        await using NamedPipeGatewayServer server =
+            await NamedPipeGatewayServer.StartAsync(
                 endpoint,
                 new StaticHealthHandler(endpoint.RuntimeBootId),
                 CreatePolicy(currentMaterial),
@@ -617,8 +617,8 @@ public sealed class NamedPipeRuntimeHealthTransportTests
         RuntimeHealthSessionMaterial material = RuntimeHealthSessionMaterial.Create();
         List<RuntimeHealthAuthenticationEvent> events = [];
 
-        await using NamedPipeRuntimeHealthServer server =
-            await NamedPipeRuntimeHealthServer.StartAsync(
+        await using NamedPipeGatewayServer server =
+            await NamedPipeGatewayServer.StartAsync(
                 endpoint,
                 new StaticHealthHandler(endpoint.RuntimeBootId),
                 CreatePolicy(material),
@@ -659,8 +659,8 @@ public sealed class NamedPipeRuntimeHealthTransportTests
             RuntimeHealthSessionMaterial.Create();
         List<RuntimeHealthAuthenticationEvent> events = [];
 
-        await using NamedPipeRuntimeHealthServer server =
-            await NamedPipeRuntimeHealthServer.StartAsync(
+        await using NamedPipeGatewayServer server =
+            await NamedPipeGatewayServer.StartAsync(
                 endpoint,
                 new StaticHealthHandler(endpoint.RuntimeBootId),
                 CreatePolicy(currentMaterial),
@@ -735,8 +735,8 @@ public sealed class NamedPipeRuntimeHealthTransportTests
         RuntimeHealthEndpoint endpoint = CreateEndpoint();
         RuntimeHealthSessionMaterial material = RuntimeHealthSessionMaterial.Create();
 
-        await using NamedPipeRuntimeHealthServer server =
-            await NamedPipeRuntimeHealthServer.StartAsync(
+        await using NamedPipeGatewayServer server =
+            await NamedPipeGatewayServer.StartAsync(
                 endpoint,
                 new StaticHealthHandler(endpoint.RuntimeBootId),
                 CreatePolicy(material),

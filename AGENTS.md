@@ -213,14 +213,16 @@ Locally implemented, verified and committed; pending reviewed pushes:
 * FND-052 — Add Last-Known-Good Configuration.
 * FND-053 — Trust Overview.
 * FND-054 — Packaging.
+* FND-055 — Add Trust Centre Project View.
+* FND-056 — Add Trust Centre Configuration View.
 
 The next planned ticket is:
 
 ```text
-FND-055 — Add Trust Centre Project View
+FND-057 — Add Trust Centre IPC Gateway
 ```
 
-Do not assume FND-055 is complete until the Add Trust Centre Project View verifier
+Do not assume FND-057 is complete until the Add Trust Centre IPC Gateway verifier
 passes and the changes are reviewed, committed and pushed.
 
 ## Build policy

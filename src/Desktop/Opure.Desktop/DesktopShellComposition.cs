@@ -18,6 +18,10 @@ public static class DesktopShellComposition
             runtimeHealth,
             new DesktopProjectListViewModel(
                 RuntimeHealthGatewayClient.CreateProjectListSource(
+                    DesktopLaunchContext.ReleaseChannel)),
+            projectFolderPicker: null,
+            configuration: new DesktopConfigurationViewModel(
+                RuntimeHealthGatewayClient.CreateTrustConfigurationSource(
                     DesktopLaunchContext.ReleaseChannel)));
     }
 

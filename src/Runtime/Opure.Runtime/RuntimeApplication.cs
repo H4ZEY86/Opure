@@ -34,7 +34,7 @@ public sealed class RuntimeApplication
         RuntimeLifecycle lifecycle = new();
         RuntimeDataRoot dataRoot;
         RuntimeBootSnapshot bootSnapshot;
-        NamedPipeRuntimeHealthServer? healthTransport = null;
+        NamedPipeGatewayServer? healthTransport = null;
         RuntimeServiceLifecycleCoordinator? serviceLifecycle = null;
         JsonLinesOperationalLogSink? operationalSink = null;
         BoundedOperationalLogger? operationalLogger = null;
@@ -125,7 +125,7 @@ public sealed class RuntimeApplication
                     "A required Runtime service did not become ready.");
             }
 
-            healthTransport = await NamedPipeRuntimeHealthServer.StartAsync(
+            healthTransport = await NamedPipeGatewayServer.StartAsync(
                 endpoint,
                 new RuntimeHealthRequestHandler(
                     bootSnapshot,

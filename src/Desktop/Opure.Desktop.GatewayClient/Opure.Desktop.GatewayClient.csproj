@@ -13,6 +13,7 @@
     <ProjectReference Include="..\..\Observability\Opure.Observability\Opure.Observability.csproj" />
     <ProjectReference Include="..\..\Project\Opure.Project.Protocol\Opure.Project.Protocol.csproj" />
     <ProjectReference Include="..\..\Runtime\Opure.Runtime.Contracts\Opure.Runtime.Contracts.csproj" />
+    <ProjectReference Include="..\..\Trust\Opure.TrustEvidence.Protocol\Opure.TrustEvidence.Protocol.csproj" />
   </ItemGroup>
 
 </Project>

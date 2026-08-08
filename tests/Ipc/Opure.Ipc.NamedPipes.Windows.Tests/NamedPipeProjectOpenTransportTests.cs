@@ -29,8 +29,8 @@ public sealed class NamedPipeProjectOpenTransportTests
             RuntimeHealthSessionMaterial.Create();
         OpenProjectResponse expected = CreateResponse();
 
-        await using NamedPipeRuntimeHealthServer server =
-            await NamedPipeRuntimeHealthServer.StartAsync(
+        await using NamedPipeGatewayServer server =
+            await NamedPipeGatewayServer.StartAsync(
                 endpoint,
                 new StaticHealthHandler(endpoint.RuntimeBootId),
                 CreatePolicy(material),
@@ -61,8 +61,8 @@ public sealed class NamedPipeProjectOpenTransportTests
             RuntimeHealthSessionMaterial.Create();
         CountingProjectOpenHandler handler = new();
 
-        await using NamedPipeRuntimeHealthServer server =
-            await NamedPipeRuntimeHealthServer.StartAsync(
+        await using NamedPipeGatewayServer server =
+            await NamedPipeGatewayServer.StartAsync(
                 endpoint,
                 new StaticHealthHandler(endpoint.RuntimeBootId),
                 CreatePolicy(accepted),
@@ -101,8 +101,8 @@ public sealed class NamedPipeProjectOpenTransportTests
 
         try
         {
-            await using NamedPipeRuntimeHealthServer server =
-                await NamedPipeRuntimeHealthServer.StartAsync(
+            await using NamedPipeGatewayServer server =
+                await NamedPipeGatewayServer.StartAsync(
                     endpoint,
                     new StaticHealthHandler(endpoint.RuntimeBootId),
                     CreatePolicy(material),

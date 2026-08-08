@@ -57,6 +57,17 @@
           "Grpc.Core.Api": "[2.80.0, )"
         }
       },
+      "opure.trustevidence.contracts": {
+        "type": "Project"
+      },
+      "opure.trustevidence.protocol": {
+        "type": "Project",
+        "dependencies": {
+          "Google.Protobuf": "[3.35.1, )",
+          "Grpc.Core.Api": "[2.80.0, )",
+          "Opure.TrustEvidence.Contracts": "[1.0.0, )"
+        }
+      },
       "Google.Protobuf": {
         "type": "CentralTransitive",
         "requested": "[3.35.1, )",
