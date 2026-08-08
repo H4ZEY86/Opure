@@ -23,6 +23,11 @@ internal static class BootstrapPathResolver
 
         string fullBase = Path.GetFullPath(installationBase);
 
+        if (layout == BootstrapLayout.Development && !File.Exists(Path.Combine(fullBase, "Opure.slnx")))
+        {
+            layout = BootstrapLayout.Packaged;
+        }
+
         return layout switch
         {
             BootstrapLayout.Development => new BootstrapExecutablePaths(
@@ -47,12 +52,10 @@ internal static class BootstrapPathResolver
                 Path.GetFullPath(
                     Path.Combine(
                         fullBase,
-                        "Runtime",
                         "Opure.Runtime.exe")),
                 Path.GetFullPath(
                     Path.Combine(
                         fullBase,
-                        "Desktop",
                         "Opure.Desktop.exe"))),
 
             _ => throw new ArgumentOutOfRangeException(
@@ -66,8 +69,8 @@ internal static class BootstrapPathResolver
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(startDirectory);
 
-        DirectoryInfo? directory = new(
-            Path.GetFullPath(startDirectory));
+        string fullStartDirectory = Path.GetFullPath(startDirectory);
+        DirectoryInfo? directory = new(fullStartDirectory);
 
         while (directory is not null)
         {
@@ -79,7 +82,6 @@ internal static class BootstrapPathResolver
             directory = directory.Parent;
         }
 
-        throw new DirectoryNotFoundException(
-            "Could not locate Opure.slnx above the Bootstrap executable.");
+        return fullStartDirectory;
     }
 }
