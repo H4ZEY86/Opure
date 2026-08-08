@@ -256,6 +256,15 @@ public sealed class TrustEvidenceDatabase : IDisposable
             timeProvider);
     }
 
+    public TrustOverviewQueryService CreateOverviewQueryService(
+        TimeProvider? timeProvider = null)
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        return new TrustOverviewQueryService(
+            database,
+            timeProvider);
+    }
+
     public void Dispose()
     {
         if (disposed)
