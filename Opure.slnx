@@ -27,6 +27,9 @@
     <Project Path="src/Observability/Opure.Observability.Contracts/Opure.Observability.Contracts.csproj" />
     <Project Path="src/Observability/Opure.Observability/Opure.Observability.csproj" />
   </Folder>
+  <Folder Name="/src/Packaging/">
+    <Project Path="src/Packaging/Opure.Packaging.Windows/Opure.Packaging.Windows.csproj" />
+  </Folder>
   <Folder Name="/src/Persistence/">
     <Project Path="src/Persistence/Opure.Persistence.Sqlite/Opure.Persistence.Sqlite.csproj" />
   </Folder>

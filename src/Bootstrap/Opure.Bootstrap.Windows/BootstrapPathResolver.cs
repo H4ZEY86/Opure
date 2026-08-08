@@ -23,11 +23,6 @@ internal static class BootstrapPathResolver
 
         string fullBase = Path.GetFullPath(installationBase);
 
-        if (layout == BootstrapLayout.Development && !File.Exists(Path.Combine(fullBase, "Opure.slnx")))
-        {
-            layout = BootstrapLayout.Packaged;
-        }
-
         return layout switch
         {
             BootstrapLayout.Development => new BootstrapExecutablePaths(

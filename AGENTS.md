@@ -212,14 +212,15 @@ Locally implemented, verified and committed; pending reviewed pushes:
 * FND-051 — Add Configuration Change Transaction.
 * FND-052 — Add Last-Known-Good Configuration.
 * FND-053 — Trust Overview.
+* FND-054 — Packaging.
 
 The next planned ticket is:
 
 ```text
-FND-054 — Packaging
+FND-055 — Add Trust Centre Project View
 ```
 
-Do not assume FND-054 is complete until the Packaging verifier
+Do not assume FND-055 is complete until the Add Trust Centre Project View verifier
 passes and the changes are reviewed, committed and pushed.
 
 ## Build policy

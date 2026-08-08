@@ -52,7 +52,8 @@ internal static class Program
 
         try
         {
-            string installationBase = options.Layout switch
+            BootstrapLayout layout = options.Layout;
+            string installationBase = layout switch
             {
                 BootstrapLayout.Development =>
                     BootstrapPathResolver.FindRepositoryRoot(
@@ -63,10 +64,16 @@ internal static class Program
                     "Unsupported Bootstrap layout.")
             };
 
+            if (layout == BootstrapLayout.Development && !File.Exists(Path.Combine(installationBase, "Opure.slnx")))
+            {
+                layout = BootstrapLayout.Packaged;
+                installationBase = Path.GetFullPath(AppContext.BaseDirectory);
+            }
+
             BootstrapExecutablePaths paths =
                 BootstrapPathResolver.Resolve(
                     installationBase,
-                    options.Layout,
+                    layout,
                     options.Configuration);
 
             BootstrapBinaryIdentity runtimeIdentity;

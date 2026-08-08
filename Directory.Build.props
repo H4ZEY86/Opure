@@ -25,6 +25,8 @@
     <UseArtifactsOutput>true</UseArtifactsOutput>
     <ArtifactsPath>$(MSBuildThisFileDirectory)artifacts</ArtifactsPath>
 
+    <ApplicationIcon Condition="('$(OutputType)' == 'Exe' or '$(OutputType)' == 'WinExe') and $(MSBuildProjectDirectory.Contains('src'))">$(MSBuildThisFileDirectory)eng\assets\icon.ico</ApplicationIcon>
+
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <RestoreLockedMode Condition="'$(LockedRestore)' == 'true'">true</RestoreLockedMode>
 
