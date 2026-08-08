@@ -29,6 +29,15 @@ public sealed class ConfigurationDatabase : IDisposable
 
     internal SqliteServiceDatabase ServiceDatabase => database;
 
+    public TrustConfigurationQueryService CreateTrustConfigurationQueryService(
+        TimeProvider? timeProvider = null)
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        return new TrustConfigurationQueryService(
+            database,
+            timeProvider ?? TimeProvider.System);
+    }
+
     public static ConfigurationDatabase Open(
         string channelDataRoot,
         CancellationToken cancellationToken = default)

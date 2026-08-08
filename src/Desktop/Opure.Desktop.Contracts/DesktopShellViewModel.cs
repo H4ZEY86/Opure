@@ -26,7 +26,8 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
         DesktopShellSnapshot snapshot,
         DesktopRuntimeStatusViewModel runtimeHealth,
         DesktopProjectListViewModel? projectList = null,
-        DesktopProjectFolderPickerViewModel? projectFolderPicker = null)
+        DesktopProjectFolderPickerViewModel? projectFolderPicker = null,
+        DesktopConfigurationViewModel? configuration = null)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
         ArgumentNullException.ThrowIfNull(runtimeHealth);
@@ -37,6 +38,7 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
         ProjectFolderPicker = projectFolderPicker ??
             new DesktopProjectFolderPickerViewModel(
                 new UnavailableProjectFolderSelectionCoordinator());
+        Configuration = configuration ?? new DesktopConfigurationViewModel(new UnavailableDesktopConfigurationSource());
         selectedSection = DesktopNavigationSection.Home;
         pageTitle = "Home";
         pageDetail =
@@ -52,6 +54,8 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
     public DesktopProjectFolderPickerViewModel ProjectFolderPicker { get; }
 
     public DesktopProjectListViewModel ProjectList { get; }
+
+    public DesktopConfigurationViewModel Configuration { get; }
 
     public string WindowTitle => Snapshot.WindowTitle;
 
@@ -78,6 +82,9 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
 
     public bool IsProjectsPage =>
         selectedSection == DesktopNavigationSection.Projects;
+
+    public bool IsTrustCentrePage =>
+        selectedSection == DesktopNavigationSection.TrustCentre;
 
     public void SelectSection(DesktopNavigationSection section)
     {
@@ -113,6 +120,7 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(PageTitle));
         OnPropertyChanged(nameof(PageDetail));
         OnPropertyChanged(nameof(IsProjectsPage));
+        OnPropertyChanged(nameof(IsTrustCentrePage));
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)

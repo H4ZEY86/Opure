@@ -168,6 +168,20 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void OnRefreshConfigurationClick(object? sender, RoutedEventArgs eventArgs)
+    {
+        _ = sender;
+        _ = eventArgs;
+        try
+        {
+            await viewModel.Configuration.RefreshAsync(
+                refreshCancellation?.Token ?? CancellationToken.None);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
     private async Task RefreshProjectsAsync()
     {
         try
@@ -190,6 +204,10 @@ public partial class MainWindow : Window
                 if (viewModel.IsProjectsPage)
                 {
                     await viewModel.ProjectList.RefreshAsync(cancellationToken);
+                }
+                if (viewModel.IsTrustCentrePage)
+                {
+                    await viewModel.Configuration.RefreshAsync(cancellationToken);
                 }
                 await Task.Delay(RuntimeRefreshInterval, cancellationToken);
             }

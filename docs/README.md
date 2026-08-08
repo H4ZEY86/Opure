@@ -16,8 +16,8 @@ It is a software engineering platform that uses AI.
 
 ## Status
 
-**Current phase:** Founding architecture and specification baseline  
-**Implementation status:** Pre-implementation  
+**Current phase:** Foundation Implementation  
+**Implementation status:** In Progress (FND-001 through FND-055 completed)  
 **Primary target:** Windows 11  
 **Cloud dependency:** None required  
 **Initial local provider:** Ollama  
@@ -29,7 +29,7 @@ The founding specification set is complete:
 - `SPEC-001.md` through `SPEC-012.md`
 - `ARCHITECTURE.md`
 
-The next phase is to approve the founding drafts, create the first Architecture Decision Records and implement the Runtime architecture skeleton.
+The founding specifications have been approved and the Architecture Decision Records have been established. We are currently implementing the Runtime architecture skeleton and Foundation tickets.
 
 ---
 
@@ -893,20 +893,19 @@ Version 1.0 does not require:
 
 ## Immediate Next Steps
 
-The next implementation actions are:
+The platform is currently progressing through the foundational implementation backlog.
 
-1. review and approve the Founder Draft specifications;
-2. create the `adr/` directory;
-3. create an ADR template;
-4. choose the primary implementation language;
-5. choose the desktop framework;
-6. define the Runtime process topology;
-7. define local IPC and contract serialisation;
-8. define the first source-tree layout;
-9. create the testing skeleton;
-10. implement the Runtime boot-to-health vertical slice.
+Key completed milestones include:
+1. Approval of founding specifications and ADRs.
+2. Selection of C# / .NET 10 as the primary implementation language.
+3. Selection of Avalonia as the desktop framework.
+4. Definition of Runtime process topology (Bootstrap → Runtime → Desktop).
+5. Implementation of local IPC via named pipes.
+6. Central SQLite persistence layer.
+7. Trust Evidence ingestion and query services (Overview, Project View).
+8. MSIX packaging and deployment.
 
-No implementation stack is assumed in this README until the relevant ADRs are approved.
+We are actively working on completing the FND tickets defined in the Foundation backlog.
 
 ---
 

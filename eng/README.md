@@ -10,6 +10,7 @@ pwsh ./build.ps1 build
 pwsh ./build.ps1 test
 pwsh ./build.ps1 verify
 pwsh ./build.ps1 policy
+pwsh ./build.ps1 package
 ```
 
 `restore`, `build`, `test` and `verify` use the committed package lock files.

@@ -15,6 +15,7 @@
     MinHeight="500"
     WindowStartupLocation="CenterScreen"
     Title="{Binding WindowTitle}"
+    Icon="avares://Opure.Desktop/icon.ico"
     AutomationProperties.Name="Opure Desktop main window"
     AutomationProperties.AutomationId="OpureMainWindow">
 
@@ -237,6 +238,65 @@
                 AutomationProperties.Name="{Binding ProjectFolderPicker.SafeDetail}"
                 AutomationProperties.AutomationId="SelectedProjectPathDetail" />
           </StackPanel>
+        </GroupBox>
+
+        <GroupBox
+            Header="Configuration Snapshot"
+            IsVisible="{Binding IsTrustCentrePage}"
+            AutomationProperties.Name="Trust Centre Configuration View"
+            AutomationProperties.AutomationId="ConfigurationSnapshotGroup">
+          <Grid Margin="8" RowDefinitions="Auto,Auto,*,Auto">
+            <StackPanel Spacing="4">
+              <TextBlock
+                  Text="{Binding Configuration.SnapshotId, StringFormat='Snapshot ID: {0}'}"
+                  FontWeight="SemiBold" />
+              <TextBlock
+                  Text="{Binding Configuration.Scope, StringFormat='Scope: {0}'}" />
+            </StackPanel>
+            <ProgressBar
+                Grid.Row="1"
+                Margin="0,8,0,0"
+                IsIndeterminate="True"
+                IsVisible="{Binding Configuration.IsRefreshing}"
+                AutomationProperties.Name="Refreshing configuration snapshot" />
+            <ListBox
+                x:Name="ConfigurationEntriesList"
+                Grid.Row="2"
+                Margin="0,8"
+                MinHeight="96"
+                MaxHeight="280"
+                ItemsSource="{Binding Configuration.Entries}"
+                SelectionMode="Single"
+                TabIndex="9"
+                AutomationProperties.Name="Configuration entries. Use arrow keys to select an entry."
+                AutomationProperties.AutomationId="ConfigurationEntriesList">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="contracts:DesktopConfigurationEntry">
+                  <Grid
+                      Margin="8,6"
+                      ColumnDefinitions="2*,Auto"
+                      RowDefinitions="Auto,Auto,Auto">
+                    <TextBlock Text="{Binding SettingId}" FontWeight="SemiBold" />
+                    <TextBlock Grid.Column="1" Margin="16,0,0,0" Text="{Binding WinningSource}" FontWeight="SemiBold" />
+                    <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding RequestedValue, StringFormat='Requested: {0}'}" />
+                    <TextBlock Grid.Row="2" Text="{Binding EffectiveValue, StringFormat='Effective: {0}'}" />
+                    <TextBlock Grid.Row="2" Grid.Column="1" Margin="16,0,0,0" Text="{Binding PolicyConstraintLabel}" />
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+            <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8">
+              <Button
+                  x:Name="RefreshConfigurationButton"
+                  Content="Re_fresh snapshot"
+                  Click="OnRefreshConfigurationClick"
+                  IsEnabled="{Binding Configuration.CanRefresh}"
+                  TabIndex="10"
+                  AutomationProperties.Name="Refresh configuration snapshot"
+                  AutomationProperties.AutomationId="RefreshConfiguration"
+                  AutomationProperties.AccessKey="Alt+F" />
+            </StackPanel>
+          </Grid>
         </GroupBox>
 
         <Border

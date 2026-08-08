@@ -22,4 +22,8 @@
     <ProjectReference Include="..\..\Filesystem\Opure.Filesystem.Windows\Opure.Filesystem.Windows.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <AvaloniaResource Include="icon.ico" />
+  </ItemGroup>
+
 </Project>
