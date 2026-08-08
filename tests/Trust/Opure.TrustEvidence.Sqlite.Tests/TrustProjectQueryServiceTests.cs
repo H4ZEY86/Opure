@@ -1,84 +1,101 @@
 using System.Collections.ObjectModel;
 using Opure.Persistence.Sqlite;
 using Opure.TrustEvidence.Contracts;
+using Xunit;
 
 namespace Opure.TrustEvidence.Sqlite.Tests;
 
-public sealed class TrustOverviewQueryServiceTests : IDisposable
+public sealed class TrustProjectQueryServiceTests : IDisposable
 {
     private readonly string directory;
-    private readonly SqliteServiceDatabase database;
     private readonly TrustEvidenceDatabase trustDatabase;
-    private readonly TrustOverviewQueryService service;
+    private readonly TrustProjectQueryService service;
     private readonly EvidenceQuerySessionContext validSession;
     private readonly TimeProvider timeProvider;
     private bool disposed;
 
-    public TrustOverviewQueryServiceTests()
+    public TrustProjectQueryServiceTests()
     {
         directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
         
         trustDatabase = TrustEvidenceDatabase.Open(directory);
-        database = new SqliteServiceDatabaseConnectionFactory(
-            ServiceDatabaseAuthority.Create(directory, TrustEvidenceDatabase.OwnerServiceId))
-            .Open(trustDatabase.Descriptor);
 
         timeProvider = TimeProvider.System;
-        service = trustDatabase.CreateOverviewQueryService(timeProvider);
+        service = trustDatabase.CreateProjectQueryService(timeProvider);
 
         validSession = new EvidenceQuerySessionContext(
+            "10000000000000000000000000000001",
+            "opure.desktop",
             EvidenceQuerySessionAuthenticationState.Authenticated,
             EvidenceReleaseChannel.Development,
-            Array.AsReadOnly(new[] { "p0000000000000000000000000000001" }),
+            ["p0000000000000000000000000000001"],
             DateTimeOffset.UtcNow.AddMinutes(-5),
-            DateTimeOffset.UtcNow.AddMinutes(55));
+            DateTimeOffset.UtcNow.AddMinutes(5));
     }
 
     [Fact]
-    public void Query_EmptyDatabase_ReturnsZeros()
+    public void Query_EmptyDatabase_ReturnsEmptyTimeline()
     {
-        TrustOverviewRequest request = new(
+        TrustProjectRequest request = new(
             "q0000000000000000000000000000001",
             1,
             EvidenceReleaseChannel.Development,
-            null,
+            "p0000000000000000000000000000001",
             DateTimeOffset.UtcNow.AddDays(-1),
             DateTimeOffset.UtcNow);
 
-        TrustOverviewResult result = service.Query(validSession, request);
+        TrustProjectResult result = service.Query(validSession, request, TestContext.Current.CancellationToken);
 
         Assert.Equal(TrustEvidenceQueryDisposition.Succeeded, result.Disposition);
         Assert.NotNull(result.Snapshot);
-        Assert.Equal(0, result.Snapshot.TotalRecordCount);
-        Assert.Equal(0, result.Snapshot.UniqueProjectCount);
-        Assert.Equal(0, result.Snapshot.UniqueServiceCount);
-        Assert.Equal(0, result.Snapshot.UnverifiedRecordCount);
-        Assert.Equal(0, result.Snapshot.KnownGapCount);
-        Assert.Empty(result.Snapshot.Metrics);
+        Assert.Equal("p0000000000000000000000000000001", result.Snapshot.ProjectId);
+        Assert.Empty(result.Snapshot.Events);
+        Assert.Null(result.Snapshot.SafeRootClass);
+        Assert.Null(result.Snapshot.CurrentWorkspaceGeneration);
     }
 
     [Fact]
     public void Query_SessionDenied_ReturnsFailure()
     {
         EvidenceQuerySessionContext deniedSession = new(
+            "20000000000000000000000000000002",
+            "opure.desktop",
             EvidenceQuerySessionAuthenticationState.Denied,
             EvidenceReleaseChannel.Development,
-            ReadOnlyCollection<string>.Empty,
+            [],
             DateTimeOffset.UtcNow,
             DateTimeOffset.UtcNow);
 
-        TrustOverviewRequest request = new(
+        TrustProjectRequest request = new(
             "q0000000000000000000000000000001",
             1,
             EvidenceReleaseChannel.Development,
-            null,
+            "p0000000000000000000000000000001",
             DateTimeOffset.UtcNow.AddDays(-1),
             DateTimeOffset.UtcNow);
 
-        TrustOverviewResult result = service.Query(deniedSession, request);
+        TrustProjectResult result = service.Query(deniedSession, request, TestContext.Current.CancellationToken);
 
         Assert.Equal(TrustEvidenceQueryDisposition.Denied, result.Disposition);
+        Assert.Null(result.Snapshot);
+    }
+
+    [Fact]
+    public void Query_UnauthorizedProject_ReturnsFailure()
+    {
+        TrustProjectRequest request = new(
+            "q0000000000000000000000000000001",
+            1,
+            EvidenceReleaseChannel.Development,
+            "p0000000000000000000000000000002", // Not in validSession
+            DateTimeOffset.UtcNow.AddDays(-1),
+            DateTimeOffset.UtcNow);
+
+        TrustProjectResult result = service.Query(validSession, request, TestContext.Current.CancellationToken);
+
+        Assert.Equal(TrustEvidenceQueryDisposition.Denied, result.Disposition);
+        Assert.Equal(TrustEvidenceQueryCodes.ProjectDenied, result.StableCode);
         Assert.Null(result.Snapshot);
     }
 
@@ -89,7 +106,6 @@ public sealed class TrustOverviewQueryServiceTests : IDisposable
             return;
         }
 
-        database.Dispose();
         trustDatabase.Dispose();
 
         try
@@ -98,6 +114,7 @@ public sealed class TrustOverviewQueryServiceTests : IDisposable
         }
         catch (IOException)
         {
+            // Best effort cleanup in tests
         }
 
         disposed = true;

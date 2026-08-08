@@ -1,4 +1,5 @@
 using Opure.TrustEvidence.Contracts;
+using Xunit;
 
 namespace Opure.TrustEvidence.Contracts.Tests;
 

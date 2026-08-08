@@ -164,7 +164,7 @@ public sealed class TrustOverviewQueryService
             WHERE e.release_channel = @channel
               AND r.occurred_at_utc >= @from
               AND r.occurred_at_utc <= @to
-            """ + (request.ProjectId is not null ? " AND r.project_id = @project" : "") + """
+            """ + (request.ProjectId is not null ? "\n              AND r.project_id = @project\n" : "\n") + """
             GROUP BY e.authority_class
             """;
 
