@@ -199,30 +199,26 @@ Locally implemented, verified and committed; pending reviewed pushes:
 * FND-036 — Add Workspace Generation.
 * FND-037 — Add Change Reconciliation.
 * FND-038 — Add Workspace Snapshot Receipt.
-* FND-047 — Add Setting Merge.
-* FND-050 — Add Per-Key Provenance.
-
-Implemented and verified by the current change:
-
 * FND-039 — Add Setting Definition Schema.
-
-FND-039 includes:
-
-* an immutable, revisioned `opure.setting-definition/1` contract owned by Configuration Service;
-* typed defaults with strict canonical JSON and explicit size, range and collection bounds;
-* explicit source, scope, merge, null, sensitivity, secret, runtime and restart semantics;
-* Product Invariant restrictions against ordinary secrets, executable values and remote schema references;
-* source-authority checks that prevent Project configuration granting non-Project authority;
-* exact semantic SHA-256 identities and retained historical revisions;
-* a reviewed packaged foundation catalogue and generated developer documentation.
+* FND-040 — Add Policy Definition Schema.
+* FND-043 — Strict JSON Parser.
+* FND-044 — Duplicate Key Detector.
+* FND-045 — Schema Registry.
+* FND-046 — Project Settings Acquisition.
+* FND-047 — Add Setting Merge.
+* FND-048 — Product Policy Evaluator.
+* FND-049 — Effective Configuration Snapshot.
+* FND-050 — Add Per-Key Provenance.
+* FND-051 — Add Configuration Change Transaction.
+* FND-052 — Add Last-Known-Good Configuration.
 
 The next planned ticket is:
 
 ```text
-FND-040 — Add Policy Definition Schema
+FND-053 — Trust Overview
 ```
 
-Do not assume FND-039 is complete until the Setting Definition verifier
+Do not assume FND-053 is complete until the Trust Overview verifier
 passes and the changes are reviewed, committed and pushed.
 
 ## Build policy

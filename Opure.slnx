@@ -3,6 +3,9 @@
   <Folder Name="/src/Bootstrap/">
     <Project Path="src/Bootstrap/Opure.Bootstrap.Windows/Opure.Bootstrap.Windows.csproj" />
   </Folder>
+  <Folder Name="/src/Cli/">
+    <Project Path="src/Cli/Opure.Cli/Opure.Cli.csproj" />
+  </Folder>
   <Folder Name="/src/Configuration/">
     <Project Path="src/Configuration/Opure.Configuration.Contracts/Opure.Configuration.Contracts.csproj" />
     <Project Path="src/Configuration/Opure.Configuration/Opure.Configuration.csproj" />
