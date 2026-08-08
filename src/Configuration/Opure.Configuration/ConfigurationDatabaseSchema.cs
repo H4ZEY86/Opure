@@ -4,12 +4,13 @@ namespace Opure.Configuration;
 
 public static class ConfigurationDatabaseSchema
 {
-    public const int CurrentVersion = 2;
+    public const int CurrentVersion = 4;
     public const string ProfileTable = "configuration_profiles";
     public const string ValueTable = "configuration_profile_values";
     public const string EffectiveSnapshotTable = "effective_configuration_snapshots";
     public const string EffectiveEntryTable = "effective_configuration_entries";
     public const string CurrentSnapshotPointerTable = "current_effective_configuration_snapshots";
+    public const string ProjectSourceObservationsTable = "project_source_observations";
 
     public static SqliteMigrationCatalogue CreateCatalogue()
     {
@@ -32,7 +33,13 @@ public static class ConfigurationDatabaseSchema
                 sourceVersion: 2,
                 targetVersion: 3,
                 "Adds trace JSON columns to effective configuration entries.",
-                CreateV3ProvenanceCommands())
+                CreateV3ProvenanceCommands()),
+            new SqliteMigration(
+                "last-known-good-v4",
+                sourceVersion: 3,
+                targetVersion: 4,
+                "Creates table for tracking project configuration observations.",
+                CreateV4ObservationCommands())
         ];
 
         List<SqliteSchemaValidation> validations =
@@ -51,7 +58,12 @@ public static class ConfigurationDatabaseSchema
                 "effective-provenance-columns-present",
                 minimumSchemaVersion: 3,
                 $"SELECT COUNT(*) FROM pragma_table_info('{EffectiveEntryTable}') WHERE name IN ('merge_trace_json', 'policy_trace_json')",
-                "2")
+                "2"),
+            new SqliteSchemaValidation(
+                "project-observation-table-present",
+                minimumSchemaVersion: 4,
+                $"SELECT COUNT(*) FROM sqlite_schema WHERE type = 'table' AND name = '{ProjectSourceObservationsTable}'",
+                "1")
         ];
 
         return new SqliteMigrationCatalogue(migrations, validations);
@@ -63,7 +75,8 @@ public static class ConfigurationDatabaseSchema
         ValueTable,
         EffectiveSnapshotTable,
         EffectiveEntryTable,
-        CurrentSnapshotPointerTable
+        CurrentSnapshotPointerTable,
+        ProjectSourceObservationsTable
     ];
 
     private static string[] CreateV1CoreCommands() =>
@@ -147,5 +160,22 @@ public static class ConfigurationDatabaseSchema
     [
         $"ALTER TABLE {EffectiveEntryTable} ADD COLUMN merge_trace_json TEXT NULL",
         $"ALTER TABLE {EffectiveEntryTable} ADD COLUMN policy_trace_json TEXT NULL"
+    ];
+
+    private static string[] CreateV4ObservationCommands() =>
+    [
+        $"""
+        CREATE TABLE {ProjectSourceObservationsTable} (
+            project_id TEXT NOT NULL PRIMARY KEY,
+            latest_observed_generation INTEGER NOT NULL,
+            latest_observed_content_hash TEXT NOT NULL,
+            latest_observed_at_utc TEXT NOT NULL,
+            latest_valid_generation INTEGER NULL,
+            latest_valid_content_hash TEXT NULL,
+            latest_valid_snapshot_id TEXT NULL,
+            last_error TEXT NULL,
+            FOREIGN KEY (latest_valid_snapshot_id) REFERENCES {EffectiveSnapshotTable} (snapshot_id) ON DELETE SET NULL
+        ) STRICT
+        """
     ];
 }

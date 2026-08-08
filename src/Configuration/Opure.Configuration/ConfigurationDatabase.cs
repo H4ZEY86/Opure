@@ -662,4 +662,91 @@ public sealed class ConfigurationDatabase : IDisposable
             },
             cancellationToken);
     }
+
+    public void RecordProjectObservation(
+        ProjectSourceObservationState observation,
+        CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        ArgumentNullException.ThrowIfNull(observation);
+        ArgumentException.ThrowIfNullOrWhiteSpace(observation.ProjectId);
+
+        _ = database.ExecuteTransaction(
+            (connection, transaction) =>
+            {
+                using SqliteCommand cmd = connection.CreateCommand();
+                cmd.Transaction = transaction;
+                cmd.CommandText = $"""
+                    INSERT INTO {ConfigurationDatabaseSchema.ProjectSourceObservationsTable} (
+                        project_id, latest_observed_generation, latest_observed_content_hash,
+                        latest_observed_at_utc, latest_valid_generation, latest_valid_content_hash,
+                        latest_valid_snapshot_id, last_error
+                    ) VALUES (
+                        $project_id, $latest_observed_generation, $latest_observed_content_hash,
+                        $latest_observed_at_utc, $latest_valid_generation, $latest_valid_content_hash,
+                        $latest_valid_snapshot_id, $last_error
+                    ) ON CONFLICT(project_id) DO UPDATE SET
+                        latest_observed_generation = excluded.latest_observed_generation,
+                        latest_observed_content_hash = excluded.latest_observed_content_hash,
+                        latest_observed_at_utc = excluded.latest_observed_at_utc,
+                        latest_valid_generation = excluded.latest_valid_generation,
+                        latest_valid_content_hash = excluded.latest_valid_content_hash,
+                        latest_valid_snapshot_id = excluded.latest_valid_snapshot_id,
+                        last_error = excluded.last_error;
+                    """;
+                cmd.Parameters.AddWithValue("$project_id", observation.ProjectId);
+                cmd.Parameters.AddWithValue("$latest_observed_generation", observation.LatestObservedGeneration);
+                cmd.Parameters.AddWithValue("$latest_observed_content_hash", observation.LatestObservedContentHash);
+                cmd.Parameters.AddWithValue("$latest_observed_at_utc", observation.LatestObservedAtUtc.ToString("O", CultureInfo.InvariantCulture));
+                cmd.Parameters.AddWithValue("$latest_valid_generation", (object?)observation.LatestValidGeneration ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("$latest_valid_content_hash", (object?)observation.LatestValidContentHash ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("$latest_valid_snapshot_id", (object?)observation.LatestValidSnapshotId ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("$last_error", (object?)observation.LastError ?? DBNull.Value);
+
+                _ = cmd.ExecuteNonQuery();
+                return true;
+            },
+            cancellationToken);
+    }
+
+    public ProjectSourceObservationState? GetProjectObservationState(
+        string projectId,
+        CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        ArgumentException.ThrowIfNullOrWhiteSpace(projectId);
+
+        return database.ExecuteTransaction(
+            (connection, transaction) =>
+            {
+                using SqliteCommand cmd = connection.CreateCommand();
+                cmd.Transaction = transaction;
+                cmd.CommandText = $"""
+                    SELECT latest_observed_generation, latest_observed_content_hash,
+                           latest_observed_at_utc, latest_valid_generation, latest_valid_content_hash,
+                           latest_valid_snapshot_id, last_error
+                      FROM {ConfigurationDatabaseSchema.ProjectSourceObservationsTable}
+                     WHERE project_id = $project_id;
+                    """;
+                cmd.Parameters.AddWithValue("$project_id", projectId);
+
+                using SqliteDataReader reader = cmd.ExecuteReader();
+                if (!reader.Read())
+                {
+                    return null;
+                }
+
+                long obsGen = reader.GetInt64(0);
+                string obsHash = reader.GetString(1);
+                DateTimeOffset obsAt = DateTimeOffset.Parse(reader.GetString(2), CultureInfo.InvariantCulture);
+                long? valGen = reader.IsDBNull(3) ? null : reader.GetInt64(3);
+                string? valHash = reader.IsDBNull(4) ? null : reader.GetString(4);
+                string? valSnapId = reader.IsDBNull(5) ? null : reader.GetString(5);
+                string? lastErr = reader.IsDBNull(6) ? null : reader.GetString(6);
+
+                return new ProjectSourceObservationState(
+                    projectId, obsGen, obsHash, obsAt, valGen, valHash, valSnapId, lastErr);
+            },
+            cancellationToken);
+    }
 }

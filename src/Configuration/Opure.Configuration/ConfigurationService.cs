@@ -401,4 +401,127 @@ public sealed class ConfigurationService
             provenance.IsConstrainedByPolicy,
             provenance.Explanation);
     }
+
+    /// <summary>
+    /// Acquires, parses, merges and evaluates project settings. 
+    /// Tracks observed vs valid source states as per FND-052.
+    /// Does not save the snapshot if parsing, merge or policy fails, but records observation state.
+    /// </summary>
+    public ProjectSourceObservationState ObserveProjectSettings(
+        string projectId,
+        long generation,
+        Opure.Workspace.Contracts.IWorkspaceSourceProvider provider,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(projectId);
+        ArgumentNullException.ThrowIfNull(provider);
+
+        DateTimeOffset observedAt = DateTimeOffset.UtcNow;
+
+        ProjectSettingsSource source;
+        try
+        {
+            source = ProjectSettingsAcquirer.Acquire(provider, projectId, generation);
+        }
+        catch (Exception ex) when (ex is StrictJsonException || ex is ArgumentException || ex is InvalidOperationException)
+        {
+            // Parse or schema validation failed
+            ProjectSourceObservationState failedState = new(
+                projectId,
+                generation,
+                string.Empty, // Unknown hash if parse failed completely before hash calculation
+                observedAt,
+                null, null, null,
+                $"Parse or validation failed: {ex.Message}");
+            
+            database.RecordProjectObservation(failedState, cancellationToken);
+            return failedState;
+        }
+
+        if (!source.Exists)
+        {
+            // Valid empty state
+            ProjectSourceObservationState emptyState = new(
+                projectId,
+                generation,
+                source.ContentHash,
+                observedAt,
+                generation,
+                source.ContentHash,
+                null,
+                null);
+            
+            database.RecordProjectObservation(emptyState, cancellationToken);
+            return emptyState;
+        }
+
+        // Merge and Policy
+        ConfigurationProfile userProfile = database.GetLatestRevision("user.base", cancellationToken) 
+            ?? new ConfigurationProfile("user.base", 1, "User", "user", SettingScope.User, null, null, 1, "confidential", new Dictionary<string, string>(), DateTimeOffset.UtcNow);
+
+        SettingMergeResult mergeResult = SettingMerger.Merge(
+            settingCatalogue,
+            productDefaults,
+            userProfile,
+            source);
+
+        if (!mergeResult.Success)
+        {
+            ProjectSourceObservationState mergeFailState = new(
+                projectId,
+                generation,
+                source.ContentHash,
+                observedAt,
+                null, null, null,
+                $"Merge failed: {mergeResult.FailureReason}");
+            
+            database.RecordProjectObservation(mergeFailState, cancellationToken);
+            return mergeFailState;
+        }
+
+        ProductPolicyEvaluationReceipt policyReceipt = ProductPolicyEvaluator.Evaluate(
+            policyCatalogue,
+            settingCatalogue,
+            mergeResult);
+
+        if (!policyReceipt.Success)
+        {
+            ProjectSourceObservationState policyFailState = new(
+                projectId,
+                generation,
+                source.ContentHash,
+                observedAt,
+                null, null, null,
+                $"Policy failed: {policyReceipt.FailureReason}");
+            
+            database.RecordProjectObservation(policyFailState, cancellationToken);
+            return policyFailState;
+        }
+
+        // Build valid snapshot
+        EffectiveConfigurationSnapshotBuildResult buildResult = EffectiveConfigurationSnapshotBuilder.Build(
+            settingCatalogue,
+            productDefaults,
+            policyCatalogue,
+            mergeResult,
+            policyReceipt,
+            userProfile,
+            source);
+
+        // Record valid state and snapshot
+        database.SaveSnapshot(buildResult, "Project", cancellationToken);
+
+        ProjectSourceObservationState validState = new(
+            projectId,
+            generation,
+            source.ContentHash,
+            observedAt,
+            generation,
+            source.ContentHash,
+            buildResult.Snapshot.SnapshotId,
+            null);
+
+        database.RecordProjectObservation(validState, cancellationToken);
+        return validState;
+    }
 }
