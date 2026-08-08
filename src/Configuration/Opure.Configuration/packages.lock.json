@@ -72,6 +72,9 @@
           "SQLitePCLRaw.bundle_e_sqlite3": "[2.1.12, )"
         }
       },
+      "opure.trustevidence.contracts": {
+        "type": "Project"
+      },
       "opure.workspace.contracts": {
         "type": "Project"
       },

@@ -199,6 +199,8 @@ Locally implemented, verified and committed; pending reviewed pushes:
 * FND-036 — Add Workspace Generation.
 * FND-037 — Add Change Reconciliation.
 * FND-038 — Add Workspace Snapshot Receipt.
+* FND-047 — Add Setting Merge.
+* FND-050 — Add Per-Key Provenance.
 
 Implemented and verified by the current change:
 

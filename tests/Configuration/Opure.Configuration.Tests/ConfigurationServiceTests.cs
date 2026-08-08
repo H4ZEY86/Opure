@@ -26,7 +26,12 @@ public sealed class ConfigurationServiceTests : IDisposable
         using ConfigurationDatabase db = ConfigurationDatabase.Open(
             ChannelRoot,
             TestContext.Current.CancellationToken);
-        ConfigurationService service = new(db, catalogue);
+        ConfigurationService service = new(
+            db,
+            catalogue,
+            FoundationProductDefaultsCatalogue.Current,
+            FoundationPolicyDefinitionCatalogue.Current,
+            new TestEvidenceIngestionPort());
 
         ConfigurationProfile? profile = service.GetProfile(
             "user.base",
@@ -42,7 +47,12 @@ public sealed class ConfigurationServiceTests : IDisposable
         using ConfigurationDatabase db = ConfigurationDatabase.Open(
             ChannelRoot,
             TestContext.Current.CancellationToken);
-        ConfigurationService service = new(db, catalogue);
+        ConfigurationService service = new(
+            db,
+            catalogue,
+            FoundationProductDefaultsCatalogue.Current,
+            FoundationPolicyDefinitionCatalogue.Current,
+            new TestEvidenceIngestionPort());
 
         ConfigurationProfile next = service.ProposeChanges(
             "user.base",
@@ -71,7 +81,12 @@ public sealed class ConfigurationServiceTests : IDisposable
         using ConfigurationDatabase db = ConfigurationDatabase.Open(
             ChannelRoot,
             TestContext.Current.CancellationToken);
-        ConfigurationService service = new(db, catalogue);
+        ConfigurationService service = new(
+            db,
+            catalogue,
+            FoundationProductDefaultsCatalogue.Current,
+            FoundationPolicyDefinitionCatalogue.Current,
+            new TestEvidenceIngestionPort());
 
         _ = Assert.Throws<ArgumentException>(() => service.ProposeChanges(
             "user.base",
@@ -85,7 +100,12 @@ public sealed class ConfigurationServiceTests : IDisposable
         using ConfigurationDatabase db = ConfigurationDatabase.Open(
             ChannelRoot,
             TestContext.Current.CancellationToken);
-        ConfigurationService service = new(db, catalogue);
+        ConfigurationService service = new(
+            db,
+            catalogue,
+            FoundationProductDefaultsCatalogue.Current,
+            FoundationPolicyDefinitionCatalogue.Current,
+            new TestEvidenceIngestionPort());
 
         // logging.level.default expects one of trace/debug/information/warning/error/critical
         _ = Assert.Throws<ArgumentException>(() => service.ProposeChanges(
@@ -100,7 +120,12 @@ public sealed class ConfigurationServiceTests : IDisposable
         using ConfigurationDatabase db = ConfigurationDatabase.Open(
             ChannelRoot,
             TestContext.Current.CancellationToken);
-        ConfigurationService service = new(db, catalogue);
+        ConfigurationService service = new(
+            db,
+            catalogue,
+            FoundationProductDefaultsCatalogue.Current,
+            FoundationPolicyDefinitionCatalogue.Current,
+            new TestEvidenceIngestionPort());
 
         // 'security.integrity-validation.enabled' allows scope Product, not User.
         _ = Assert.Throws<ArgumentException>(() => service.ProposeChanges(
@@ -115,7 +140,12 @@ public sealed class ConfigurationServiceTests : IDisposable
         using ConfigurationDatabase db = ConfigurationDatabase.Open(
             ChannelRoot,
             TestContext.Current.CancellationToken);
-        ConfigurationService service = new(db, catalogue);
+        ConfigurationService service = new(
+            db,
+            catalogue,
+            FoundationProductDefaultsCatalogue.Current,
+            FoundationPolicyDefinitionCatalogue.Current,
+            new TestEvidenceIngestionPort());
 
         // provider.credential.vault-reference requires a valid VaultReference (opaque ID)
         // A short or malformed string fails opaque reference validation.
@@ -131,7 +161,12 @@ public sealed class ConfigurationServiceTests : IDisposable
         using ConfigurationDatabase db = ConfigurationDatabase.Open(
             ChannelRoot,
             TestContext.Current.CancellationToken);
-        ConfigurationService service = new(db, catalogue);
+        ConfigurationService service = new(
+            db,
+            catalogue,
+            FoundationProductDefaultsCatalogue.Current,
+            FoundationPolicyDefinitionCatalogue.Current,
+            new TestEvidenceIngestionPort());
 
         // Set one user value
         _ = service.ProposeChanges(

@@ -29,7 +29,9 @@ public static class FoundationEvidenceTypeCatalogue
             ProjectClosed(),
             WorkspaceSnapshotCreated(),
             RecoveryPointCreated(),
-            SecurityPolicyDenied()
+            SecurityPolicyDenied(),
+            ConfigurationTransactionRequested(),
+            ConfigurationTransactionResult()
         ]);
 
     private static EvidenceTypeDefinition RuntimeStarted()
@@ -140,6 +142,60 @@ public static class FoundationEvidenceTypeCatalogue
             [
                 EvidenceRelationshipKind.Implements,
                 EvidenceRelationshipKind.Supersedes,
+                EvidenceRelationshipKind.CorrelatesWith
+            ]);
+    }
+
+    private static EvidenceTypeDefinition ConfigurationTransactionRequested()
+    {
+        return Define(
+            "configuration.transaction-requested",
+            "opure.configuration",
+            EvidenceAuthorityClass.AuthoritativeDomainDecision,
+            [
+                Field(
+                    "transaction_id",
+                    EvidencePayloadFieldType.Identifier,
+                    EvidenceDataClassification.Pseudonymous),
+                Field(
+                    "source_identifier",
+                    EvidencePayloadFieldType.String,
+                    EvidenceDataClassification.Safe),
+                Field(
+                    "target_profile_id",
+                    EvidencePayloadFieldType.Identifier,
+                    EvidenceDataClassification.Pseudonymous)
+            ],
+            ["transaction_id", "source_identifier"],
+            [
+                EvidenceRelationshipKind.Causes,
+                EvidenceRelationshipKind.CorrelatesWith
+            ]);
+    }
+
+    private static EvidenceTypeDefinition ConfigurationTransactionResult()
+    {
+        return Define(
+            "configuration.transaction-result",
+            "opure.configuration",
+            EvidenceAuthorityClass.DeterministicValidationResult,
+            [
+                Field(
+                    "transaction_id",
+                    EvidencePayloadFieldType.Identifier,
+                    EvidenceDataClassification.Pseudonymous),
+                Field(
+                    "is_valid",
+                    EvidencePayloadFieldType.Boolean,
+                    EvidenceDataClassification.Safe),
+                Field(
+                    "error_count",
+                    EvidencePayloadFieldType.Integer,
+                    EvidenceDataClassification.Safe)
+            ],
+            ["transaction_id", "is_valid"],
+            [
+                EvidenceRelationshipKind.Produces,
                 EvidenceRelationshipKind.CorrelatesWith
             ]);
     }

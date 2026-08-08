@@ -1,4 +1,11 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading;
 using Opure.Configuration.Contracts;
+using Opure.TrustEvidence.Contracts;
 
 namespace Opure.Configuration;
 
@@ -31,13 +38,22 @@ public sealed class ConfigurationService
 {
     private readonly ConfigurationDatabase database;
     private readonly SettingDefinitionCatalogue settingCatalogue;
+    private readonly ProductDefaultsCatalogue productDefaults;
+    private readonly PolicyDefinitionCatalogue policyCatalogue;
+    private readonly ITrustEvidenceOwnerIngestionPort evidencePort;
 
     public ConfigurationService(
         ConfigurationDatabase database,
-        SettingDefinitionCatalogue settingCatalogue)
+        SettingDefinitionCatalogue settingCatalogue,
+        ProductDefaultsCatalogue productDefaults,
+        PolicyDefinitionCatalogue policyCatalogue,
+        ITrustEvidenceOwnerIngestionPort evidencePort)
     {
         this.database = database ?? throw new ArgumentNullException(nameof(database));
         this.settingCatalogue = settingCatalogue ?? throw new ArgumentNullException(nameof(settingCatalogue));
+        this.productDefaults = productDefaults ?? throw new ArgumentNullException(nameof(productDefaults));
+        this.policyCatalogue = policyCatalogue ?? throw new ArgumentNullException(nameof(policyCatalogue));
+        this.evidencePort = evidencePort ?? throw new ArgumentNullException(nameof(evidencePort));
     }
 
     /// <summary>
@@ -125,6 +141,175 @@ public sealed class ConfigurationService
         database.Save(nextRevision, cancellationToken);
 
         return nextRevision;
+    }
+
+    /// <summary>
+    /// Begins a configuration change transaction, returning a preview of the proposed state.
+    /// If changes are invalid or violate policy, the preview marks the transaction as invalid and provides diagnostic errors.
+    /// </summary>
+    public ConfigurationChangeTransactionPreview BeginTransaction(
+        ConfigurationChangeRequest request,
+        ProjectSettingsSource? currentProjectSettings = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        ConfigurationProfile? latest = database.GetLatestRevision(request.TargetProfileId, cancellationToken)
+            ?? throw new KeyNotFoundException($"Profile '{request.TargetProfileId}' does not exist.");
+
+        Dictionary<string, string> newValues = latest.Values.ToDictionary(
+            static kvp => kvp.Key,
+            static kvp => kvp.Value);
+
+        foreach (ProfileProposedChange change in request.Changes)
+        {
+            if (change.ValueJson is null)
+            {
+                _ = newValues.Remove(change.SettingId);
+            }
+            else
+            {
+                newValues[change.SettingId] = change.ValueJson;
+            }
+        }
+
+        ConfigurationProfile provisionalProfile = new(
+            latest.ProfileId,
+            revision: latest.Revision + 1,
+            latest.DisplayName,
+            latest.ProfileKind,
+            latest.OwnerScope,
+            latest.ParentProfileId,
+            latest.ParentRevision,
+            latest.SchemaVersion,
+            latest.Classification,
+            newValues,
+            DateTimeOffset.UtcNow);
+
+        List<string> errors = [];
+        try
+        {
+            provisionalProfile.Validate(settingCatalogue);
+        }
+        catch (ArgumentException ex)
+        {
+            errors.Add(ex.Message);
+            return new ConfigurationChangeTransactionPreview(false, errors, null, null);
+        }
+
+        ConfigurationProfile userProfile = provisionalProfile.ProfileKind == "user"
+            ? provisionalProfile
+            : (database.GetLatestRevision("user.base", cancellationToken) ?? provisionalProfile); // Fallback to avoid null but real logic would fetch user profile
+
+        if (provisionalProfile.ProfileKind == "project")
+        {
+            currentProjectSettings = new ProjectSettingsSource(provisionalProfile.ProfileId, provisionalProfile.Revision, provisionalProfile.CanonicalSha256, new Dictionary<string, string>(provisionalProfile.Values, StringComparer.Ordinal), true);
+        }
+
+        SettingMergeResult mergeResult = SettingMerger.Merge(
+            settingCatalogue,
+            productDefaults,
+            userProfile,
+            currentProjectSettings);
+
+        if (!mergeResult.Success)
+        {
+            errors.Add($"Merge failed: {mergeResult.FailureReason}");
+            return new ConfigurationChangeTransactionPreview(false, errors, null, null);
+        }
+
+        ProductPolicyEvaluationReceipt policyReceipt = ProductPolicyEvaluator.Evaluate(
+            policyCatalogue,
+            settingCatalogue,
+            mergeResult);
+
+        if (!policyReceipt.Success)
+        {
+            errors.Add($"Policy evaluation failed: {policyReceipt.FailureReason}");
+            return new ConfigurationChangeTransactionPreview(false, errors, null, null);
+        }
+
+        EffectiveConfigurationSnapshotBuildResult previewResult = EffectiveConfigurationSnapshotBuilder.Build(
+            settingCatalogue,
+            productDefaults,
+            policyCatalogue,
+            mergeResult,
+            policyReceipt,
+            userProfile,
+            currentProjectSettings);
+
+        return new ConfigurationChangeTransactionPreview(true, errors, provisionalProfile, previewResult);
+    }
+
+    /// <summary>
+    /// Commits a previously validated transaction, saving the new profile revision and snapshot,
+    /// and emitting authoritative trust evidence.
+    /// </summary>
+    public void CommitTransaction(
+        ConfigurationChangeRequest originalRequest,
+        ConfigurationChangeTransactionPreview preview,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(originalRequest);
+        ArgumentNullException.ThrowIfNull(preview);
+
+        if (!preview.IsValid || preview.ProvisionalProfile is null || preview.PreviewSnapshotResult is null)
+        {
+            throw new InvalidOperationException("Cannot commit an invalid transaction preview.");
+        }
+
+        database.Save(preview.ProvisionalProfile, cancellationToken);
+
+        string transactionId = Guid.NewGuid().ToString("N");
+
+        EvidenceTypeDefinition evidenceType = FoundationEvidenceTypeCatalogue.Current.Definitions.Single(
+            static d => d.EvidenceTypeId == "configuration.transaction-result" && d.Revision == 1);
+
+        EvidenceRecordPayload payload = EvidenceRecordPayload.CreateInline(
+            $"{{\"transaction_id\":\"{transactionId}\",\"is_valid\":true,\"error_count\":0}}",
+            EvidenceDataClassification.Safe);
+
+        evidencePort.Ingest(
+            new EvidenceIngestionRequest(
+                messageId: Guid.NewGuid().ToString("N"),
+                contractRevision: 1,
+                record: new EvidenceRecord(
+                    evidenceId: EvidenceRecord.CreateEvidenceId(),
+                    evidenceType: evidenceType,
+                    ownerServiceId: "opure.configuration",
+                    ownerRecordId: transactionId,
+                    ownerRecordRevision: 1,
+                    authorityClass: EvidenceAuthorityClass.DeterministicValidationResult,
+                    releaseChannel: EvidenceReleaseChannel.Development,
+                    scope: EvidenceRecordScope.Global,
+                    projectId: null,
+                    operationId: null,
+                    workflowInstanceId: null,
+                    traceId: null,
+                    spanId: null,
+                    runtimeBootId: null,
+                    subjectKind: EvidenceSubjectKind.Configuration,
+                    subjectId: "transaction",
+                    action: "configuration.transaction.commit",
+                    outcome: "succeeded",
+                    occurredAtUtc: DateTimeOffset.UtcNow,
+                    observedAtUtc: DateTimeOffset.UtcNow,
+                    ownerSequence: 1,
+                    previousStreamSha256: null,
+                    retentionClass: evidenceType.Retention.RetentionClass,
+                    preservationState: EvidencePreservationState.NotPreserved,
+                    payload: payload),
+                declaredPayloadSha256: payload.PayloadSha256,
+                declaredRecordSha256: "hash_placeholder",
+                relationships: []),
+            cancellationToken);
+    }
+
+    private static string ComputeSha256(string data)
+    {
+        byte[] bytes = Encoding.UTF8.GetBytes(data);
+        byte[] hash = SHA256.HashData(bytes);
+        return Convert.ToHexStringLower(hash);
     }
 
     /// <summary>

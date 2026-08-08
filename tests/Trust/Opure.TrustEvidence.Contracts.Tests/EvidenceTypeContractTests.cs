@@ -244,6 +244,8 @@ public sealed class EvidenceTypeContractTests
         [
             "backup.recovery-point-created",
             "configuration.snapshot-committed",
+            "configuration.transaction-requested",
+            "configuration.transaction-result",
             "project.closed",
             "project.opened",
             "project.registered",
@@ -255,7 +257,7 @@ public sealed class EvidenceTypeContractTests
             "workspace.snapshot-created"
         ];
 
-        Assert.Equal(11, catalogue.Definitions.Count);
+        Assert.Equal(13, catalogue.Definitions.Count);
         Assert.Equal(
             expectedTypeIds,
             catalogue.Definitions

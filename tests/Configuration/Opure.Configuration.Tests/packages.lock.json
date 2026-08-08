@@ -214,6 +214,7 @@
           "JsonSchema.Net": "[7.3.0, )",
           "Opure.Configuration.Contracts": "[1.0.0, )",
           "Opure.Persistence.Sqlite": "[1.0.0, )",
+          "Opure.TrustEvidence.Contracts": "[1.0.0, )",
           "Opure.Workspace.Contracts": "[1.0.0, )"
         }
       },
