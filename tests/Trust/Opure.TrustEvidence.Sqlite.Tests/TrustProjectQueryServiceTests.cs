@@ -65,7 +65,7 @@ public sealed class TrustProjectQueryServiceTests : IDisposable
             EvidenceReleaseChannel.Development,
             [],
             DateTimeOffset.UtcNow,
-            DateTimeOffset.UtcNow);
+            DateTimeOffset.UtcNow.AddMinutes(5));
 
         TrustProjectRequest request = new(
             "q0000000000000000000000000000001",
