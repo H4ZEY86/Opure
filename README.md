@@ -4,8 +4,7 @@
 
 [Opure site → https://h4zey86.github.io/Opure/](https://h4zey86.github.io/Opure/)
 [Opure repo → https://github.com/H4ZEY86/Opure](https://github.com/H4ZEY86/Opure) 
-[SoundCloud → https://soundcloud.com/ctrl_alt_haze/sets/my-mix-1]
-(https://soundcloud.com/ctrl_alt_haze/sets/my-mix-1)
+[SoundCloud → https://soundcloud.com/ctrl_alt_haze/sets/my-mix-1](https://soundcloud.com/ctrl_alt_haze/sets/my-mix-1)
 
 ---
 
@@ -26,11 +25,6 @@ I’m Ctrl_Alt_Haze — solo developer and music maker. I build Opure, a local-f
 - SoundCloud: https://soundcloud.com/ctrl_alt_haze
 - GitHub: https://github.com/H4ZEY86/Opure
 - / project site: https://h4zey86.github.io/Opure/
-
-> Note: GitHub sometimes strips iframes in READMEs. The SoundCloud iframe will be included below as an optional embed — the link remains as a reliable fallback.
-
-<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
-src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/ctrl_alt_haze/sets/my-mix-1&color=%23ff5500&inverse=false&auto_play=false&show_user=true"></iframe>
 
 ---
 
