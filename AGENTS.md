@@ -181,9 +181,6 @@ Completed and committed:
 * FND-021 — Add Evidence Type Schema.
 * FND-022 — Add Evidence Record Schema.
 * FND-023 — Add Trust Evidence Database.
-
-Locally implemented, verified and committed; pending reviewed pushes:
-
 * FND-024 — Add Trust Evidence Ingestion.
 * FND-025 — Add Trust Query Contract.
 * FND-026 — Add Windows Path-Reference Library.
@@ -215,14 +212,18 @@ Locally implemented, verified and committed; pending reviewed pushes:
 * FND-054 — Packaging.
 * FND-055 — Add Trust Centre Project View.
 * FND-056 — Add Trust Centre Configuration View.
+* FND-057 — Add Trust Centre IPC Gateway.
+* FND-058 — Add Backup Adapter Contract.
+
+Locally implemented, verified and committed; pending reviewed pushes:
 
 The next planned ticket is:
 
 ```text
-FND-057 — Add Trust Centre IPC Gateway
+FND-059 — Add SQLite Online Backup
 ```
 
-Do not assume FND-057 is complete until the Add Trust Centre IPC Gateway verifier
+Do not assume FND-059 is complete until the Add SQLite Online Backup verifier
 passes and the changes are reviewed, committed and pushed.
 
 ## Build policy
