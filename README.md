@@ -43,15 +43,10 @@ I’m Ctrl_Alt_Haze — solo developer and music maker. I build Opure, a local-f
 
 - **Opure** — software engineering platform ⚙️
   - Local-first, dev-first engineering platform focused on developer ergonomics, reproducible local previews, and an architecture that preserves developer control.
-  - Live demo: https://h4zey86.github.io/Opure/
+    
+  - Project site: https://h4zey86.github.io/Opure/
+    
   - Repo: https://github.com/H4ZEY86/Opure
-
-- **HazeSynth** — modular synth toolkit (in progress)
-  - Prototype / private project — will publish repo and badges when available.
-
-- **NebulaPlay** — indie game prototype (in progress)
-  - Prototype / private project — will publish repo and badges when available.
-
 ---
 
 ## How I work ⚙️
@@ -85,5 +80,5 @@ C# · .NET 10 · SoloDev · Full-Stack · Backend · AudioDev · GameDev · TDD 
 - Key repo artifacts: specs (CHARTER-001, SPEC-001..SPEC-012), ARCHITECTURE.md, ADRs, eng tooling and evidence gates.
 
 ---
-For full project documentation and the canonical README, see `https://github.com/H4ZEY86/opure/docs/README.md`.
+For full project documentation and the canonical README, see [`https://github.com/H4ZEY86/opure/docs/README.md`](https://github.com/H4ZEY86/Opure/blob/main/docs/README.md).
 ---
