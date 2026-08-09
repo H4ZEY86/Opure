@@ -418,6 +418,40 @@ public static class FoundationEvidenceTypeCatalogue
             ]);
     }
 
+    private static EvidenceTypeDefinition VerificationCompleted()
+    {
+        return Define(
+            "backup.verification-completed",
+            "opure.backup",
+            EvidenceAuthorityClass.DeterministicValidationResult,
+            [
+                Field(
+                    "recovery_point_id",
+                    EvidencePayloadFieldType.Identifier,
+                    EvidenceDataClassification.Pseudonymous),
+                Field(
+                    "manifest_sha256",
+                    EvidencePayloadFieldType.Sha256,
+                    EvidenceDataClassification.Safe),
+                Field(
+                    "is_valid",
+                    EvidencePayloadFieldType.Boolean,
+                    EvidenceDataClassification.Safe),
+                Field(
+                    "verification_duration_ms",
+                    EvidencePayloadFieldType.Integer,
+                    EvidenceDataClassification.Safe),
+                Field(
+                    "owner_count_verified",
+                    EvidencePayloadFieldType.Integer,
+                    EvidenceDataClassification.Safe)
+            ],
+            ["recovery_point_id", "is_valid"],
+            [
+                EvidenceRelationshipKind.Produces,
+                EvidenceRelationshipKind.CorrelatesWith
+            ]);
+    }
     private static EvidenceTypeDefinition SecurityPolicyDenied()
     {
         return Define(
@@ -490,3 +524,4 @@ public static class FoundationEvidenceTypeCatalogue
             isRequired);
     }
 }
+

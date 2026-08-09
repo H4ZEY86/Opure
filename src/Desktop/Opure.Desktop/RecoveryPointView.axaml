@@ -1,0 +1,34 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:contracts="clr-namespace:Opure.Desktop.Contracts;assembly=Opure.Desktop.Contracts"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Opure.Desktop.RecoveryPointView"
+             x:DataType="contracts:DesktopRecoveryPointViewModel"
+             x:Name="RootControl">
+    <StackPanel Margin="20">
+        <TextBlock Text="Local Recovery Points" FontSize="24" FontWeight="Bold" Margin="0,0,0,10"/>
+        
+        <Border Background="#FFEEEE" BorderBrush="Red" BorderThickness="2" Padding="10" Margin="0,0,0,20">
+            <TextBlock Text="WARNING: Same-Device Recovery Only" Foreground="Red" FontWeight="Bold" HorizontalAlignment="Center"/>
+        </Border>
+
+        <Button Content="Create New Recovery Point" Command="{Binding CreateRecoveryPointCommand}" Margin="0,0,0,20"/>
+
+        <ItemsControl ItemsSource="{Binding RecoveryPoints}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="contracts:DesktopRecoveryPoint">
+                    <Border BorderBrush="Gray" BorderThickness="1" Padding="10" Margin="0,0,0,10">
+                        <StackPanel>
+                            <TextBlock Text="{Binding RecoveryPointId, StringFormat='ID: {0}'}" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding CreatedAt, StringFormat='Created: {0}'}"/>
+                            <TextBlock Text="{Binding VerificationState, StringFormat='Status: {0}'}"/>
+                            <Button Content="Verify" Command="{Binding #RootControl.((contracts:DesktopRecoveryPointViewModel)DataContext).VerifyRecoveryPointCommand}" CommandParameter="{Binding}" Margin="0,5,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </StackPanel>
+</UserControl>

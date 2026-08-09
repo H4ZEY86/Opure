@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Opure.Recovery.Contracts\Opure.Recovery.Contracts.csproj" />
+    <ProjectReference Include="..\..\Runtime\Opure.Runtime.Contracts\Opure.Runtime.Contracts.csproj" />
+    <ProjectReference Include="..\..\Trust\Opure.TrustEvidence.Contracts\Opure.TrustEvidence.Contracts.csproj" />
+    <ProjectReference Include="..\..\Trust\Opure.TrustEvidence.Service\Opure.TrustEvidence.Service.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>
