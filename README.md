@@ -2,13 +2,16 @@
 
 **Solo developer • Music maker • Founder of Opure** — professional, creative, and focused on shipping surprising, delightful software.
 
-[Opure site → https://h4zey86.github.io/Opure/](https://h4zey86.github.io/Opure/) · [Opure repo → https://github.com/H4ZEY86/Opure](https://github.com/H4ZEY86/Opure) · [SoundCloud → https://soundcloud.com/ctrl_alt_haze/sets/my-mix-1](https://soundcloud.com/ctrl_alt_haze/sets/my-mix-1)
+[Opure site → https://h4zey86.github.io/Opure/](https://h4zey86.github.io/Opure/)
+[Opure repo → https://github.com/H4ZEY86/Opure](https://github.com/H4ZEY86/Opure) 
+[SoundCloud → https://soundcloud.com/ctrl_alt_haze/sets/my-mix-1]
+(https://soundcloud.com/ctrl_alt_haze/sets/my-mix-1)
 
 ---
 
 ## Quick intro
 
-I’m Ctrl_Alt_Haze — solo developer and music maker. I build Opure, a local-first, developer-first software engineering platform, and I produce experimental electronic music in my free time. My work focuses on developer ergonomics, reproducible local previews, and practical, well-tested engineering tools.
+I’m Ctrl_Alt_Haze — solo developer and music maker. I build Opure, a local-first, developer-first software engineering platform, and I produce music in my free time. My work focuses on developer ergonomics, reproducible local previews, and practical, well-tested engineering tools.
 
 - 🔭 Currently shipping: **Opure** — software engineering platform (Preview release).
 - 🌱 Main implementation choices: **C# / .NET 10** (primary), **Avalonia** desktop framework.
@@ -20,9 +23,9 @@ I’m Ctrl_Alt_Haze — solo developer and music maker. I build Opure, a local-f
 ## Contact & socials
 
 - Email: ctddestiny@outlook.com (preferred contact)
-- SoundCloud (music & playlist): https://soundcloud.com/ctrl_alt_haze/sets/my-mix-1
-- GitHub: https://github.com/H4ZEY86
-- Live demo / project site: https://h4zey86.github.io/Opure/
+- SoundCloud: https://soundcloud.com/ctrl_alt_haze
+- GitHub: https://github.com/H4ZEY86/Opure
+- / project site: https://h4zey86.github.io/Opure/
 
 > Note: GitHub sometimes strips iframes in READMEs. The SoundCloud iframe will be included below as an optional embed — the link remains as a reliable fallback.
 
@@ -88,11 +91,5 @@ C# · .NET 10 · SoloDev · Full-Stack · Backend · AudioDev · GameDev · TDD 
 - Key repo artifacts: specs (CHARTER-001, SPEC-001..SPEC-012), ARCHITECTURE.md, ADRs, eng tooling and evidence gates.
 
 ---
-
-## GitHub stats / preview
-
-(If you want the screenshot included from this chat — Image 1 — I can add it into `docs/assets/` and reference it here as `docs/assets/profile-screenshot-1.png`.)
-
+For full project documentation and the canonical README, see `https://github.com/H4ZEY86/opure/docs/README.md`.
 ---
-
-For full project documentation and the canonical README, see `docs/README.md`.
