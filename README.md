@@ -1,5 +1,19 @@
 # Ctrl_Alt_Haze 🎧💻
 
+<p align="center">
+  <img src="https://streak-stats.demolab.com?user=H4ZEY86&theme=tokyonight" alt="GitHub Streak" />
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/C%23-%231572B6?style=for-the-badge&logo=c-sharp&logoColor=white" alt="C#" />
+  <img src="https://img.shields.io/badge/.NET%2010-%239530E8?style=for-the-badge&logo=dotnet&logoColor=white" alt=".NET 10" />
+  <img src="https://img.shields.io/badge/Python-%2314354C?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
+  <img src="https://img.shields.io/badge/Java-%23ED8B00?style=for-the-badge&logo=java&logoColor=white" alt="Java" />
+  <img src="https://img.shields.io/badge/HTML5-%23E34F26?style=for-the-badge&logo=html5&logoColor=white" alt="HTML5" />
+  <img src="https://img.shields.io/badge/WebGL-%2300AEEF?style=for-the-badge&logo=webgl&logoColor=white" alt="WebGL" />
+  <img src="https://img.shields.io/badge/CUDA-%23FF7F00?style=for-the-badge&logo=nvidia&logoColor=white" alt="CUDA" />
+</p>
+
 **Solo developer • Music maker • Founder of Opure** — professional, creative, and focused on shipping surprising, delightful software.
 
 [Opure site → https://h4zey86.github.io/Opure/](https://h4zey86.github.io/Opure/)
@@ -10,7 +24,7 @@
 
 ## Quick intro
 
-I’m Ctrl_Alt_Haze — solo developer and music maker. I build Opure, a local-first, developer-first software engineering platform, and I produce music in my free time. My work focuses on developer ergonomics, reproducible local previews, and practical, well-tested engineering tools.
+I’m Ctrl_Alt_Haze — solo developer and music maker. I build Opure, a local-first, developer-first software engineering platform, and I produce music in my free time. My work focuses on develop[...]
 
 - 🔭 Currently shipping: **Opure** — software engineering platform (Preview release).
 - 🌱 Main implementation choices: **C# / .NET 10** (primary), **Avalonia** desktop framework.
@@ -80,5 +94,6 @@ C# · .NET 10 · SoloDev · Full-Stack · Backend · AudioDev · GameDev · TDD 
 - Key repo artifacts: specs (CHARTER-001, SPEC-001..SPEC-012), ARCHITECTURE.md, ADRs, eng tooling and evidence gates.
 
 ---
-For full project documentation and the canonical README, see [`https://github.com/H4ZEY86/opure/docs/README.md`](https://github.com/H4ZEY86/Opure/blob/main/docs/README.md).
+
+## For full project documentation and the canonical README, see [`https://github.com/H4ZEY86/opure/docs/README.md`](https://github.com/H4ZEY86/Opure/blob/main/docs/README.md).
 ---
