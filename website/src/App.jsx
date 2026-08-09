@@ -238,7 +238,7 @@ const adrsList = [
 
 export default function App() {
   const [repoData, setRepoData] = useState({ stars: 12, forks: 3, avatar: '', bio: 'Independent Software Engineer & Music Producer' });
-  const [latestRelease, setLatestRelease] = useState({ tag: 'v1.0.4', url: 'https://github.com/H4ZEY86/Opure' });
+  const [latestRelease, setLatestRelease] = useState({ tag: 'Opure.Preview-1.1.0.10000-win-x64', url: 'https://github.com/H4ZEY86/Opure/releases' });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [highContrast, setHighContrast] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -326,7 +326,7 @@ export default function App() {
             <h1 className="font-bold tracking-wider text-lg bg-gradient-to-r from-white via-blue-200 to-blue-400 bg-clip-text text-transparent">
               Opure
             </h1>
-            <p className="text-xs text-gray-400 tracking-widest font-mono">BY CTRL_ALT_HAZE</p>
+            <p className="text-xs text-gray-400 tracking-widest font-mono">BY Ctrl_Alt_Haze</p>
           </div>
         </div>
 
