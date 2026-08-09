@@ -24,7 +24,7 @@
 
 ## Quick intro
 
-I’m Ctrl_Alt_Haze — solo developer and music maker. I build Opure, a local-first, developer-first software engineering platform, and I produce music in my free time. My work focuses on develop[...]
+I’m Ctrl_Alt_Haze — solo developer and music maker. I build Opure, a local-first, developer-first software engineering platform, and I produce music in my free time. My work focuses on development of Opure.
 
 - 🔭 Currently shipping: **Opure** — software engineering platform (Preview release).
 - 🌱 Main implementation choices: **C# / .NET 10** (primary), **Avalonia** desktop framework.
