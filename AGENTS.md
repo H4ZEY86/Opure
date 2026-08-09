@@ -214,16 +214,17 @@ Completed and committed:
 * FND-056 — Add Trust Centre Configuration View.
 * FND-057 — Add Trust Centre IPC Gateway.
 * FND-058 — Add Backup Adapter Contract.
+* FND-059 — Add SQLite Online Backup.
 
 Locally implemented, verified and committed; pending reviewed pushes:
 
 The next planned ticket is:
 
 ```text
-FND-059 — Add SQLite Online Backup
+FND-060 — Add Local Recovery Point View
 ```
 
-Do not assume FND-059 is complete until the Add SQLite Online Backup verifier
+Do not assume FND-060 is complete until the Add Local Recovery Point View verifier
 passes and the changes are reviewed, committed and pushed.
 
 ## Build policy
