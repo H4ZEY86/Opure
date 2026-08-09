@@ -404,3 +404,5 @@ A foundation ticket is complete only when:
 * generated artefacts are excluded;
 * the implementation is reviewed, committed and pushed;
 * the working tree is clean and up to date with `origin/main`.
+
+
