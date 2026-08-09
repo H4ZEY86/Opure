@@ -80,6 +80,9 @@
     <Project Path="tests/Desktop/Opure.Desktop.GatewayClient.Tests/Opure.Desktop.GatewayClient.Tests.csproj" />
     <Project Path="tests/Desktop/Opure.Desktop.Tests/Opure.Desktop.Tests.csproj" />
   </Folder>
+  <Folder Name="/tests/EndToEnd/">
+    <Project Path="tests/EndToEnd/Opure.EndToEnd.Tests/Opure.EndToEnd.Tests.csproj" />
+  </Folder>
   <Folder Name="/tests/Filesystem/">
     <Project Path="tests/Filesystem/Opure.Filesystem.Windows.Tests/Opure.Filesystem.Windows.Tests.csproj" />
   </Folder>

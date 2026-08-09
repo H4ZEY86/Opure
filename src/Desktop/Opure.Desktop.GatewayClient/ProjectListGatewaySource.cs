@@ -110,6 +110,7 @@ internal sealed class ProjectListGatewaySource(string releaseChannel) : IDesktop
         "Development" => ProjectListReleaseChannel.Development,
         "Preview" => ProjectListReleaseChannel.Preview,
         "Stable" => ProjectListReleaseChannel.Stable,
+        "Test" => ProjectListReleaseChannel.Test,
         _ => throw new ArgumentOutOfRangeException(nameof(channel), channel, "The release channel is unsupported.")
     };
 }

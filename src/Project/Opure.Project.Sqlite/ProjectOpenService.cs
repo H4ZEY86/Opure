@@ -377,6 +377,7 @@ public sealed class ProjectOpenService : IProjectOpenRequestHandler
                 DomainReleaseChannel.Development,
             WireReleaseChannel.Preview => DomainReleaseChannel.Preview,
             WireReleaseChannel.Stable => DomainReleaseChannel.Stable,
+            WireReleaseChannel.Test => DomainReleaseChannel.Test,
             _ => throw new ArgumentOutOfRangeException(
                 nameof(channel),
                 channel,
@@ -407,6 +408,7 @@ public sealed class ProjectOpenService : IProjectOpenRequestHandler
                 WireReleaseChannel.Development,
             DomainReleaseChannel.Preview => WireReleaseChannel.Preview,
             DomainReleaseChannel.Stable => WireReleaseChannel.Stable,
+            DomainReleaseChannel.Test => WireReleaseChannel.Test,
             _ => throw new ArgumentOutOfRangeException(
                 nameof(channel),
                 channel,

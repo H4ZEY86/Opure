@@ -218,6 +218,7 @@ public sealed class ProjectServiceHost : IDisposable
             "Development" => ProjectReleaseChannel.Development,
             "Preview" => ProjectReleaseChannel.Preview,
             "Stable" => ProjectReleaseChannel.Stable,
+            "Test" => ProjectReleaseChannel.Test,
             _ => throw new ArgumentException(
                 "The Project Service release channel is unsupported.",
                 nameof(value))

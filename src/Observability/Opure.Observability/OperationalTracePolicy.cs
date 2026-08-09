@@ -11,7 +11,7 @@ public sealed record OperationalTracePolicy(bool Enabled, string ReleaseChannel)
 
         return releaseChannel switch
         {
-            "Development" => new OperationalTracePolicy(true, releaseChannel),
+            "Development" or "Test" => new OperationalTracePolicy(true, releaseChannel),
             "Preview" or "Stable" =>
                 new OperationalTracePolicy(false, releaseChannel),
             _ => throw new ArgumentOutOfRangeException(

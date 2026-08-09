@@ -10,7 +10,8 @@ public enum EvidenceReleaseChannel
 {
     Development = 0,
     Preview = 1,
-    Stable = 2
+    Stable = 2,
+    Test = 3
 }
 
 public enum EvidenceRecordScope

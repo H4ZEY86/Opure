@@ -115,6 +115,7 @@ public sealed class ProjectOpenGatewayReceiver :
             "Development" => WireReleaseChannel.Development,
             "Preview" => WireReleaseChannel.Preview,
             "Stable" => WireReleaseChannel.Stable,
+            "Test" => WireReleaseChannel.Test,
             _ => throw new ArgumentException(
                 "The Desktop release channel is unsupported.",
                 nameof(value))

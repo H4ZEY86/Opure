@@ -186,7 +186,8 @@ public sealed partial record RuntimeBootstrapEnvironment(
     {
         return string.Equals(channel, "Stable", StringComparison.Ordinal) ||
             string.Equals(channel, "Preview", StringComparison.Ordinal) ||
-            string.Equals(channel, "Development", StringComparison.Ordinal);
+            string.Equals(channel, "Development", StringComparison.Ordinal) ||
+            string.Equals(channel, "Test", StringComparison.Ordinal);
     }
 
     [GeneratedRegex("^[0-9a-f]{32}$", RegexOptions.CultureInvariant)]
@@ -195,3 +196,4 @@ public sealed partial record RuntimeBootstrapEnvironment(
     [GeneratedRegex("^[A-Za-z0-9_-]{43}$", RegexOptions.CultureInvariant)]
     private static partial Regex SessionSecretPattern();
 }
+

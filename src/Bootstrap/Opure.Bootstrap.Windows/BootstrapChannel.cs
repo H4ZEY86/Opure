@@ -4,5 +4,7 @@ internal enum BootstrapChannel
 {
     Stable = 0,
     Preview = 1,
-    Development = 2
+    Development = 2,
+    Test = 3
 }
+

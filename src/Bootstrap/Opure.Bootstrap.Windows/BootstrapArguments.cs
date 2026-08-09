@@ -25,7 +25,7 @@ internal static class BootstrapArguments
         Opure Bootstrap
 
         Options:
-          --channel <Stable|Preview|Development>
+          --channel <Stable|Preview|Development|Test>
           --layout <Development|Packaged>
           --configuration <Debug|Release>
           --help
@@ -62,7 +62,7 @@ internal static class BootstrapArguments
                     {
                         options = null;
                         error =
-                            "--channel must be Stable, Preview or Development.";
+                            "--channel must be Stable, Preview, Development or Test.";
                         return false;
                     }
 
@@ -248,3 +248,4 @@ internal static class BootstrapArguments
             string.Equals(value, "Release", StringComparison.Ordinal);
     }
 }
+

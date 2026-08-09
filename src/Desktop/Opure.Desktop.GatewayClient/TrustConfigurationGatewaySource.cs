@@ -80,6 +80,7 @@ internal sealed class TrustConfigurationGatewaySource(string releaseChannel) : I
             "Development" => TrustEvidenceReleaseChannel.Development,
             "Preview" => TrustEvidenceReleaseChannel.Preview,
             "Stable" => TrustEvidenceReleaseChannel.Stable,
+            "Test" => TrustEvidenceReleaseChannel.Test,
             _ => TrustEvidenceReleaseChannel.Unspecified
         };
     }
