@@ -11,7 +11,7 @@ public sealed class EndToEndHarness : IDisposable
     public Process BootstrapProcess { get; }
     public string DataRoot { get; }
 
-    public EndToEndHarness(string additionalArguments = "")
+    public EndToEndHarness(string additionalArguments = "", System.Collections.Generic.Dictionary<string, string>? environmentVariables = null)
     {
         string repositoryRoot = GetRepositoryRoot();
         string configuration = "Debug";
@@ -54,6 +54,14 @@ public sealed class EndToEndHarness : IDisposable
 
         // Tell bootstrap to start in test mode so we can control desktop lifecycle
         startInfo.Environment["OPURE_BOOTSTRAP_TEST_MODE"] = "true";
+
+        if (environmentVariables != null)
+        {
+            foreach (var kvp in environmentVariables)
+            {
+                startInfo.Environment[kvp.Key] = kvp.Value;
+            }
+        }
 
         BootstrapProcess = Process.Start(startInfo)
             ?? throw new InvalidOperationException("Failed to start Bootstrap process.");

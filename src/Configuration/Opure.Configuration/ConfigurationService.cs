@@ -258,6 +258,11 @@ public sealed class ConfigurationService
             throw new InvalidOperationException("Cannot commit an invalid transaction preview.");
         }
 
+        if (Environment.GetEnvironmentVariable("OPURE_TEST_CRASH_POINT") == "ConfigurationBeforeCommit")
+        {
+            Environment.Exit(71);
+        }
+
         database.Save(preview.ProvisionalProfile, cancellationToken);
 
         string transactionId = Guid.NewGuid().ToString("N");
@@ -268,6 +273,11 @@ public sealed class ConfigurationService
         EvidenceRecordPayload payload = EvidenceRecordPayload.CreateInline(
             $"{{\"transaction_id\":\"{transactionId}\",\"is_valid\":true,\"error_count\":0}}",
             EvidenceDataClassification.Safe);
+
+        if (Environment.GetEnvironmentVariable("OPURE_TEST_CRASH_POINT") == "ConfigurationAfterCommitBeforeOutbox")
+        {
+            Environment.Exit(71);
+        }
 
         evidencePort.Ingest(
             new EvidenceIngestionRequest(

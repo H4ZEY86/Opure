@@ -133,6 +133,12 @@ public sealed class TrustEvidenceServiceHost : IDisposable
                 EvidenceOwnerSessionAuthenticationState.Authenticated,
                 now,
                 now.Add(SessionLifetime));
+
+            if (Environment.GetEnvironmentVariable("OPURE_TEST_CRASH_POINT") == "TrustEvidenceIngestion")
+            {
+                Environment.Exit(71);
+            }
+
             return ingestion.Ingest(
                 session,
                 request,

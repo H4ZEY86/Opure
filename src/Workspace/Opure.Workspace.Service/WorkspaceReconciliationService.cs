@@ -134,6 +134,11 @@ public sealed class WorkspaceReconciliationService
                     batch.PeakPendingHintCount);
             }
 
+            if (Environment.GetEnvironmentVariable("OPURE_TEST_CRASH_POINT") == "WorkspaceGenerationBeforeCommit")
+            {
+                Environment.Exit(71);
+            }
+
             WorkspaceGenerationSnapshot committed = generationStore.Commit(
                 candidate,
                 commitContext,

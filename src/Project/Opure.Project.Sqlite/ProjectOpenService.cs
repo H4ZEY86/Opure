@@ -153,6 +153,11 @@ public sealed class ProjectOpenService : IProjectOpenRequestHandler
                 "A committed Open Project operation returned no project.");
         WorkspaceSnapshotRequestResult initialSnapshot;
 
+        if (Environment.GetEnvironmentVariable("OPURE_TEST_CRASH_POINT") == "ProjectServiceMidFlight")
+        {
+            Environment.Exit(71);
+        }
+
         try
         {
             RepositoryObservation repositoryObservation = repositoryDetector.Observe(

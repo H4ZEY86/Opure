@@ -389,6 +389,68 @@ public sealed class SqliteServiceDatabaseTests
         });
     }
 
+    [Fact]
+    public void DiskSpaceExhaustion_SqliteCommit_FailsSafelyWithoutCorruption()
+    {
+        using TestDataRoot testRoot = new();
+        SamplePersistenceService service = new(testRoot.ChannelRoot);
+        using SqliteServiceDatabase database = service.Initialise();
+
+        // Calculate the current page count
+        long pageCount = 0;
+        database.ExecuteTransaction<int>((connection, transaction) =>
+        {
+            using var countCmd = connection.CreateCommand();
+            countCmd.Transaction = transaction;
+            countCmd.CommandText = "PRAGMA page_count;";
+            pageCount = (long)(countCmd.ExecuteScalar() ?? 0L);
+            return 1;
+        }, CancellationToken.None);
+
+        // Clamp the max_page_count to exactly the current page count to simulate a completely full disk
+        database.ExecuteTransaction<int>((connection, transaction) =>
+        {
+            using var pragmaCmd = connection.CreateCommand();
+            pragmaCmd.Transaction = transaction;
+            pragmaCmd.CommandText = $"PRAGMA max_page_count = {pageCount};";
+            pragmaCmd.ExecuteNonQuery();
+            return 1;
+        }, CancellationToken.None);
+
+        // Attempt a critical transaction that exceeds the allowed space
+        byte[] largePayload = new byte[8192];
+        Random.Shared.NextBytes(largePayload);
+        string payloadStr = Convert.ToBase64String(largePayload);
+        
+        var ex = Assert.Throws<SqlitePersistenceException>(() =>
+        {
+            database.ExecuteTransaction<int>((connection, transaction) =>
+            {
+                using var command = connection.CreateCommand();
+                command.Transaction = transaction;
+                command.CommandText = "INSERT INTO sample_items (value) VALUES (@p);";
+                command.Parameters.AddWithValue("@p", payloadStr);
+                command.ExecuteNonQuery();
+                return 1;
+            }, TestContext.Current.CancellationToken);
+        });
+
+        // Must be SQLITE_FULL (13) exception which represents out of space, wrapped in Persistence Exception
+        Assert.Equal(SqlitePersistenceErrorCodes.WriteFailed, ex.ErrorCode);
+        var sqliteEx = ex.InnerException as Microsoft.Data.Sqlite.SqliteException;
+        Assert.NotNull(sqliteEx);
+        Assert.Equal(13, sqliteEx.SqliteErrorCode); 
+        database.ExecuteTransaction<int>((connection, transaction) =>
+        {
+            using var integrityCmd = connection.CreateCommand();
+            integrityCmd.Transaction = transaction;
+            integrityCmd.CommandText = "PRAGMA integrity_check;";
+            string integrity = (string)(integrityCmd.ExecuteScalar() ?? string.Empty);
+            Assert.Equal("ok", integrity);
+            return 1;
+        }, CancellationToken.None);
+    }
+
     private static void UpdateMaximum(ref int maximum, int candidate)
     {
         int current = Volatile.Read(ref maximum);
