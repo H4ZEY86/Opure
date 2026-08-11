@@ -4,24 +4,99 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Opure.Desktop.Contracts;
+using Opure.Ipc.Abstractions;
+using Opure.Ipc.NamedPipes.Windows;
+using Opure.Recovery.Protocol;
+using Opure.Recovery.Protocol.Point.V1;
 
 namespace Opure.Desktop.GatewayClient;
 
 public sealed class RecoveryPointGatewayClient : DesktopRecoveryPointViewModel
 {
+    private readonly string _releaseChannel;
+
     public override ObservableCollection<DesktopRecoveryPoint> RecoveryPoints { get; } = new();
 
     public override ICommand CreateRecoveryPointCommand { get; }
     public override ICommand VerifyRecoveryPointCommand { get; }
 
-    public RecoveryPointGatewayClient()
+    public RecoveryPointGatewayClient(string releaseChannel)
     {
-        // Dummy ICommand implementation for Foundation phase
+        _releaseChannel = releaseChannel;
         CreateRecoveryPointCommand = new RelayCommand(async () => await CreateAsync());
         VerifyRecoveryPointCommand = new RelayCommand(async () => await VerifyAsync());
+
+        // Fire and forget list population
+        _ = RefreshAsync();
     }
 
-    private static Task CreateAsync() => Task.CompletedTask;
+    private async Task RefreshAsync()
+    {
+        RuntimeHealthEndpoint? endpoint = RuntimeHealthEndpointEnvironment.ReadCurrent();
+        RuntimeHealthSessionMaterial? sessionMaterial = RuntimeHealthSessionEnvironment.ReadCurrent();
+
+        if (endpoint is null || sessionMaterial is null)
+        {
+            return;
+        }
+
+        await using NamedPipeRecoveryPointClient client = new(endpoint, sessionMaterial);
+
+        try
+        {
+            var response = await client.ListRecoveryPointsAsync(new ListRecoveryPointsRequestMessage
+            {
+                ContractRevision = RecoveryPointContractPolicy.CurrentRevision,
+                ReleaseChannel = _releaseChannel
+            }, CancellationToken.None).ConfigureAwait(true);
+
+            RecoveryPoints.Clear();
+
+            foreach (var point in response.Points)
+            {
+                RecoveryPoints.Add(new DesktopRecoveryPoint(
+                    Guid.Parse(point.RecoveryPointId),
+                    DateTimeOffset.FromUnixTimeMilliseconds(point.CreatedAtUnixTimeMilliseconds).ToLocalTime(),
+                    point.VerificationState));
+            }
+        }
+        catch
+        {
+            // Ignore transport errors for now
+        }
+    }
+
+    private async Task CreateAsync()
+    {
+        RuntimeHealthEndpoint? endpoint = RuntimeHealthEndpointEnvironment.ReadCurrent();
+        RuntimeHealthSessionMaterial? sessionMaterial = RuntimeHealthSessionEnvironment.ReadCurrent();
+
+        if (endpoint is null || sessionMaterial is null)
+        {
+            return;
+        }
+
+        await using NamedPipeRecoveryPointClient client = new(endpoint, sessionMaterial);
+
+        try
+        {
+            var response = await client.CreateRecoveryPointAsync(new CreateRecoveryPointRequestMessage
+            {
+                ContractRevision = RecoveryPointContractPolicy.CurrentRevision,
+                ReleaseChannel = _releaseChannel
+            }, CancellationToken.None).ConfigureAwait(true);
+
+            if (response.IsSuccess)
+            {
+                await RefreshAsync();
+            }
+        }
+        catch
+        {
+            // Ignore for now
+        }
+    }
+
     private static Task VerifyAsync() => Task.CompletedTask;
 
     private class RelayCommand : ICommand

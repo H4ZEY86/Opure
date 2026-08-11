@@ -18,6 +18,7 @@
     <ProjectReference Include="..\..\Project\Opure.Project.Protocol\Opure.Project.Protocol.csproj" />
     <ProjectReference Include="..\..\Runtime\Opure.Runtime.Contracts\Opure.Runtime.Contracts.csproj" />
     <ProjectReference Include="..\..\Trust\Opure.TrustEvidence.Protocol\Opure.TrustEvidence.Protocol.csproj" />
+    <ProjectReference Include="..\..\Recovery\Opure.Recovery.Protocol\Opure.Recovery.Protocol.csproj" />
   </ItemGroup>
 
 </Project>

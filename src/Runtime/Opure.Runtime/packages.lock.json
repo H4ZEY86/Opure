@@ -83,6 +83,7 @@
           "Opure.Ipc.Abstractions": "[1.0.0, )",
           "Opure.Observability.Contracts": "[1.0.0, )",
           "Opure.Project.Protocol": "[1.0.0, )",
+          "Opure.Recovery.Protocol": "[1.0.0, )",
           "Opure.Runtime.Contracts": "[1.0.0, )",
           "Opure.TrustEvidence.Protocol": "[1.0.0, )"
         }
@@ -139,6 +140,26 @@
           "Opure.Repository.Contracts": "[1.0.0, )",
           "Opure.TrustEvidence.Contracts": "[1.0.0, )",
           "Opure.Workspace.Contracts": "[1.0.0, )"
+        }
+      },
+      "opure.recovery.contracts": {
+        "type": "Project"
+      },
+      "opure.recovery.protocol": {
+        "type": "Project",
+        "dependencies": {
+          "Google.Protobuf": "[3.35.1, )",
+          "Grpc.Core.Api": "[2.80.0, )",
+          "Opure.Recovery.Contracts": "[1.0.0, )"
+        }
+      },
+      "opure.recovery.service": {
+        "type": "Project",
+        "dependencies": {
+          "Opure.Recovery.Contracts": "[1.0.0, )",
+          "Opure.Runtime.Contracts": "[1.0.0, )",
+          "Opure.TrustEvidence.Contracts": "[1.0.0, )",
+          "Opure.TrustEvidence.Service": "[1.0.0, )"
         }
       },
       "opure.repository.contracts": {

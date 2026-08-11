@@ -21,6 +21,10 @@
       Include="Protos\backup\backup_adapter.proto"
       ProtoRoot="Protos"
       GrpcServices="Both" />
+    <Protobuf
+      Include="Protos\point\recovery_point.proto"
+      ProtoRoot="Protos"
+      GrpcServices="Both" />
   </ItemGroup>
 
   <ItemGroup>

@@ -98,4 +98,33 @@ public sealed class LocalRecoveryPointService
         var hash = sha256.ComputeHash(stream);
         return Convert.ToHexString(hash).ToLowerInvariant();
     }
+
+#pragma warning disable CA1822 // Method does not access instance data and can be marked as static (Service methods should remain instance methods for DI and mocking).
+    public Task<IReadOnlyList<RecoveryPointManifest>> ListRecoveryPointsAsync(string recoveryRootPath, CancellationToken cancellationToken)
+#pragma warning restore CA1822
+    {
+        var results = new List<RecoveryPointManifest>();
+        if (!Directory.Exists(recoveryRootPath))
+            return Task.FromResult<IReadOnlyList<RecoveryPointManifest>>(results);
+
+        foreach (var dir in Directory.GetDirectories(recoveryRootPath))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            string commitMarkerPath = Path.Combine(dir, ".commit");
+            if (File.Exists(commitMarkerPath))
+            {
+                string epochIdStr = Path.GetFileName(dir);
+                if (Guid.TryParse(epochIdStr, out Guid epochId))
+                {
+                    // For now, we return a minimal manifest with just the ID and Creation Time based on directory creation
+                    var dirInfo = new DirectoryInfo(dir);
+                    var epoch = new BackupEpoch(epochId, dirInfo.CreationTimeUtc);
+                    var manifest = new RecoveryPointManifest(epochId, epoch, "local", "Unknown", new Dictionary<string, RecoveryOwnerSnapshot>());
+                    results.Add(manifest);
+                }
+            }
+        }
+
+        return Task.FromResult<IReadOnlyList<RecoveryPointManifest>>(results);
+    }
 }

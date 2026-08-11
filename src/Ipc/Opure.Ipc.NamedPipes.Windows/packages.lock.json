@@ -50,6 +50,17 @@
           "Grpc.Core.Api": "[2.80.0, )"
         }
       },
+      "opure.recovery.contracts": {
+        "type": "Project"
+      },
+      "opure.recovery.protocol": {
+        "type": "Project",
+        "dependencies": {
+          "Google.Protobuf": "[3.35.1, )",
+          "Grpc.Core.Api": "[2.80.0, )",
+          "Opure.Recovery.Contracts": "[1.0.0, )"
+        }
+      },
       "opure.runtime.contracts": {
         "type": "Project",
         "dependencies": {

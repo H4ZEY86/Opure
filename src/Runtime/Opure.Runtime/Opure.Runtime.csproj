@@ -8,6 +8,7 @@
     <ProjectReference Include="..\..\Observability\Opure.Observability\Opure.Observability.csproj" />
     <ProjectReference Include="..\..\Project\Opure.Project.Service\Opure.Project.Service.csproj" />
     <ProjectReference Include="..\..\Trust\Opure.TrustEvidence.Service\Opure.TrustEvidence.Service.csproj" />
+    <ProjectReference Include="..\..\Recovery\Opure.Recovery.Service\Opure.Recovery.Service.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

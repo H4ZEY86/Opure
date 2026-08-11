@@ -125,6 +125,9 @@ public sealed class RuntimeApplication
                     "A required Runtime service did not become ready.");
             }
 
+            var recoveryPointService = new Opure.Recovery.Service.LocalRecoveryPointService(Array.Empty<Opure.Recovery.Contracts.IBackupAdapter>());
+            var recoveryPointHandler = new Opure.Runtime.Handlers.RecoveryPointRequestHandler(recoveryPointService, dataRoot.FullPath);
+
             healthTransport = await NamedPipeGatewayServer.StartAsync(
                 endpoint,
                 new RuntimeHealthRequestHandler(
@@ -145,7 +148,8 @@ public sealed class RuntimeApplication
                         completion,
                         operationalLogger),
                 projectOpenRequestHandler: projectService.OpenHandler,
-                projectListRequestHandler: projectService.ListHandler)
+                projectListRequestHandler: projectService.ListHandler,
+                recoveryPointRequestHandler: recoveryPointHandler)
                 .ConfigureAwait(false);
 
             lifecycle.TransitionTo(RuntimeLifecycleState.Ready);
