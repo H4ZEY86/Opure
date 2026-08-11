@@ -25,7 +25,7 @@ public sealed class RuntimeExecutableBoundaryTests
             .OfType<string>()
             .ToArray();
 
-        Assert.Equal(7, projectReferences.Length);
+        Assert.Equal(8, projectReferences.Length);
         Assert.Contains(
             projectReferences,
             reference => reference.EndsWith(
@@ -74,6 +74,13 @@ public sealed class RuntimeExecutableBoundaryTests
                 Path.Combine(
                     "Opure.TrustEvidence.Service",
                     "Opure.TrustEvidence.Service.csproj"),
+                StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(
+            projectReferences,
+            reference => reference.EndsWith(
+                Path.Combine(
+                    "Opure.Recovery.Service",
+                    "Opure.Recovery.Service.csproj"),
                 StringComparison.OrdinalIgnoreCase));
 
         Assert.False(
