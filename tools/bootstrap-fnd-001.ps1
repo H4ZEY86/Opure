@@ -204,8 +204,8 @@ Use -AllowDirty only for a reviewed rerun after an interrupted FND-001 attempt.
 
     $installedSdkStrings = @(
         & dotnet --list-sdks |
-            ForEach-Object { ($_ -split '\s+')[0] } |
-            Where-Object { $_ -match '^10\.0\.\d+$' }
+        ForEach-Object { ($_ -split '\s+')[0] } |
+        Where-Object { $_ -match '^10\.0\.\d+$' }
     )
 
     if ($installedSdkStrings.Count -eq 0) {
@@ -221,8 +221,8 @@ Use -AllowDirty only for a reviewed rerun after an interrupted FND-001 attempt.
     else {
         $selectedSdk = (
             $installedSdkStrings |
-                Sort-Object { [version]$_ } -Descending |
-                Select-Object -First 1
+            Sort-Object { [version]$_ } -Descending |
+            Select-Object -First 1
         )
     }
 

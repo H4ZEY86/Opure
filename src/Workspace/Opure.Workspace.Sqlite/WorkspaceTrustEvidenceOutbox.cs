@@ -316,6 +316,7 @@ public static class WorkspaceTrustEvidenceOutbox
             WorkspaceReleaseChannel.Development => EvidenceReleaseChannel.Development,
             WorkspaceReleaseChannel.Preview => EvidenceReleaseChannel.Preview,
             WorkspaceReleaseChannel.Stable => EvidenceReleaseChannel.Stable,
+            WorkspaceReleaseChannel.Test => EvidenceReleaseChannel.Test,
             _ => throw new ArgumentOutOfRangeException(nameof(channel))
         };
 

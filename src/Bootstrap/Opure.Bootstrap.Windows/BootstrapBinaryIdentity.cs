@@ -33,7 +33,7 @@ internal static class BootstrapBinaryIdentityVerifier
         if (!File.Exists(fullPath))
         {
             throw new FileNotFoundException(
-                "Expected Bootstrap child executable was not found.",
+                $"Expected Bootstrap child executable was not found: {fullPath}",
                 fullPath);
         }
 
@@ -80,8 +80,9 @@ internal static class BootstrapBinaryIdentityVerifier
             ?? assemblyName.Version?.ToString()
             ?? "unknown";
 
+        using var stream = File.OpenRead(fullPath);
         string executableHash = Convert.ToHexStringLower(
-            SHA256.HashData(File.ReadAllBytes(fullPath)));
+            SHA256.HashData(stream));
 
         return new BootstrapBinaryIdentity(
             fullPath,

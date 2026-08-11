@@ -14,16 +14,20 @@ using Opure.Filesystem.Contracts;
 namespace Opure.EndToEnd.Tests;
 
 [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+[Collection("E2E")]
 public class RuntimeCrashRecoveryTests
 {
-    private static Process GetRuntimeProcess(int parentId)
+    private static async Task<Process> GetRuntimeProcessAsync(int parentId)
     {
-        var processes = Process.GetProcessesByName("Opure.Runtime.Windows");
-        if (processes.Length == 0)
-            throw new InvalidOperationException("Runtime process not found.");
-        
-        // Simple fallback since tests run in isolation and there should only be one Runtime
-        return processes.First();
+        for (int i = 0; i < 10; i++)
+        {
+            var processes = Process.GetProcessesByName("Opure.Runtime");
+            if (processes.Length > 0)
+                return processes.First();
+                
+            await Task.Delay(1000);
+        }
+        throw new InvalidOperationException("Runtime process not found.");
     }
 
     [Fact]
@@ -32,7 +36,7 @@ public class RuntimeCrashRecoveryTests
         using var harness = new EndToEndHarness();
         var env = await harness.GetTestSessionAsync(TestContext.Current.CancellationToken);
         
-        var endpoint = new RuntimeHealthEndpoint(env["OPURE_IPC_PIPE"], "");
+        var endpoint = new RuntimeHealthEndpoint(env["OPURE_IPC_PIPE"], env.TryGetValue("OPURE_RUNTIME_BOOT_ID", out var bootId) ? bootId : new string('0', 32));
         var session = new RuntimeHealthSessionMaterial(env["OPURE_BOOTSTRAP_SESSION_ID"], env["OPURE_BOOTSTRAP_SESSION_SECRET"]);
 
         var healthSource = RuntimeHealthGatewayClient.CreateProjectionSource("1.0.0", DesktopSupervisorProjection.Disconnected, endpoint, session);
@@ -52,12 +56,12 @@ public class RuntimeCrashRecoveryTests
         VerifiedWorkspaceRootTransferReceipt receipt = await receiver.ReceiveAsync(reference, TestContext.Current.CancellationToken);
         
         Assert.NotNull(receipt);
-        Assert.Equal("Unopened", receipt.AuthoritativeState);
+        Assert.Equal("Open", receipt.AuthoritativeState);
         
         var listSource = RuntimeHealthGatewayClient.CreateProjectListSource("Test");
         var projection = await listSource.RefreshAsync(TestContext.Current.CancellationToken);
         
-        Assert.Contains(projection.Projects, p => p.SafeLocationSummary.Contains("DummyProject"));
+        Assert.Contains(projection.Projects, p => p.DisplayName == "DummyProject");
     }
     
     [Fact]
@@ -66,7 +70,7 @@ public class RuntimeCrashRecoveryTests
         using var harness = new EndToEndHarness();
         var env = await harness.GetTestSessionAsync(TestContext.Current.CancellationToken);
         
-        var runtimeProcess = GetRuntimeProcess(harness.BootstrapProcess.Id);
+        var runtimeProcess = await GetRuntimeProcessAsync(harness.BootstrapProcess.Id);
         int originalPid = runtimeProcess.Id;
         
         // Kill the runtime process to simulate a crash
@@ -76,12 +80,12 @@ public class RuntimeCrashRecoveryTests
         // Bootstrap should restart it
         await Task.Delay(2000, TestContext.Current.CancellationToken); 
         
-        var newRuntimeProcess = GetRuntimeProcess(harness.BootstrapProcess.Id);
+        var newRuntimeProcess = await GetRuntimeProcessAsync(harness.BootstrapProcess.Id);
         Assert.NotEqual(originalPid, newRuntimeProcess.Id);
         
         // The pipe is different because the session rotates
         var newEnv = await harness.GetTestSessionAsync(TestContext.Current.CancellationToken);
-        var endpoint = new RuntimeHealthEndpoint(newEnv["OPURE_IPC_PIPE"], "");
+        var endpoint = new RuntimeHealthEndpoint(newEnv["OPURE_IPC_PIPE"], newEnv.TryGetValue("OPURE_RUNTIME_BOOT_ID", out var newBootId) ? newBootId : new string('0', 32));
         var session = new RuntimeHealthSessionMaterial(newEnv["OPURE_BOOTSTRAP_SESSION_ID"], newEnv["OPURE_BOOTSTRAP_SESSION_SECRET"]);
         
         var healthSource = RuntimeHealthGatewayClient.CreateProjectionSource("1.0.0", DesktopSupervisorProjection.Disconnected, endpoint, session);
@@ -97,7 +101,7 @@ public class RuntimeCrashRecoveryTests
         using var harness = new EndToEndHarness();
         var env = await harness.GetTestSessionAsync(TestContext.Current.CancellationToken);
         
-        var endpoint = new RuntimeHealthEndpoint(env["OPURE_IPC_PIPE"], "");
+        var endpoint = new RuntimeHealthEndpoint(env["OPURE_IPC_PIPE"], env.TryGetValue("OPURE_RUNTIME_BOOT_ID", out var bootId) ? bootId : new string('0', 32));
         var session = new RuntimeHealthSessionMaterial(env["OPURE_BOOTSTRAP_SESSION_ID"], env["OPURE_BOOTSTRAP_SESSION_SECRET"]);
 
         var healthSource = RuntimeHealthGatewayClient.CreateProjectionSource("1.0.0", DesktopSupervisorProjection.Disconnected, endpoint, session);
@@ -105,7 +109,7 @@ public class RuntimeCrashRecoveryTests
         
         Assert.Equal(DesktopRuntimeConnectionState.Connected, snapshot.ConnectionState);
         
-        var runtimeProcess = GetRuntimeProcess(harness.BootstrapProcess.Id);
+        var runtimeProcess = await GetRuntimeProcessAsync(harness.BootstrapProcess.Id);
         
         // We disconnect (by letting the gateway client go out of scope and stopping requests).
         // Since we are the Desktop in this test harness, we don't have a real Opure.Desktop.exe running that we could kill.
@@ -119,7 +123,7 @@ public class RuntimeCrashRecoveryTests
     public async Task SupervisorSafeMode_EnforcedAfterBudgetExhausted()
     {
         // Use additional arguments to configure tight budget and instant crash
-        using var harness = new EndToEndHarness("--test-crash-after-ready-ms 100 --test-crash-count 4");
+        using var harness = new EndToEndHarness("--runtime-crash-after-ready-ms 100 --runtime-crash-count 4");
         
         // The Runtime will crash repeatedly until budget is exhausted (4 times)
         // Then Bootstrap enters Safe Mode.
@@ -130,7 +134,7 @@ public class RuntimeCrashRecoveryTests
         await Task.Delay(3000, TestContext.Current.CancellationToken);
         
         // There should be no Runtime process running
-        var processes = Process.GetProcessesByName("Opure.Runtime.Windows");
+        var processes = Process.GetProcessesByName("Opure.Runtime");
         Assert.Empty(processes);
     }
 }

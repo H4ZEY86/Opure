@@ -11,7 +11,7 @@ param(
     [string] $Configuration = 'Debug',
 
     [Parameter()]
-    [ValidateSet('Development', 'Preview', 'Stable')]
+    [ValidateSet('Development', 'Preview', 'Stable', 'Test')]
     [string] $BuildChannel = 'Development',
 
     [Parameter()]

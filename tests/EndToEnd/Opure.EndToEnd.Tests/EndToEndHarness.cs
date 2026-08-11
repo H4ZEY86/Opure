@@ -45,7 +45,7 @@ public sealed class EndToEndHarness : IDisposable
         var startInfo = new ProcessStartInfo
         {
             FileName = bootstrapExecutable,
-            Arguments = $"--channel Test --layout Development {additionalArguments}".Trim(),
+            Arguments = $"--channel Test --layout Development --configuration {configuration} {additionalArguments}".Trim(),
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -53,23 +53,11 @@ public sealed class EndToEndHarness : IDisposable
         };
 
         // Tell bootstrap to start in test mode so we can control desktop lifecycle
-        startInfo.Environment["OPURE_BOOTSTRAP_TEST_MODE"] = "1";
+        startInfo.Environment["OPURE_BOOTSTRAP_TEST_MODE"] = "true";
 
         BootstrapProcess = Process.Start(startInfo)
             ?? throw new InvalidOperationException("Failed to start Bootstrap process.");
             
-        Task.Run(() => 
-        {
-            try {
-                using var fs = new FileStream(Path.Combine(DataRoot, "bootstrap-log.txt"), FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
-                using var sw = new StreamWriter(fs);
-                while (!BootstrapProcess.StandardOutput.EndOfStream)
-                {
-                    string? line = BootstrapProcess.StandardOutput.ReadLine();
-                    if (line != null) sw.WriteLine(line);
-                }
-            } catch { }
-        });
         Task.Run(() => 
         {
             try {
@@ -99,52 +87,130 @@ public sealed class EndToEndHarness : IDisposable
     }
 
     public async Task<System.Collections.Generic.Dictionary<string, string>> GetTestSessionAsync(CancellationToken cancellationToken = default)
+{
+    using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+    using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeout.Token);
+    var stdoutLog = new System.Text.StringBuilder();
+    
+    while (!linked.Token.IsCancellationRequested)
     {
-        string sessionPath = Path.Combine(DataRoot, "test-session.json");
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeout.Token);
-        
-        while (!linked.Token.IsCancellationRequested)
+        string? line = await BootstrapProcess.StandardOutput.ReadLineAsync(linked.Token);
+        if (line != null)
         {
-            if (File.Exists(sessionPath))
+            stdoutLog.AppendLine(line);
+            if (line.Contains("\"kind\":\"ipc.session\""))
             {
                 try
                 {
-                    string json = await File.ReadAllTextAsync(sessionPath, linked.Token);
-                    var env = System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.Dictionary<string, string>>(json);
-                    if (env != null && env.ContainsKey("OPURE_IPC_PIPE"))
+                    using var document = System.Text.Json.JsonDocument.Parse(line);
+                    var root = document.RootElement;
+                    if (root.TryGetProperty("OPURE_IPC_PIPE", out var pipe) &&
+                        root.TryGetProperty("OPURE_RUNTIME_BOOT_ID", out var bootId) &&
+                        root.TryGetProperty("OPURE_BOOTSTRAP_SESSION_ID", out var sessionId) &&
+                        root.TryGetProperty("OPURE_BOOTSTRAP_SESSION_SECRET", out var sessionSecret))
                     {
+                        var env = new System.Collections.Generic.Dictionary<string, string>
+                        {
+                            ["OPURE_IPC_PIPE"] = pipe.GetString()!,
+                            ["OPURE_RUNTIME_BOOT_ID"] = bootId.GetString()!,
+                            ["OPURE_BOOTSTRAP_SESSION_ID"] = sessionId.GetString()!,
+                            ["OPURE_BOOTSTRAP_SESSION_SECRET"] = sessionSecret.GetString()!
+                        };
+                        Environment.SetEnvironmentVariable("OPURE_RUNTIME_PIPE_NAME", env["OPURE_IPC_PIPE"]);
+                        Environment.SetEnvironmentVariable("OPURE_RUNTIME_BOOT_ID", env["OPURE_RUNTIME_BOOT_ID"]);
+                        Environment.SetEnvironmentVariable("OPURE_BOOTSTRAP_SESSION_ID", env["OPURE_BOOTSTRAP_SESSION_ID"]);
+                        Environment.SetEnvironmentVariable("OPURE_BOOTSTRAP_SESSION_SECRET", env["OPURE_BOOTSTRAP_SESSION_SECRET"]);
                         return env;
                     }
                 }
-                catch (IOException)
-                {
-                    // File might be in use, retry
-                }
+                catch (System.Text.Json.JsonException) { }
             }
-            await Task.Delay(100, linked.Token);
         }
         
-        throw new TimeoutException("Test session file was not created within the timeout.");
+        if (line == null && BootstrapProcess.HasExited)
+        {
+            throw new InvalidOperationException($"Bootstrap process exited prematurely with exit code {BootstrapProcess.ExitCode}. Stdout: {stdoutLog}");
+        }
+    }
+    
+    throw new TimeoutException("Test session line was not emitted within the timeout.");
+}
+
+    private static System.Collections.Generic.Dictionary<string, string>? ParseSessionJson(string line)
+    {
+        try
+        {
+            using var document = System.Text.Json.JsonDocument.Parse(line);
+            var root = document.RootElement;
+            if (root.TryGetProperty("OPURE_IPC_PIPE", out var pipe) &&
+                root.TryGetProperty("OPURE_RUNTIME_BOOT_ID", out var bootId) &&
+                root.TryGetProperty("OPURE_BOOTSTRAP_SESSION_ID", out var sessionId) &&
+                root.TryGetProperty("OPURE_BOOTSTRAP_SESSION_SECRET", out var sessionSecret))
+            {
+                var env = new System.Collections.Generic.Dictionary<string, string>
+                {
+                    ["OPURE_IPC_PIPE"] = pipe.GetString()!,
+                    ["OPURE_RUNTIME_BOOT_ID"] = bootId.GetString()!,
+                    ["OPURE_BOOTSTRAP_SESSION_ID"] = sessionId.GetString()!,
+                    ["OPURE_BOOTSTRAP_SESSION_SECRET"] = sessionSecret.GetString()!
+                };
+                Environment.SetEnvironmentVariable("OPURE_RUNTIME_PIPE_NAME", env["OPURE_IPC_PIPE"]);
+                Environment.SetEnvironmentVariable("OPURE_RUNTIME_BOOT_ID", env["OPURE_RUNTIME_BOOT_ID"]);
+                Environment.SetEnvironmentVariable("OPURE_BOOTSTRAP_SESSION_ID", env["OPURE_BOOTSTRAP_SESSION_ID"]);
+                Environment.SetEnvironmentVariable("OPURE_BOOTSTRAP_SESSION_SECRET", env["OPURE_BOOTSTRAP_SESSION_SECRET"]);
+                return env;
+            }
+        }
+        catch (System.Text.Json.JsonException) { }
+        return null;
+    }
+
+    private static System.Collections.Generic.Dictionary<string, string>? TryParseSessionLine(string line)
+    {
+        if (line.Contains("\"kind\":\"ipc.session\""))
+        {
+            return ParseSessionJson(line);
+        }
+        return null;
     }
 
     public void Dispose()
     {
+        // 1. Terminate the Bootstrap process
         if (!BootstrapProcess.HasExited)
         {
-            BootstrapProcess.Kill(true);
+            try { BootstrapProcess.Kill(true); } catch { }
         }
         BootstrapProcess.Dispose();
 
-        try
+        // 2. Terminate any orphaned Runtime processes holding SQLite locks
+        foreach (var process in Process.GetProcessesByName("Opure.Runtime"))
         {
-            if (Directory.Exists(DataRoot))
+            try 
+            { 
+                process.Kill(true); 
+                process.WaitForExit(1000); // Give the OS a second to flush handles
+            } 
+            catch { }
+        }
+
+        // 3. Now that handles are released, cleanly wipe the state for the next test
+        if (Directory.Exists(DataRoot))
+        {
+            // Try up to 3 times to account for lingering OS locks
+            for (int i = 0; i < 3; i++)
             {
-                Directory.Delete(DataRoot, recursive: true);
+                try 
+                { 
+                    Directory.Delete(DataRoot, recursive: true); 
+                    break; 
+                } 
+                catch when (i < 2) 
+                { 
+                    Thread.Sleep(500); 
+                }
+                catch { }
             }
         }
-        catch { /* ignore cleanup errors */ }
     }
 }
-
-

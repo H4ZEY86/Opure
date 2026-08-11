@@ -444,10 +444,10 @@ public static class ProjectTrustEvidenceOutbox
     {
         return channel switch
         {
-            ProjectReleaseChannel.Development =>
-                EvidenceReleaseChannel.Development,
+            ProjectReleaseChannel.Development => EvidenceReleaseChannel.Development,
             ProjectReleaseChannel.Preview => EvidenceReleaseChannel.Preview,
             ProjectReleaseChannel.Stable => EvidenceReleaseChannel.Stable,
+            ProjectReleaseChannel.Test => EvidenceReleaseChannel.Test,
             _ => throw new ArgumentOutOfRangeException(nameof(channel))
         };
     }

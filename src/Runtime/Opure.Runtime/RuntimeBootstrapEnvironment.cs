@@ -85,7 +85,7 @@ public sealed partial record RuntimeBootstrapEnvironment(
         if (channel is null || !IsSupportedChannel(channel))
         {
             environment = null;
-            error = "Bootstrap release channel is invalid.";
+            error = $"Bootstrap release channel is invalid: '{channel ?? "null"}'";
             return false;
         }
 

@@ -97,7 +97,7 @@ internal static class Program
                     Console.Out,
                     BootstrapExitCode.BinaryValidationFailure,
                     "binary_validation_failure",
-                    "Bootstrap could not verify the expected child binaries.",
+                    "Bootstrap could not verify the expected child binaries. " + exception.Message,
                     exception.GetType().FullName).ConfigureAwait(false);
 
                 return (int)BootstrapExitCode.BinaryValidationFailure;
@@ -144,6 +144,17 @@ internal static class Program
                         StringComparer.Ordinal)
                     {
                         ["OPURE_RUNTIME_TEST_MODE"] = "1"
+                    };
+            }
+
+            if (testMode)
+            {
+                childEnvironment =
+                    new Dictionary<string, string>(
+                        childEnvironment,
+                        StringComparer.Ordinal)
+                    {
+                        ["OPURE_BOOTSTRAP_TEST_MODE"] = "1"
                     };
             }
 

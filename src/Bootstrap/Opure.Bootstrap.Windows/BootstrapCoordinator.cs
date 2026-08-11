@@ -85,7 +85,7 @@ internal sealed class BootstrapCoordinator
                     output,
                     BootstrapExitCode.RuntimeStartFailure,
                     "runtime_readiness_failure",
-                    "Runtime did not reach verified readiness.",
+                    exception.InnerException?.Message ?? "Runtime did not reach verified readiness.",
                     exception.InnerException?.GetType().FullName ??
                     exception.GetType().FullName).ConfigureAwait(false);
 
@@ -521,7 +521,11 @@ internal sealed class BootstrapCoordinator
             }
             catch (Exception exception)
             {
-                throw new BootstrapRuntimeReadinessException(exception);
+                string errorOutput = "";
+                if (errorTask != null) {
+                    try { errorOutput = await errorTask.ConfigureAwait(false); } catch { }
+                }
+                throw new BootstrapRuntimeReadinessException(new Exception(exception.Message + " STDERR: " + errorOutput, exception));
             }
 
             identity = identity.WithBootId(runtimeEndpoint.BootId);
@@ -529,6 +533,20 @@ internal sealed class BootstrapCoordinator
             await BootstrapEventWriter.WriteRuntimeReadyAsync(
                 output,
                 identity).ConfigureAwait(false);
+
+if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("OPURE_BOOTSTRAP_TEST_MODE")))
+{
+    var sessionInfo = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["kind"] = "ipc.session",
+        ["OPURE_IPC_PIPE"] = runtimeEndpoint.PipeName,
+        ["OPURE_BOOTSTRAP_SESSION_ID"] = runtimeEndpoint.SessionId,
+        ["OPURE_BOOTSTRAP_SESSION_SECRET"] = runtimeEndpoint.SessionSecret,
+        ["OPURE_RUNTIME_BOOT_ID"] = runtimeEndpoint.BootId
+    };
+    await output.WriteLineAsync(JsonSerializer.Serialize(sessionInfo).AsMemory(), cancellationToken).ConfigureAwait(false);
+    await output.FlushAsync(cancellationToken).ConfigureAwait(false);
+}
 
             return new OwnedBootstrapProcess(
                 process,
@@ -789,8 +807,12 @@ internal sealed class BootstrapCoordinator
                     "runtime.failure",
                     StringComparison.Ordinal))
             {
-                throw new InvalidOperationException(
-                    "Runtime reported a startup failure.");
+                string msg = "Runtime reported a startup failure.";
+                if (root.TryGetProperty("message", out JsonElement msgElement))
+                {
+                    msg = msgElement.GetString() ?? msg;
+                }
+                throw new InvalidOperationException(msg);
             }
 
             if (!string.Equals(
@@ -839,7 +861,7 @@ internal sealed class BootstrapCoordinator
     private static bool IsBoundedPipeName(
         [NotNullWhen(true)] string? value)
     {
-        return value is { Length: >= 48 and <= 72 } &&
+        return value is { Length: >= 42 and <= 72 } &&
             value.StartsWith("opure-", StringComparison.Ordinal) &&
             value.All(character =>
                 character is >= '0' and <= '9' or

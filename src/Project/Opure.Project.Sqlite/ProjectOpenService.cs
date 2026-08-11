@@ -365,6 +365,7 @@ public sealed class ProjectOpenService : IProjectOpenRequestHandler
                     WorkspaceReleaseChannel.Development,
                 DomainReleaseChannel.Preview => WorkspaceReleaseChannel.Preview,
                 DomainReleaseChannel.Stable => WorkspaceReleaseChannel.Stable,
+                DomainReleaseChannel.Test => WorkspaceReleaseChannel.Test,
                 _ => throw new ArgumentOutOfRangeException(nameof(releaseChannel))
             });
     }

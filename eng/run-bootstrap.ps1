@@ -7,7 +7,7 @@ param(
     [string] $Configuration = 'Debug',
 
     [Parameter()]
-    [ValidateSet('Development', 'Preview', 'Stable')]
+    [ValidateSet('Development', 'Preview', 'Stable', 'Test')]
     [string] $Channel = 'Development',
 
     [Parameter()]

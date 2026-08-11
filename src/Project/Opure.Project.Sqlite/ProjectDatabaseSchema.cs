@@ -196,7 +196,7 @@ public static class ProjectDatabaseSchema
             $"""
             CREATE TABLE {ProjectTable} (
                 project_id TEXT PRIMARY KEY CHECK (length(project_id) = 32),
-                release_channel TEXT NOT NULL CHECK (release_channel IN ('Development', 'Preview', 'Stable')),
+                release_channel TEXT NOT NULL CHECK (release_channel IN ('Development', 'Preview', 'Stable', 'Test')),
                 display_name TEXT NOT NULL CHECK (length(display_name) BETWEEN 1 AND 200),
                 lifecycle_state TEXT NOT NULL CHECK (lifecycle_state IN ('Registered', 'Open', 'Unavailable', 'Closed', 'Archived')),
                 created_at_utc TEXT NOT NULL,
@@ -207,7 +207,7 @@ public static class ProjectDatabaseSchema
             CREATE TABLE {RootTable} (
                 root_reference_id TEXT PRIMARY KEY CHECK (length(root_reference_id) = 32),
                 project_id TEXT NOT NULL UNIQUE,
-                release_channel TEXT NOT NULL CHECK (release_channel IN ('Development', 'Preview', 'Stable')),
+                release_channel TEXT NOT NULL CHECK (release_channel IN ('Development', 'Preview', 'Stable', 'Test')),
                 display_path TEXT NOT NULL,
                 volume_class TEXT NOT NULL CHECK (volume_class IN ('FixedLocal', 'Removable', 'Network', 'Unsupported')),
                 volume_serial_number TEXT NOT NULL,
@@ -269,7 +269,7 @@ public static class ProjectDatabaseSchema
             $"""
             CREATE TABLE projects_v3 (
                 project_id TEXT PRIMARY KEY CHECK (length(project_id) = 32),
-                release_channel TEXT NOT NULL CHECK (release_channel IN ('Development', 'Preview', 'Stable')),
+                release_channel TEXT NOT NULL CHECK (release_channel IN ('Development', 'Preview', 'Stable', 'Test')),
                 display_name TEXT NOT NULL CHECK (length(display_name) BETWEEN 1 AND 200),
                 lifecycle_state TEXT NOT NULL CHECK (lifecycle_state IN ('Registered', 'Opening', 'Open', 'RecoveryRequired', 'Unavailable', 'Closed', 'Archived')),
                 created_at_utc TEXT NOT NULL,
@@ -280,7 +280,7 @@ public static class ProjectDatabaseSchema
             CREATE TABLE project_root_references_v3 (
                 root_reference_id TEXT PRIMARY KEY CHECK (length(root_reference_id) = 32),
                 project_id TEXT NOT NULL UNIQUE,
-                release_channel TEXT NOT NULL CHECK (release_channel IN ('Development', 'Preview', 'Stable')),
+                release_channel TEXT NOT NULL CHECK (release_channel IN ('Development', 'Preview', 'Stable', 'Test')),
                 display_path TEXT NOT NULL,
                 volume_class TEXT NOT NULL CHECK (volume_class IN ('FixedLocal', 'Removable', 'Network', 'Unsupported')),
                 volume_serial_number TEXT NOT NULL,

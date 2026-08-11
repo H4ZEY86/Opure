@@ -243,6 +243,7 @@ public sealed class ProjectListProjectionService(
         ListChannel.Development => DomainChannel.Development,
         ListChannel.Preview => DomainChannel.Preview,
         ListChannel.Stable => DomainChannel.Stable,
+        ListChannel.Test => DomainChannel.Test,
         _ => throw new ArgumentOutOfRangeException(nameof(channel), channel, null)
     };
 
@@ -251,6 +252,7 @@ public sealed class ProjectListProjectionService(
         ListChannel.Development => OpenChannel.Development,
         ListChannel.Preview => OpenChannel.Preview,
         ListChannel.Stable => OpenChannel.Stable,
+        ListChannel.Test => OpenChannel.Test,
         _ => throw new ArgumentOutOfRangeException(nameof(channel), channel, null)
     };
 

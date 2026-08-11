@@ -72,7 +72,7 @@ public static class TrustEvidenceDatabaseSchema
                 owner_record_id TEXT NOT NULL,
                 owner_record_revision INTEGER NOT NULL CHECK (owner_record_revision > 0),
                 authority_class TEXT NOT NULL,
-                release_channel TEXT NOT NULL CHECK (release_channel IN ('Development', 'Preview', 'Stable')),
+                release_channel TEXT NOT NULL CHECK (release_channel IN ('Development', 'Preview', 'Stable', 'Test')),
                 scope TEXT NOT NULL CHECK (scope IN ('Global', 'Project')),
                 project_id TEXT NULL,
                 operation_id TEXT NULL,
