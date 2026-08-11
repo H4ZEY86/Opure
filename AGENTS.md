@@ -215,6 +215,7 @@ Completed and committed:
 * FND-057 — Add Trust Centre IPC Gateway.
 * FND-058 — Add Backup Adapter Contract.
 * FND-059 — Add SQLite Online Backup.
+* GATE-A-001 — Out-of-band architecture hardening and headless E2E.
 
 Locally implemented, verified and committed; pending reviewed pushes:
 
