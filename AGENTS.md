@@ -251,6 +251,7 @@ Completed and committed:
 * GATE-A-004 — Run Filesystem Adversarial Suite.
 * GATE-A-005 — Run Configuration Adversarial Suite.
 * GATE-A-006 — Run Trust Evidence Forgery and Reconciliation Suite.
+* GATE-A-007 — Establish Performance Baseline.
 
 Locally implemented, verified and committed; pending reviewed pushes:
 
@@ -259,7 +260,7 @@ Locally implemented, verified and committed; pending reviewed pushes:
 The next planned ticket is:
 
 ```text
-GATE-A-007 — Establish Performance Baseline
+GATE-A-008 — Establish Accessibility Baseline
 ```
 
 GATE-A-001 passed its repeatable 32-step Development-channel demonstration and
@@ -303,9 +304,18 @@ and projection/database rebuild now have executable proof. Its run-specific
 ignored receipt had payload SHA-256
 `1188163b02681b160ad31e3cb1eda6202bea81fe7f19ecd566d13ed5725bcbd0`.
 
-This proves GATE-A-001 through GATE-A-006 only. It does not record Founder Gate
-A acceptance. GATE-A-007 through GATE-A-009, the explicit GATE-A-010 founder
-review and
+GATE-A-007 passed its 22-measurement Windows 11 performance baseline and the
+complete Release verification with 762 tests, zero warnings and zero errors.
+Every result is bound to build, hardware and fixture identity; security controls
+remain enabled; Runtime and Desktop own no TCP or UDP endpoints; Opure uses its
+Balanced performance mode; and cancellation latency is measured for authenticated
+IPC and Workspace hashing. Desktop shell visibility at 5.834 seconds and Runtime
+readiness at 3.673 seconds are retained as documented misses against provisional
+ROADMAP targets rather than hidden. All regression thresholds pass, and a Windows
+11, four-core, 8 GB low-resource follow-up is identified.
+
+This proves GATE-A-001 through GATE-A-007 only. It does not record Founder Gate
+A acceptance. GATE-A-008 and GATE-A-009, the explicit GATE-A-010 founder review and
 GATE-A-011 controlled-mutation backlog remain required before Phase 7 begins.
 The next programme phase is Controlled Mutation: deterministic reviewable file
 patches first, followed by capability-bound curated commands. Local intelligence
