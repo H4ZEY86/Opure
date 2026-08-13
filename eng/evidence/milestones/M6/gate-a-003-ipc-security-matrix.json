@@ -1,0 +1,33 @@
+{
+  "ticket": "GATE-A-003",
+  "status": "Ready",
+  "result": "Passed",
+  "scenarioCount": 12,
+  "scenarios": [
+    { "id": 1, "scenario": "another Windows user", "proofMember": "Pipe_security_denies_other_windows_users_by_acl" },
+    { "id": 2, "scenario": "unrelated same-user process", "proofMember": "Same_user_process_without_session_material_is_denied" },
+    { "id": 3, "scenario": "stale Bootstrap session", "proofMember": "Stale_or_expired_session_is_denied_without_leaking_material" },
+    { "id": 4, "scenario": "captured challenge replay", "proofMember": "Captured_proof_nonce_cannot_be_replayed" },
+    { "id": 5, "scenario": "wrong Runtime boot identity", "proofMember": "Runtime_restart_rejects_prior_session_and_accepts_fresh_session" },
+    { "id": 6, "scenario": "malformed protobuf", "proofMember": "Malformed_protobuf_does_not_crash_server" },
+    { "id": 7, "scenario": "oversized message", "proofMember": "Oversized_request_is_rejected_before_transport" },
+    { "id": 8, "scenario": "deadline abuse", "proofMember": "Deadline_expiry_has_stable_transport_error" },
+    { "id": 9, "scenario": "cancellation abuse", "proofMember": "Cancellation_closes_call_promptly" },
+    { "id": 10, "scenario": "rapid connection attempts", "proofMember": "Rapid_connection_attempts_are_handled_safely" },
+    { "id": 11, "scenario": "pipe-name discovery", "proofMember": "Endpoint_names_are_channel_specific_unpredictable_and_boot_bound" },
+    { "id": 12, "scenario": "Runtime restart", "proofMember": "Runtime_restart_requires_latest_endpoint_and_reconnects_cleanly" }
+  ],
+  "admissionPolicy": {
+    "maximumConcurrentConnections": 32,
+    "maximumReplayEntries": 4096,
+    "maximumAuthenticationClockSkewSeconds": 30
+  },
+  "evidence": [
+    "eng/evidence/milestones/M2/ipc-authentication-acl.json",
+    "eng/evidence/milestones/M2/ipc-authentication-replay.json",
+    "eng/evidence/milestones/M2/ipc-authentication-secret-leakage.json",
+    "eng/evidence/milestones/M2/ipc-authentication-threat-model.md",
+    "eng/evidence/milestones/M2/runtime-health-network-listeners.json",
+    "eng/evidence/milestones/M6/gate-a-003-malformed-input-report.json"
+  ]
+}

@@ -125,6 +125,7 @@ public sealed class RuntimeHealthTransportException : Exception
 /// </summary>
 public static class RuntimeHealthTransportPolicy
 {
+    public const int MaximumConcurrentConnections = 32;
     public const int MaximumPendingStreamMessages = 32;
     public static readonly TimeSpan AuthenticationClockSkew = TimeSpan.FromSeconds(30);
     public static readonly TimeSpan SessionLifetime = TimeSpan.FromHours(12);

@@ -247,6 +247,7 @@ Completed and committed:
 * FND-060 — Add Local Recovery Point View.
 * GATE-A-001 — Run the End-to-End Foundation Demonstration.
 * GATE-A-002 — Run Crash and Restart Recovery Suite.
+* GATE-A-003 — Run IPC Security Suite.
 
 Locally implemented, verified and committed; pending reviewed pushes:
 
@@ -255,7 +256,7 @@ Locally implemented, verified and committed; pending reviewed pushes:
 The next planned ticket is:
 
 ```text
-GATE-A-003 — Run IPC Security Suite
+GATE-A-004 — Run Filesystem Adversarial Suite
 ```
 
 GATE-A-001 passed its repeatable 32-step Development-channel demonstration and
@@ -270,8 +271,15 @@ Release verification with 735 tests, zero warnings and zero errors. Its
 run-specific ignored receipt had payload SHA-256
 `3b13fd9874fc85d6feb751211b4cd319e15f0c321a744c890f4006be36ca0714`.
 
-This proves GATE-A-001 and GATE-A-002 only. It does not record Founder Gate A acceptance.
-GATE-A-003 through GATE-A-009, the explicit GATE-A-010 founder review and
+GATE-A-003 passed its 12-scenario IPC security matrix and the complete Release
+verification with 735 tests, zero warnings and zero errors. It proved a
+32-connection admission ceiling and zero Runtime-owned TCP or UDP endpoints.
+Its run-specific ignored receipt had payload SHA-256
+`42d5cc3ce5a27e408d2991aab5427959595f05340a233af906ff0e8fcd6ad4de`.
+
+This proves GATE-A-001 through GATE-A-003 only. It does not record Founder Gate
+A acceptance. GATE-A-004 through GATE-A-009, the explicit GATE-A-010 founder
+review and
 GATE-A-011 controlled-mutation backlog remain required before Phase 7 begins.
 The next programme phase is Controlled Mutation: deterministic reviewable file
 patches first, followed by capability-bound curated commands. Local intelligence

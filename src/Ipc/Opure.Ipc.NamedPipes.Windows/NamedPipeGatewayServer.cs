@@ -117,6 +117,8 @@ public sealed class NamedPipeGatewayServer : IRuntimeHealthTransportHost
         });
         builder.WebHost.UseKestrel(options =>
         {
+            options.Limits.MaxConcurrentConnections =
+                RuntimeHealthTransportPolicy.MaximumConcurrentConnections;
             options.ListenNamedPipe(
                 endpoint.PipeName,
                 listenOptions => listenOptions.Protocols = HttpProtocols.Http2);

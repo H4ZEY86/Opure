@@ -174,8 +174,12 @@ public class IpcSecuritySuiteTests
             CreatePolicy(material),
             cancellationToken);
 
-        // Spam the server with raw connections
-        var tasks = Enumerable.Range(0, 100).Select(async _ =>
+        Assert.Equal(32, RuntimeHealthTransportPolicy.MaximumConcurrentConnections);
+
+        // Exceed the bounded admission ceiling with short-lived raw connections.
+        var tasks = Enumerable.Range(
+            0,
+            RuntimeHealthTransportPolicy.MaximumConcurrentConnections * 3).Select(async _ =>
         {
             try
             {

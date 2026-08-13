@@ -3,8 +3,8 @@
   "transport": "grpc-over-windows-named-pipe",
   "warmupCalls": 1,
   "measuredCalls": 25,
-  "medianMilliseconds": 0.311,
-  "p95Milliseconds": 0.973,
+  "medianMilliseconds": 0.77,
+  "p95Milliseconds": 1.375,
   "requiredP95Milliseconds": 250,
   "payloadLogging": false
 }

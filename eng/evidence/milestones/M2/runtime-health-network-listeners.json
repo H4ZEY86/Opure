@@ -1,7 +1,7 @@
 {
   "result": "Passed",
   "captureMethod": "Get-NetTCPConnection and Get-NetUDPEndpoint by owning process",
-  "runtimeProcessId": 39568,
+  "runtimeProcessId": 49480,
   "tcpListenerCount": 0,
   "udpEndpointCount": 0,
   "namedPipePublished": true,

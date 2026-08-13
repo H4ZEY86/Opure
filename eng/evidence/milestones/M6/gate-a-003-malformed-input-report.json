@@ -1,0 +1,14 @@
+{
+  "ticket": "GATE-A-003",
+  "result": "Passed",
+  "transport": "gRPC over an exact Windows named pipe",
+  "malformedInputBytes": 1024,
+  "serverAvailableAfterMalformedInput": true,
+  "oversizedRequestRejectedBeforeTransport": true,
+  "maximumConcurrentConnections": 32,
+  "rapidConnectionAttempts": 96,
+  "validAuthenticatedRequestSucceededAfterRapidAttempts": true,
+  "tcpListenerCount": 0,
+  "udpEndpointCount": 0,
+  "payloadPersisted": false
+}
