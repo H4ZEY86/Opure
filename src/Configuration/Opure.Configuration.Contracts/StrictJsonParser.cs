@@ -1,9 +1,14 @@
+using System.Text;
 using System.Text.Json;
 
 namespace Opure.Configuration.Contracts;
 
 public static class StrictJsonParser
 {
+    private static readonly UTF8Encoding StrictUtf8 = new(
+        encoderShouldEmitUTF8Identifier: false,
+        throwOnInvalidBytes: true);
+
     public static StrictJsonNode Parse(byte[] bytes)
     {
         ArgumentNullException.ThrowIfNull(bytes);
@@ -42,6 +47,15 @@ public static class StrictJsonParser
         if (jsonSpan.IsEmpty)
         {
             throw new StrictJsonException("The JSON input is empty.");
+        }
+
+        try
+        {
+            _ = StrictUtf8.GetCharCount(jsonSpan);
+        }
+        catch (DecoderFallbackException)
+        {
+            throw new StrictJsonException("The JSON input contains invalid UTF-8.");
         }
 
         // 3. Setup Utf8JsonReader

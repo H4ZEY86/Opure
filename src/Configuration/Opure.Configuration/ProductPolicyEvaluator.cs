@@ -115,6 +115,35 @@ public sealed class ProductPolicyEvaluationReceipt
 }
 
 /// <summary>
+/// Explicit evaluation boundary used by the Configuration service. Implementations must not
+/// perform I/O; the production implementation delegates to the deterministic evaluator below.
+/// </summary>
+public interface IProductPolicyEvaluationPort
+{
+    ProductPolicyEvaluationReceipt Evaluate(
+        PolicyDefinitionCatalogue policyCatalogue,
+        SettingDefinitionCatalogue settingCatalogue,
+        SettingMergeResult mergeResult);
+}
+
+internal sealed class DeterministicProductPolicyEvaluationPort : IProductPolicyEvaluationPort
+{
+    public static DeterministicProductPolicyEvaluationPort Instance { get; } = new();
+
+    private DeterministicProductPolicyEvaluationPort()
+    {
+    }
+
+    public ProductPolicyEvaluationReceipt Evaluate(
+        PolicyDefinitionCatalogue policyCatalogue,
+        SettingDefinitionCatalogue settingCatalogue,
+        SettingMergeResult mergeResult)
+    {
+        return ProductPolicyEvaluator.Evaluate(policyCatalogue, settingCatalogue, mergeResult);
+    }
+}
+
+/// <summary>
 /// Evaluates non-bypassable Product Policies against merged configuration settings.
 /// Enforces Gate A security invariants, capability denials, and secret exclusion.
 /// </summary>

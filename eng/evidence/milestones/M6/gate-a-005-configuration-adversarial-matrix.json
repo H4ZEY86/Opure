@@ -1,0 +1,40 @@
+{
+  "schema": "opure.gate-a-005-configuration-adversarial-matrix/1",
+  "ticket": "GATE-A-005",
+  "status": "Ready",
+  "result": "Passed",
+  "scenarioCount": 19,
+  "scenarios": [
+    { "id": 1, "scenario": "comments", "proofMember": "RejectsComments", "result": "Passed" },
+    { "id": 2, "scenario": "trailing comma", "proofMember": "RejectsTrailingCommas", "result": "Passed" },
+    { "id": 3, "scenario": "duplicate top-level key", "proofMember": "RejectsDuplicateKeys", "result": "Passed" },
+    { "id": 4, "scenario": "duplicate nested key", "proofMember": "DuplicateInNestedObjectFails", "result": "Passed" },
+    { "id": 5, "scenario": "escaped equivalent key", "proofMember": "RejectsDuplicateKeysWithUnicodeEscapes", "result": "Passed" },
+    { "id": 6, "scenario": "invalid UTF-8", "proofMember": "RejectsInvalidUtf8Sequence", "result": "Passed" },
+    { "id": 7, "scenario": "huge string", "proofMember": "RejectsStringBeyondIndividualLimit", "result": "Passed" },
+    { "id": 8, "scenario": "excessive depth", "proofMember": "RejectsExcessiveDepth", "result": "Passed" },
+    { "id": 9, "scenario": "remote schema reference", "proofMember": "RemoteRefCannotBeResolvedAndFails", "result": "Passed" },
+    { "id": 10, "scenario": "local file schema reference", "proofMember": "FileSystemRefCannotBeResolvedAndFails", "result": "Passed" },
+    { "id": 11, "scenario": "unknown setting", "proofMember": "UnknownSettingThrowsException", "result": "Passed" },
+    { "id": 12, "scenario": "wrong type", "proofMember": "WrongValueTypeThrowsException", "result": "Passed" },
+    { "id": 13, "scenario": "project attempts user-only value", "proofMember": "ProjectOverrideDeniedIsIgnoredWithPolicyExplanation", "result": "Passed" },
+    { "id": 14, "scenario": "project attempts capability grant", "proofMember": "ProjectAuthorityEscalationAttemptIsRejected", "result": "Passed" },
+    { "id": 15, "scenario": "secret-like value", "proofMember": "SecretInConfigDeniedFailsClosed", "result": "Passed" },
+    { "id": 16, "scenario": "stale approval", "proofMember": "ChangedProfileRevisionInvalidatesApproval", "result": "Passed" },
+    { "id": 17, "scenario": "changed Workspace generation", "proofMember": "ChangedWorkspaceGenerationInvalidatesApproval", "result": "Passed" },
+    { "id": 18, "scenario": "Product Policy evaluator exception", "proofMember": "ProductPolicyEvaluatorExceptionFailsClosed", "result": "Passed" },
+    { "id": 19, "scenario": "valid-invalid-valid external edit", "proofMember": "InvalidObservationPreservesLatestValidSnapshotUntilRepair", "result": "Passed" }
+  ],
+  "acceptanceProofMembers": [
+    "ChangedProposalInvalidatesApproval",
+    "PreviewContainsCompletePerKeyProvenance",
+    "TrustProjectionDistinguishesInvalidObservationFromActiveConfiguration"
+  ],
+  "evidence": [
+    "eng/evidence/milestones/M6/gate-a-005-parser-adversarial.md",
+    "eng/evidence/milestones/M6/gate-a-005-schema-reference-denial.md",
+    "eng/evidence/milestones/M6/gate-a-005-policy-bypass.md",
+    "eng/evidence/milestones/M6/gate-a-005-stale-approval.md",
+    "eng/evidence/milestones/M6/gate-a-005-last-known-good.md"
+  ]
+}

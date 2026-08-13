@@ -55,6 +55,29 @@ public sealed class StrictJsonParserTests
     }
 
     [Fact]
+    public void RejectsInvalidUtf8Sequence()
+    {
+        byte[] invalidUtf8 = [(byte)'{', (byte)'"', (byte)'x', (byte)'"', (byte)':', (byte)'"', 0xC3, 0x28, (byte)'"', (byte)'}'];
+
+        StrictJsonException exception = Assert.Throws<StrictJsonException>(
+            () => StrictJsonParser.Parse(invalidUtf8));
+
+        Assert.Contains("invalid UTF-8", exception.Message);
+    }
+
+    [Fact]
+    public void RejectsStringBeyondIndividualLimit()
+    {
+        string oversizedValue = new('x', StrictJsonLimits.MaxStringLength + 1);
+        byte[] bytes = Encoding.UTF8.GetBytes($"{{\"value\":\"{oversizedValue}\"}}");
+
+        StrictJsonException exception = Assert.Throws<StrictJsonException>(
+            () => StrictJsonParser.Parse(bytes));
+
+        Assert.Contains("String length exceeds limit", exception.Message);
+    }
+
+    [Fact]
     public void RejectsExcessiveDepth()
     {
         // Max depth is 16. Build a nested object of depth 18.

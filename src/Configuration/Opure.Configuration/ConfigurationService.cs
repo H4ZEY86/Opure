@@ -41,6 +41,7 @@ public sealed class ConfigurationService
     private readonly ProductDefaultsCatalogue productDefaults;
     private readonly PolicyDefinitionCatalogue policyCatalogue;
     private readonly ITrustEvidenceOwnerIngestionPort evidencePort;
+    private readonly IProductPolicyEvaluationPort policyEvaluationPort;
 
     public ConfigurationService(
         ConfigurationDatabase database,
@@ -48,12 +49,30 @@ public sealed class ConfigurationService
         ProductDefaultsCatalogue productDefaults,
         PolicyDefinitionCatalogue policyCatalogue,
         ITrustEvidenceOwnerIngestionPort evidencePort)
+        : this(
+            database,
+            settingCatalogue,
+            productDefaults,
+            policyCatalogue,
+            evidencePort,
+            DeterministicProductPolicyEvaluationPort.Instance)
+    {
+    }
+
+    public ConfigurationService(
+        ConfigurationDatabase database,
+        SettingDefinitionCatalogue settingCatalogue,
+        ProductDefaultsCatalogue productDefaults,
+        PolicyDefinitionCatalogue policyCatalogue,
+        ITrustEvidenceOwnerIngestionPort evidencePort,
+        IProductPolicyEvaluationPort policyEvaluationPort)
     {
         this.database = database ?? throw new ArgumentNullException(nameof(database));
         this.settingCatalogue = settingCatalogue ?? throw new ArgumentNullException(nameof(settingCatalogue));
         this.productDefaults = productDefaults ?? throw new ArgumentNullException(nameof(productDefaults));
         this.policyCatalogue = policyCatalogue ?? throw new ArgumentNullException(nameof(policyCatalogue));
         this.evidencePort = evidencePort ?? throw new ArgumentNullException(nameof(evidencePort));
+        this.policyEvaluationPort = policyEvaluationPort ?? throw new ArgumentNullException(nameof(policyEvaluationPort));
     }
 
     /// <summary>
@@ -161,7 +180,8 @@ public sealed class ConfigurationService
             static kvp => kvp.Key,
             static kvp => kvp.Value);
 
-        foreach (ProfileProposedChange change in request.Changes)
+        ProfileProposedChange[] requestedChanges = request.Changes.ToArray();
+        foreach (ProfileProposedChange change in requestedChanges)
         {
             if (change.ValueJson is null)
             {
@@ -218,10 +238,7 @@ public sealed class ConfigurationService
             return new ConfigurationChangeTransactionPreview(false, errors, null, null);
         }
 
-        ProductPolicyEvaluationReceipt policyReceipt = ProductPolicyEvaluator.Evaluate(
-            policyCatalogue,
-            settingCatalogue,
-            mergeResult);
+        ProductPolicyEvaluationReceipt policyReceipt = EvaluatePolicyFailClosed(mergeResult);
 
         if (!policyReceipt.Success)
         {
@@ -238,7 +255,19 @@ public sealed class ConfigurationService
             userProfile,
             currentProjectSettings);
 
-        return new ConfigurationChangeTransactionPreview(true, errors, provisionalProfile, previewResult);
+        ConfigurationChangeApprovalBinding approvalBinding = new(
+            ComputeProposalSha256(request, requestedChanges),
+            latest.Revision,
+            latest.CanonicalSha256,
+            currentProjectSettings?.Generation,
+            currentProjectSettings?.ContentHash);
+
+        return new ConfigurationChangeTransactionPreview(
+            true,
+            errors,
+            provisionalProfile,
+            previewResult,
+            approvalBinding);
     }
 
     /// <summary>
@@ -250,12 +279,52 @@ public sealed class ConfigurationService
         ConfigurationChangeTransactionPreview preview,
         CancellationToken cancellationToken = default)
     {
+        CommitTransaction(originalRequest, preview, null, cancellationToken);
+    }
+
+    public void CommitTransaction(
+        ConfigurationChangeRequest originalRequest,
+        ConfigurationChangeTransactionPreview preview,
+        ProjectSettingsSource? currentProjectSettings,
+        CancellationToken cancellationToken = default)
+    {
         ArgumentNullException.ThrowIfNull(originalRequest);
         ArgumentNullException.ThrowIfNull(preview);
 
-        if (!preview.IsValid || preview.ProvisionalProfile is null || preview.PreviewSnapshotResult is null)
+        if (!preview.IsValid || preview.ProvisionalProfile is null ||
+            preview.PreviewSnapshotResult is null || preview.ApprovalBinding is null)
         {
             throw new InvalidOperationException("Cannot commit an invalid transaction preview.");
+        }
+
+        ConfigurationChangeApprovalBinding binding = preview.ApprovalBinding;
+        ProfileProposedChange[] currentChanges = originalRequest.Changes.ToArray();
+        if (!CryptographicOperations.FixedTimeEquals(
+                Convert.FromHexString(binding.ProposalSha256),
+                Convert.FromHexString(ComputeProposalSha256(originalRequest, currentChanges))))
+        {
+            throw new InvalidOperationException("The approved configuration proposal has changed.");
+        }
+
+        ConfigurationProfile currentProfile = database.GetLatestRevision(
+            originalRequest.TargetProfileId,
+            cancellationToken) ?? throw new InvalidOperationException(
+                "The configuration profile used for approval no longer exists.");
+        if (currentProfile.Revision != binding.BaseProfileRevision ||
+            !string.Equals(currentProfile.CanonicalSha256, binding.BaseProfileSha256, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("The configuration approval is stale because the profile changed.");
+        }
+
+        if ((binding.WorkspaceGeneration is null) != (currentProjectSettings is null) ||
+            (binding.WorkspaceGeneration is not null &&
+             (currentProjectSettings!.Generation != binding.WorkspaceGeneration ||
+              !string.Equals(
+                  currentProjectSettings.ContentHash,
+                  binding.WorkspaceContentHash,
+                  StringComparison.Ordinal))))
+        {
+            throw new InvalidOperationException("The configuration approval is stale because the Workspace source changed.");
         }
 
         if (IsTestCrashPoint("ConfigurationBeforeCommit"))
@@ -480,10 +549,7 @@ public sealed class ConfigurationService
             return mergeFailState;
         }
 
-        ProductPolicyEvaluationReceipt policyReceipt = ProductPolicyEvaluator.Evaluate(
-            policyCatalogue,
-            settingCatalogue,
-            mergeResult);
+        ProductPolicyEvaluationReceipt policyReceipt = EvaluatePolicyFailClosed(mergeResult);
 
         if (!policyReceipt.Success)
         {
@@ -557,5 +623,50 @@ public sealed class ConfigurationService
             crashPoint,
             StringComparison.Ordinal) &&
         (string.IsNullOrWhiteSpace(armFile) || File.Exists(armFile));
+    }
+
+    private ProductPolicyEvaluationReceipt EvaluatePolicyFailClosed(SettingMergeResult mergeResult)
+    {
+        try
+        {
+            return policyEvaluationPort.Evaluate(policyCatalogue, settingCatalogue, mergeResult);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            return new ProductPolicyEvaluationReceipt(
+                policyCatalogue.CatalogueRevision,
+                policyCatalogue.CanonicalSha256,
+                new Dictionary<string, PolicyKeyEvaluation>(StringComparer.Ordinal),
+                decisions: [],
+                success: false,
+                failureReason: "Product Policy evaluation failed closed.");
+        }
+    }
+
+    private static string ComputeProposalSha256(
+        ConfigurationChangeRequest request,
+        IReadOnlyList<ProfileProposedChange> changes)
+    {
+        StringBuilder canonical = new();
+        AppendLengthPrefixed(canonical, request.TargetProfileId);
+        AppendLengthPrefixed(canonical, request.SourceIdentifier);
+        foreach (ProfileProposedChange change in changes)
+        {
+            AppendLengthPrefixed(canonical, change.SettingId);
+            AppendLengthPrefixed(canonical, change.ValueJson);
+        }
+
+        return ComputeSha256(canonical.ToString());
+    }
+
+    private static void AppendLengthPrefixed(StringBuilder destination, string? value)
+    {
+        if (value is null)
+        {
+            _ = destination.Append("-1:");
+            return;
+        }
+
+        _ = destination.Append(value.Length).Append(':').Append(value);
     }
 }
