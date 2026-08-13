@@ -86,6 +86,14 @@
       "opure.workspace.contracts": {
         "type": "Project"
       },
+      "opure.workspace.windows": {
+        "type": "Project",
+        "dependencies": {
+          "Opure.Filesystem.Contracts": "[1.0.0, )",
+          "Opure.Filesystem.Windows": "[1.0.0, )",
+          "Opure.Workspace.Contracts": "[1.0.0, )"
+        }
+      },
       "Google.Protobuf": {
         "type": "CentralTransitive",
         "requested": "[3.35.1, )",

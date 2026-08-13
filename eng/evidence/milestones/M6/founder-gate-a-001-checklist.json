@@ -11,7 +11,7 @@
     { "id": 6, "description": "Select and open a small Git repository.", "automation": "Automated", "status": "Ready" },
     { "id": 7, "description": "Show verified Project identity.", "automation": "Automated", "status": "Ready" },
     { "id": 8, "description": "Show repository observation.", "automation": "Automated", "status": "Ready" },
-    { "id": 9, "description": "Show Workspace Snapshot generation and hash.", "automation": "Partial", "status": "Pending", "blocker": "Runtime currently composes the Project Service with DeferredInitialWorkspaceSnapshotRequester; no live Workspace generation is created." },
+    { "id": 9, "description": "Show Workspace Snapshot generation and hash.", "automation": "Automated", "status": "Ready" },
     { "id": 10, "description": "Show Product Defaults.", "automation": "Pending", "status": "Pending" },
     { "id": 11, "description": "Show User Base Profile.", "automation": "Pending", "status": "Pending" },
     { "id": 12, "description": "Show project settings.", "automation": "Pending", "status": "Pending" },

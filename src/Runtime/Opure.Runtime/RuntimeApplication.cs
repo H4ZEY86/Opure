@@ -5,6 +5,7 @@ using Opure.Observability;
 using Opure.Observability.Contracts;
 using Opure.Project.Service;
 using Opure.TrustEvidence.Service;
+using Opure.Workspace.Service;
 
 namespace Opure.Runtime;
 
@@ -41,6 +42,7 @@ public sealed class RuntimeApplication
         OperationalTraceSession? traceSession = null;
         ProjectServiceHost? projectService = null;
         TrustEvidenceServiceHost? trustEvidenceService = null;
+        WorkspaceServiceHost? workspaceService = null;
         int sequence = 0;
 
         try
@@ -108,10 +110,16 @@ public sealed class RuntimeApplication
             trustEvidenceService = TrustEvidenceServiceHost.Start(
                 dataRoot.FullPath,
                 cancellationToken: shutdownSignal.Token);
+            workspaceService = WorkspaceServiceHost.Start(
+                dataRoot.FullPath,
+                trustEvidenceService.BindOwner("opure.workspace"),
+                shutdownSignal.Token);
             projectService = await ProjectServiceHost.StartAsync(
                 dataRoot.FullPath,
                 releaseChannel,
                 trustEvidenceService.BindOwner("opure.project"),
+                workspaceService,
+                timeProvider: null,
                 shutdownSignal.Token).ConfigureAwait(false);
             serviceLifecycle = new RuntimeServiceLifecycleCoordinator(
                 serviceRegistry,
@@ -128,7 +136,8 @@ public sealed class RuntimeApplication
             var recoveryPointService = new Opure.Recovery.Service.LocalRecoveryPointService(
                 [
                     trustEvidenceService.BackupAdapter,
-                    projectService.BackupAdapter
+                    projectService.BackupAdapter,
+                    workspaceService.BackupAdapter
                 ],
                 bootSnapshot.ProductVersion);
             var recoveryPointHandler = new Opure.Runtime.Handlers.RecoveryPointRequestHandler(
@@ -279,6 +288,7 @@ public sealed class RuntimeApplication
 
             serviceLifecycle?.Dispose();
             projectService?.Dispose();
+            workspaceService?.Dispose();
             trustEvidenceService?.Dispose();
             traceSession?.Dispose();
 

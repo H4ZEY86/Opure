@@ -191,8 +191,17 @@ function Invoke-ProjectEvidenceProbe {
     $snapshotState = [regex]::Match(
         $opened.StandardOutput,
         'Initial Workspace Snapshot:\s*(?<value>\S+)').Groups['value'].Value
+    $workspaceGeneration = [long][regex]::Match(
+        $opened.StandardOutput,
+        'Workspace generation:\s*(?<value>\d+)').Groups['value'].Value
+    $workspaceGenerationSha256 = [regex]::Match(
+        $opened.StandardOutput,
+        'Workspace generation SHA-256:\s*(?<value>[0-9a-f]{64})').Groups['value'].Value
     if ([string]::IsNullOrWhiteSpace($projectId) -or
-        $lifecycle -ne 'Open') {
+        $lifecycle -ne 'Open' -or
+        $snapshotState -ne 'Ready' -or
+        $workspaceGeneration -lt 1 -or
+        [string]::IsNullOrWhiteSpace($workspaceGenerationSha256)) {
         throw 'The Project-open CLI response did not contain a safe open Project projection.'
     }
 
@@ -231,6 +240,8 @@ function Invoke-ProjectEvidenceProbe {
             repositoryClass = $repositoryClass
             availability = $availability
             initialWorkspaceSnapshotState = $snapshotState
+            workspaceGeneration = $workspaceGeneration
+            workspaceGenerationSha256 = $workspaceGenerationSha256
         }
     }
 }
@@ -473,8 +484,8 @@ try {
         }
         allowedPlatformInfrastructure = @('conhost.exe')
         checklist = [ordered]@{
-            ready = @(1, 2, 3, 4, 5, 6, 7, 8)
-            partial = @(9)
+            ready = @(1, 2, 3, 4, 5, 6, 7, 8, 9)
+            partial = @()
             pending = @(10..32)
         }
     }
@@ -496,7 +507,7 @@ try {
         [Text.UTF8Encoding]::new($false))
 
     Write-Host "GATE-A-001 bounded launch prerequisite passed: $receiptPath" -ForegroundColor Green
-    Write-Host 'Checklist steps 1-8 are ready; step 9 remains partial and steps 10-32 remain pending.' -ForegroundColor Yellow
+    Write-Host 'Checklist steps 1-9 are ready; steps 10-32 remain pending.' -ForegroundColor Yellow
 }
 finally {
     if ($null -ne $process) {

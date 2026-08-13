@@ -48,11 +48,8 @@ for ($index = 0; $index -lt 32; $index++) {
 $readyStepIds = @($checklist.steps |
     Where-Object { $_.status -eq 'Ready' } |
     ForEach-Object { [int]$_.id })
-if (($readyStepIds -join ',') -ne '1,2,3,4,5,6,7,8' -or
-    $checklist.steps[8].automation -ne 'Partial' -or
-    $checklist.steps[8].status -ne 'Pending' -or
-    [string]::IsNullOrWhiteSpace($checklist.steps[8].blocker)) {
-    throw 'GATE-A-001 checklist readiness must remain bounded to proven steps 1 through 8.'
+if (($readyStepIds -join ',') -ne '1,2,3,4,5,6,7,8,9') {
+    throw 'GATE-A-001 checklist readiness must remain bounded to proven steps 1 through 9.'
 }
 
 foreach ($requiredAssertion in @(
@@ -75,7 +72,8 @@ foreach ($requiredProbe in @(
     'serverProofVerified',
     'invalidSessionDenied',
     'rootIdentityVerified',
-    'repositoryClass')) {
+    'repositoryClass',
+    'workspaceGenerationSha256')) {
     if (-not $runnerContent.Contains($requiredProbe, [StringComparison]::Ordinal)) {
         throw "GATE-A-001 live probe assertion is missing: $requiredProbe"
     }

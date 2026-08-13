@@ -1,4 +1,7 @@
 using System.Runtime.Versioning;
+using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 using Opure.Filesystem.Contracts;
 using Opure.Filesystem.Windows;
 using Opure.Project.Contracts;
@@ -6,6 +9,7 @@ using Opure.Project.Protocol;
 using Opure.Project.Protocol.Open.V1;
 using Opure.Repository.Contracts;
 using Opure.Workspace.Contracts;
+using Opure.Workspace.Windows;
 using DomainIdentityCapability = Opure.Filesystem.Contracts.FileIdentityCapability;
 using DomainLifecycleState = Opure.Project.Contracts.ProjectLifecycleState;
 using DomainReleaseChannel = Opure.Project.Contracts.ProjectReleaseChannel;
@@ -170,12 +174,14 @@ public sealed class ProjectOpenService : IProjectOpenRequestHandler
                 request.OperationId,
                 repositoryObservation,
                 cancellationToken);
-            initialSnapshot = await snapshotRequester.RequestAsync(
+            initialSnapshot = await RequestSnapshotAsync(
                 CreateSnapshotRequest(
                     opening.ProjectId,
                     opening.Root.RootReferenceId,
+                    repositoryObservation,
                     request.OperationId,
                     opening.ReleaseChannel),
+                root,
                 cancellationToken).ConfigureAwait(false);
             ProjectSnapshot opened = repository.CompleteOpen(
                 opening.ProjectId,
@@ -269,12 +275,14 @@ public sealed class ProjectOpenService : IProjectOpenRequestHandler
                     repositoryObservation,
                     cancellationToken);
 
-                _ = await snapshotRequester.RequestAsync(
+                _ = await RequestSnapshotAsync(
                     CreateSnapshotRequest(
                         project.ProjectId,
                         project.Root.RootReferenceId,
+                        repositoryObservation,
                         operationId,
                         project.ReleaseChannel),
+                    root,
                     cancellationToken).ConfigureAwait(false);
                 _ = repository.CompleteOpen(
                     project.ProjectId,
@@ -326,7 +334,10 @@ public sealed class ProjectOpenService : IProjectOpenRequestHandler
                     WorkspaceSnapshotRequestDisposition.Ready
                         ? InitialWorkspaceSnapshotState.Ready
                         : InitialWorkspaceSnapshotState.Requested,
-                SafeDetail = initialSnapshot.SafeDetail
+                SafeDetail = initialSnapshot.SafeDetail,
+                InitialWorkspaceGeneration = initialSnapshot.Generation ?? 0,
+                InitialWorkspaceGenerationSha256 =
+                    initialSnapshot.GenerationSha256 ?? string.Empty
             }
         };
     }
@@ -351,12 +362,14 @@ public sealed class ProjectOpenService : IProjectOpenRequestHandler
     private static WorkspaceSnapshotRequest CreateSnapshotRequest(
         string projectId,
         string rootReferenceId,
+        RepositoryObservation repositoryObservation,
         string operationId,
         DomainReleaseChannel releaseChannel)
     {
         return new WorkspaceSnapshotRequest(
             projectId,
             rootReferenceId,
+            ComputeRepositorySummarySha256(repositoryObservation),
             WorkspaceSnapshotBounds.MaximumFileCount,
             WorkspaceSnapshotBounds.MaximumObservedBytes,
             WorkspaceSnapshotBounds.MaximumDuration,
@@ -373,6 +386,37 @@ public sealed class ProjectOpenService : IProjectOpenRequestHandler
                 DomainReleaseChannel.Test => WorkspaceReleaseChannel.Test,
                 _ => throw new ArgumentOutOfRangeException(nameof(releaseChannel))
             });
+    }
+
+    private Task<WorkspaceSnapshotRequestResult> RequestSnapshotAsync(
+        WorkspaceSnapshotRequest request,
+        VerifiedWorkspaceRootReference root,
+        CancellationToken cancellationToken)
+    {
+        return snapshotRequester is IWindowsWorkspaceSnapshotRequester windowsRequester
+            ? windowsRequester.RequestAsync(request, root, cancellationToken)
+            : snapshotRequester.RequestAsync(request, cancellationToken);
+    }
+
+    private static string ComputeRepositorySummarySha256(
+        RepositoryObservation observation)
+    {
+        string canonical = string.Join(
+            '\n',
+            "opure-repository-summary/1",
+            observation.Kind,
+            observation.State.ToString(),
+            observation.RepositoryIdentity ?? string.Empty,
+            observation.HeadCommit ?? string.Empty,
+            observation.BranchName ?? string.Empty,
+            observation.WorkingTree.Modified.ToString(CultureInfo.InvariantCulture),
+            observation.WorkingTree.Staged.ToString(CultureInfo.InvariantCulture),
+            observation.WorkingTree.Untracked.ToString(CultureInfo.InvariantCulture),
+            observation.WorkingTree.Deleted.ToString(CultureInfo.InvariantCulture),
+            observation.WorkingTree.Renamed.ToString(CultureInfo.InvariantCulture),
+            observation.WorkingTree.Conflicted.ToString(CultureInfo.InvariantCulture));
+        return Convert.ToHexStringLower(
+            SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
     }
 
     private static DomainReleaseChannel ToDomain(WireReleaseChannel channel)

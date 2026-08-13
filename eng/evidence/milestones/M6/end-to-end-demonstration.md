@@ -24,8 +24,8 @@ reports a failure, if stderr is populated, or if the fixture changes. Windows'
 console host is recorded as permitted platform infrastructure, not as a product
 capability. The session secret remains in process memory and is neither written
 to logs nor included in the receipt. Steps 1–8 are automated. Step 9 remains
-partial because Runtime currently composes Project Service with the deliberately
-deferred Workspace requester; steps 10–32 remain pending. The runner does not
+complete through the Runtime-owned Workspace Service generation and SHA-256
+receipt; steps 10–32 remain pending. The runner does not
 claim completion of UI, configuration mutation, restart, durability, recovery
 or Trust Centre evidence.
 

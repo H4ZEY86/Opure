@@ -10,6 +10,7 @@ public static class WorkspaceSnapshotBounds
 public sealed record WorkspaceSnapshotRequest(
     string ProjectId,
     string RootReferenceId,
+    string RepositorySummarySha256,
     int MaximumFileCount,
     long MaximumObservedBytes,
     TimeSpan MaximumDuration,
@@ -26,7 +27,8 @@ public enum WorkspaceSnapshotRequestDisposition
 public sealed record WorkspaceSnapshotRequestResult(
     WorkspaceSnapshotRequestDisposition Disposition,
     string SafeDetail,
-    long? Generation = null);
+    long? Generation = null,
+    string? GenerationSha256 = null);
 
 public interface IWorkspaceSnapshotRequester
 {

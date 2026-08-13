@@ -281,6 +281,10 @@ internal static class Program
         Console.WriteLine($"Root volume class: {response.Project.RootVolumeClass}");
         Console.WriteLine(
             $"Initial Workspace Snapshot: {response.Project.InitialSnapshotState}");
+        Console.WriteLine(
+            $"Workspace generation: {response.Project.InitialWorkspaceGeneration}");
+        Console.WriteLine(
+            $"Workspace generation SHA-256: {response.Project.InitialWorkspaceGenerationSha256}");
         return 0;
     }
 
