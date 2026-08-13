@@ -103,9 +103,11 @@ internal static class Program
                 return (int)BootstrapExitCode.BinaryValidationFailure;
             }
 
-            string localApplicationData = Environment.GetFolderPath(
-                Environment.SpecialFolder.LocalApplicationData,
-                Environment.SpecialFolderOption.DoNotVerify);
+            string localApplicationData =
+                options.TestLocalApplicationDataRoot ??
+                Environment.GetFolderPath(
+                    Environment.SpecialFolder.LocalApplicationData,
+                    Environment.SpecialFolderOption.DoNotVerify);
 
             string dataRoot = BootstrapDataRootResolver.Resolve(
                 options.Channel,
@@ -144,6 +146,19 @@ internal static class Program
                         StringComparer.Ordinal)
                     {
                         ["OPURE_RUNTIME_TEST_MODE"] = "1"
+                    };
+            }
+
+            if (options.TestLocalApplicationDataRoot is not null)
+            {
+                childEnvironment =
+                    new Dictionary<string, string>(
+                        childEnvironment,
+                        StringComparer.Ordinal)
+                    {
+                        ["OPURE_RUNTIME_TEST_MODE"] = "1",
+                        ["OPURE_RUNTIME_TEST_LOCAL_APP_DATA_ROOT"] =
+                            options.TestLocalApplicationDataRoot
                     };
             }
 

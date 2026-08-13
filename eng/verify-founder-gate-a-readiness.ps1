@@ -9,6 +9,7 @@ $repositoryRoot = Get-OpureRepositoryRoot
 Assert-OpureBuildEnvironment -RepositoryRoot $repositoryRoot
 $fixtureRoot = Join-Path $repositoryRoot 'eng\fixtures\founder-gate-a'
 $evidencePath = Join-Path $repositoryRoot 'eng\evidence\milestones\M6\founder-gate-a-001-readiness.json'
+$checklistPath = Join-Path $repositoryRoot 'eng\evidence\milestones\M6\founder-gate-a-001-checklist.json'
 $backlogPath = Join-Path $repositoryRoot 'specs\BACKLOG-001-foundation-first-12-weeks.md'
 $recoveryTestPath = Join-Path $repositoryRoot 'tests\EndToEnd\Opure.EndToEnd.Tests\RecoveryPointCliPipelineTests.cs'
 
@@ -18,12 +19,42 @@ Write-Host '==> Verify GATE-A-001 demonstration readiness' -ForegroundColor Cyan
 foreach ($requiredPath in @(
     $fixtureRoot,
     $evidencePath,
+    $checklistPath,
     $backlogPath,
     $recoveryTestPath,
     (Join-Path $repositoryRoot 'eng\run-bootstrap.ps1'),
+    (Join-Path $repositoryRoot 'eng\run-founder-gate-a.ps1'),
     (Join-Path $repositoryRoot 'src\Desktop\Opure.Desktop\RecoveryPointView.axaml'))) {
     if (-not (Test-Path -LiteralPath $requiredPath)) {
         throw "GATE-A-001 readiness input is missing: $requiredPath"
+    }
+}
+
+$checklistContent = [IO.File]::ReadAllText($checklistPath)
+$checklist = $checklistContent | ConvertFrom-Json
+if ($checklist.ticket -ne 'GATE-A-001' -or
+    $checklist.status -ne 'InProgress' -or
+    $checklist.fullDemonstrationComplete -ne $false -or
+    $checklist.steps.Count -ne 32) {
+    throw 'GATE-A-001 checklist does not retain its bounded in-progress state.'
+}
+
+for ($index = 0; $index -lt 32; $index++) {
+    if ($checklist.steps[$index].id -ne ($index + 1)) {
+        throw 'GATE-A-001 checklist step identifiers must be sequential from 1 through 32.'
+    }
+}
+
+foreach ($requiredAssertion in @(
+    'No network endpoint is owned by a Gate A child process.',
+    'No AI runtime process is spawned by the Gate A process tree.',
+    'No plugin process is spawned by the Gate A process tree.',
+    'No MCP process is spawned by the Gate A process tree.',
+    'No agent or skill host is spawned by the Gate A process tree.',
+    'No Linux-style output or data path is used.',
+    'The checked-in fixture is unchanged.')) {
+    if ($requiredAssertion -notin $checklist.negativeAssertions) {
+        throw "GATE-A-001 negative assertion is missing: $requiredAssertion"
     }
 }
 

@@ -66,6 +66,59 @@ public sealed class RuntimeBootstrapEnvironmentTests
     }
 
     [Fact]
+    public void Test_data_root_override_is_rejected_without_test_mode()
+    {
+        bool resolved = RuntimeBootstrapEnvironment.TryResolveLocalApplicationData(
+            Path.GetTempPath(),
+            testModeMarker: null,
+            testLocalApplicationDataRoot: Path.GetTempPath(),
+            out string? localApplicationData,
+            out string? error);
+
+        Assert.False(resolved);
+        Assert.Null(localApplicationData);
+        Assert.Equal(
+            "Runtime test data-root override requires test mode.",
+            error);
+    }
+
+    [Fact]
+    public void Test_data_root_override_requires_an_absolute_path()
+    {
+        bool resolved = RuntimeBootstrapEnvironment.TryResolveLocalApplicationData(
+            Path.GetTempPath(),
+            testModeMarker: "1",
+            testLocalApplicationDataRoot: "relative-root",
+            out string? localApplicationData,
+            out string? error);
+
+        Assert.False(resolved);
+        Assert.Null(localApplicationData);
+        Assert.Equal(
+            "Runtime test data-root override must be absolute.",
+            error);
+    }
+
+    [Fact]
+    public void Test_data_root_override_is_normalised_in_test_mode()
+    {
+        string root = Path.Combine(
+            Path.GetTempPath(),
+            $"Opure-Runtime-{Guid.NewGuid():N}",
+            "..");
+
+        bool resolved = RuntimeBootstrapEnvironment.TryResolveLocalApplicationData(
+            Path.GetTempPath(),
+            testModeMarker: "1",
+            testLocalApplicationDataRoot: root,
+            out string? localApplicationData,
+            out string? error);
+
+        Assert.True(resolved, error);
+        Assert.Equal(Path.GetFullPath(root), localApplicationData);
+    }
+
+    [Fact]
     public async Task Closing_bootstrap_control_pipe_requests_shutdown()
     {
         using StringReader input = new(string.Empty);

@@ -16,7 +16,8 @@ internal sealed record BootstrapOptions(
     TimeSpan? DesktopAutomaticCloseDelay,
     bool ShowHelp,
     TimeSpan? RuntimeTestCrashAfterReadyDelay,
-    int RuntimeTestCrashCount);
+    int RuntimeTestCrashCount,
+    string? TestLocalApplicationDataRoot);
 
 internal static class BootstrapArguments
 {
@@ -45,6 +46,7 @@ internal static class BootstrapArguments
         int? desktopCloseAfterMilliseconds = null;
         int? runtimeCrashAfterReadyMilliseconds = null;
         int runtimeCrashCount = 0;
+        string? testLocalApplicationDataRoot = null;
         bool showHelp = false;
 
         for (int index = 0; index < arguments.Count; index++)
@@ -183,6 +185,31 @@ internal static class BootstrapArguments
 
                     break;
 
+                case "--test-local-app-data-root":
+                    if (!testMode)
+                    {
+                        options = null;
+                        error =
+                            "--test-local-app-data-root is restricted to the Bootstrap test harness.";
+                        return false;
+                    }
+
+                    if (!TryReadValue(
+                            arguments,
+                            ref index,
+                            out string? localApplicationDataValue) ||
+                        !Path.IsPathFullyQualified(localApplicationDataValue))
+                    {
+                        options = null;
+                        error =
+                            "--test-local-app-data-root must be an absolute path.";
+                        return false;
+                    }
+
+                    testLocalApplicationDataRoot = Path.GetFullPath(
+                        localApplicationDataValue);
+                    break;
+
                 case "--help":
                 case "-h":
                     showHelp = true;
@@ -217,7 +244,8 @@ internal static class BootstrapArguments
                 ? null
                 : TimeSpan.FromMilliseconds(
                     runtimeCrashAfterReadyMilliseconds.Value),
-            runtimeCrashCount);
+            runtimeCrashCount,
+            testLocalApplicationDataRoot);
 
         error = null;
         return true;
@@ -248,4 +276,3 @@ internal static class BootstrapArguments
             string.Equals(value, "Release", StringComparison.Ordinal);
     }
 }
-

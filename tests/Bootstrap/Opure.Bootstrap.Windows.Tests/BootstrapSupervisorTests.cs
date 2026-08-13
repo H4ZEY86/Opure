@@ -198,6 +198,53 @@ public sealed class BootstrapSupervisorTests
     }
 
     [Fact]
+    public void Local_application_data_override_is_rejected_outside_test_harness()
+    {
+        bool parsed = BootstrapArguments.TryParse(
+            ["--test-local-app-data-root", Path.GetTempPath()],
+            testMode: false,
+            out BootstrapOptions? options,
+            out string? error);
+
+        Assert.False(parsed);
+        Assert.Null(options);
+        Assert.Contains("restricted", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Local_application_data_override_requires_an_absolute_path()
+    {
+        bool parsed = BootstrapArguments.TryParse(
+            ["--test-local-app-data-root", "relative-root"],
+            testMode: true,
+            out BootstrapOptions? options,
+            out string? error);
+
+        Assert.False(parsed);
+        Assert.Null(options);
+        Assert.Contains("absolute path", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Local_application_data_override_is_normalised_in_test_harness()
+    {
+        string root = Path.Combine(
+            Path.GetTempPath(),
+            $"Opure-Bootstrap-{Guid.NewGuid():N}",
+            "..");
+
+        bool parsed = BootstrapArguments.TryParse(
+            ["--test-local-app-data-root", root],
+            testMode: true,
+            out BootstrapOptions? options,
+            out string? error);
+
+        Assert.True(parsed, error);
+        Assert.NotNull(options);
+        Assert.Equal(Path.GetFullPath(root), options.TestLocalApplicationDataRoot);
+    }
+
+    [Fact]
     public void Restart_budget_applies_bounded_exponential_backoff()
     {
         BootstrapRestartBudget budget = new(

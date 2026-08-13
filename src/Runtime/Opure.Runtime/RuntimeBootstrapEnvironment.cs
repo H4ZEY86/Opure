@@ -35,11 +35,56 @@ public sealed partial record RuntimeBootstrapEnvironment(
             Environment.GetEnvironmentVariable,
             StringComparer.Ordinal);
 
-        string localApplicationData = Environment.GetFolderPath(
+        string systemLocalApplicationData = Environment.GetFolderPath(
             Environment.SpecialFolder.LocalApplicationData,
             Environment.SpecialFolderOption.DoNotVerify);
 
+        if (!TryResolveLocalApplicationData(
+                systemLocalApplicationData,
+                Environment.GetEnvironmentVariable("OPURE_RUNTIME_TEST_MODE"),
+                Environment.GetEnvironmentVariable(
+                    "OPURE_RUNTIME_TEST_LOCAL_APP_DATA_ROOT"),
+                out string? localApplicationData,
+                out error))
+        {
+            environment = null;
+            return false;
+        }
+
         return TryCreate(values, localApplicationData, out environment, out error);
+    }
+
+    internal static bool TryResolveLocalApplicationData(
+        string systemLocalApplicationData,
+        string? testModeMarker,
+        string? testLocalApplicationDataRoot,
+        [NotNullWhen(true)] out string? localApplicationData,
+        [NotNullWhen(false)] out string? error)
+    {
+        if (string.IsNullOrWhiteSpace(testLocalApplicationDataRoot))
+        {
+            localApplicationData = systemLocalApplicationData;
+            error = null;
+            return true;
+        }
+
+        if (!string.Equals(testModeMarker, "1", StringComparison.Ordinal))
+        {
+            localApplicationData = null;
+            error = "Runtime test data-root override requires test mode.";
+            return false;
+        }
+
+        if (!Path.IsPathFullyQualified(testLocalApplicationDataRoot))
+        {
+            localApplicationData = null;
+            error = "Runtime test data-root override must be absolute.";
+            return false;
+        }
+
+        localApplicationData = Path.GetFullPath(testLocalApplicationDataRoot);
+        error = null;
+        return true;
     }
 
     public static bool TryCreate(
@@ -196,4 +241,3 @@ public sealed partial record RuntimeBootstrapEnvironment(
     [GeneratedRegex("^[A-Za-z0-9_-]{43}$", RegexOptions.CultureInvariant)]
     private static partial Regex SessionSecretPattern();
 }
-
