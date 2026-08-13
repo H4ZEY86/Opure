@@ -42,6 +42,35 @@ Primary solution:
 C:\Opure\Opure.slnx
 ```
 
+## Authoritative guidance and working memory
+
+Repository work must use these sources together:
+
+* `AGENTS.md` for standing engineering and safety instructions;
+* `specs/README.md` for the specification catalogue, scope and Founder Gate boundaries;
+* `specs/BACKLOG-001-foundation-first-12-weeks.md` for acceptance criteria and ticket order;
+* `specs/ROADMAP-001-foundation-implementation-sequence.md` for milestone sequencing;
+* the ticket's named specifications and ADRs for its detailed authority.
+
+There is no canonical `roadmap/backlog/agents.md` file. References to that phrase
+mean the sources above unless a future reviewed document explicitly supersedes
+them. Do not infer completion from an idea, roadmap entry or draft specification;
+the repository implementation, verifier evidence, reviewed commit and pushed
+state remain decisive.
+
+Opure-related working notes may be consulted read-only in:
+
+```text
+C:\Users\Ctdde\Documents\Obsidian Vault
+```
+
+Those notes are non-authoritative design memory. Use them to recover context and
+identify future questions, but do not let them override repository specifications,
+ADRs, backlog gates or current implementation evidence. Do not copy unrelated
+personal material, secrets or private paths from the vault into source, logs or
+evidence. In particular, model routing, token budgets, project memory, plugins,
+MCP and agent ideas remain post-Gate-A work unless the approved roadmap changes.
+
 Engineering commands are exposed through:
 
 ```text
@@ -408,4 +437,3 @@ A foundation ticket is complete only when:
 * generated artefacts are excluded;
 * the implementation is reviewed, committed and pushed;
 * the working tree is clean and up to date with `origin/main`.
-
