@@ -3,7 +3,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('restore', 'build', 'test', 'verify', 'package', 'policy', 'version', 'version-policy', 'runtime', 'runtime-policy', 'desktop', 'desktop-policy', 'bootstrap', 'bootstrap-policy', 'supervisor-policy', 'health-contract-policy', 'health-transport-policy', 'health-session-policy', 'service-registry-policy', 'service-lifecycle-policy', 'runtime-health-ui-policy', 'persistence-policy', 'migration-policy', 'outbox-policy', 'inbox-policy', 'structured-logging-policy', 'trace-propagation-policy', 'redaction-policy', 'evidence-type-policy', 'evidence-record-policy', 'trust-database-policy', 'trust-ingestion-policy', 'trust-query-policy', 'path-reference-policy', 'folder-picker-policy', 'project-database-policy', 'open-project-policy', 'project-trust-policy', 'repository-policy', 'project-list-ui-policy', 'workspace-contract-policy', 'workspace-inventory-policy', 'workspace-hashing-policy', 'workspace-generation-policy', 'workspace-reconciliation-policy', 'workspace-snapshot-receipt-policy', 'setting-definition-policy', 'local-recovery-point-policy', 'founder-gate-a-readiness-policy', 'founder-gate-a-launch', 'founder-gate-a-crash-recovery', 'founder-gate-a-ipc-security', 'founder-gate-a-filesystem', 'founder-gate-a-configuration', 'founder-gate-a-trust-reconciliation', 'gate-a-performance-baseline', 'gate-a-accessibility-baseline', 'gate-a-adr-evidence-matrix', 'founder-gate-a-review', 'controlled-mutation-backlog')]
+    [ValidateSet('restore', 'build', 'test', 'verify', 'package', 'policy', 'version', 'version-policy', 'runtime', 'runtime-policy', 'desktop', 'desktop-policy', 'bootstrap', 'bootstrap-policy', 'supervisor-policy', 'health-contract-policy', 'health-transport-policy', 'health-session-policy', 'service-registry-policy', 'service-lifecycle-policy', 'runtime-health-ui-policy', 'persistence-policy', 'migration-policy', 'outbox-policy', 'inbox-policy', 'structured-logging-policy', 'trace-propagation-policy', 'redaction-policy', 'evidence-type-policy', 'evidence-record-policy', 'trust-database-policy', 'trust-ingestion-policy', 'trust-query-policy', 'path-reference-policy', 'folder-picker-policy', 'project-database-policy', 'open-project-policy', 'project-trust-policy', 'repository-policy', 'project-list-ui-policy', 'workspace-contract-policy', 'workspace-inventory-policy', 'workspace-hashing-policy', 'workspace-generation-policy', 'workspace-reconciliation-policy', 'workspace-snapshot-receipt-policy', 'setting-definition-policy', 'local-recovery-point-policy', 'founder-gate-a-readiness-policy', 'founder-gate-a-launch', 'founder-gate-a-crash-recovery', 'founder-gate-a-ipc-security', 'founder-gate-a-filesystem', 'founder-gate-a-configuration', 'founder-gate-a-trust-reconciliation', 'gate-a-performance-baseline', 'gate-a-accessibility-baseline', 'gate-a-adr-evidence-matrix', 'founder-gate-a-review', 'controlled-mutation-backlog', 'patch-contract-policy')]
     [string] $Target = 'verify',
 
     [Parameter()]
@@ -291,5 +291,9 @@ switch ($Target) {
 
     'controlled-mutation-backlog' {
         & (Join-Path $PSScriptRoot 'eng\verify-controlled-mutation-backlog.ps1')
+    }
+
+    'patch-contract-policy' {
+        & (Join-Path $PSScriptRoot 'eng\verify-patch-contract.ps1')
     }
 }

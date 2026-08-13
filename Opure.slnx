@@ -30,6 +30,9 @@
   <Folder Name="/src/Packaging/">
     <Project Path="src/Packaging/Opure.Packaging.Windows/Opure.Packaging.Windows.csproj" />
   </Folder>
+  <Folder Name="/src/Patch/">
+    <Project Path="src/Patch/Opure.Patch.Contracts/Opure.Patch.Contracts.csproj" />
+  </Folder>
   <Folder Name="/src/Persistence/">
     <Project Path="src/Persistence/Opure.Persistence.Sqlite/Opure.Persistence.Sqlite.csproj" />
   </Folder>
@@ -92,6 +95,9 @@
   </Folder>
   <Folder Name="/tests/Observability/">
     <Project Path="tests/Observability/Opure.Observability.Tests/Opure.Observability.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Patch/">
+    <Project Path="tests/Patch/Opure.Patch.Contracts.Tests/Opure.Patch.Contracts.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Persistence/">
     <Project Path="tests/Persistence/Opure.Persistence.Sqlite.Tests/Opure.Persistence.Sqlite.Tests.csproj" />

@@ -256,6 +256,7 @@ Completed and committed:
 * GATE-A-009 — Update ADR Evidence Matrix.
 * GATE-A-010 — Founder Gate A Review.
 * GATE-A-011 — Prepare Controlled Mutation Backlog.
+* CM-001 — Version Patch Contracts and Exact UTF-8 Operation.
 
 Locally implemented, verified and committed; pending reviewed pushes:
 
@@ -264,7 +265,7 @@ Locally implemented, verified and committed; pending reviewed pushes:
 The next planned ticket is:
 
 ```text
-CM-001 — Version Patch Contracts and Exact UTF-8 Operation
+CM-002 — Add Patch State Store and Transition Machine
 ```
 
 GATE-A-001 passed its repeatable 32-step Development-channel demonstration and
@@ -360,6 +361,16 @@ recovery/compensation and acceptance evidence. Gate A amendments are carried
 forward, no arbitrary shell exists, and no AI-generated patch is authorised before
 Founder Gate B. The complete Release verification passed 765 tests with zero
 warnings and zero errors.
+
+CM-001 adds the versioned framework-neutral `Opure.Patch.Contracts` assembly for
+exactly one UTF-8-without-BOM create-or-replace proposal. The immutable proposal
+binds opaque project/root/path identities, base Workspace generation and SHA-256,
+unambiguous source existence/hash/size preconditions, line-ending intent,
+deterministic creator, bounded intent and resulting content SHA-256. Invalid UTF-8,
+BOM, NUL, oversize, raw paths, unknown revisions/creators and ambiguous source
+state are denied. Architecture tests prove that the contract has no filesystem,
+persistence, Desktop, process, network or apply authority. The complete Release
+verification passed 777 tests with zero warnings and zero errors.
 
 This completes GATE-A-001 through GATE-A-011 and records Founder Gate A acceptance
 with amendments. Phase 7 implementation begins at CM-001 under the verified
