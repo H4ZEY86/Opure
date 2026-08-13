@@ -26,13 +26,15 @@ is not Runtime or Desktop, if a child owns a TCP or UDP endpoint, if Bootstrap
 reports a failure, if stderr is populated, or if the fixture changes. Windows'
 console host is recorded as permitted platform infrastructure, not as a product
 capability. The session secret remains in process memory and is neither written
-to logs nor included in the receipt. Steps 1–19 are automated through the
-Runtime-owned Workspace and Configuration Services; steps 20–32 remain
-pending. The runner does not claim completion of UI restart, durability, recovery
-or Trust Centre evidence.
+to logs nor included in the receipt. All 32 steps are automated. The runner
+proves the three read-only Trust Centre projections, a clean Desktop reconnect
+while Runtime remains ready, supervised Runtime recovery with rotated boot and
+session identities, durable Project and Configuration state, and a structurally
+verified same-device Recovery Point materialised into a disposable restore root
+without modifying active owner databases.
 
 No AI runtime, agent loop, skill host, plugin host, MCP server, connector,
 browser storage or Linux-style data path is part of this demonstration.
 
-Gate A remains open until every checklist item has passing evidence and the
-founder decision is reviewed and recorded.
+Every checklist item now has passing automated evidence. The founder decision
+remains a separate review and sign-off action.

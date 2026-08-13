@@ -31,9 +31,15 @@ public sealed class TrustEvidenceServiceHost : IDisposable
         QueryService = database.CreateQueryService(
             evidenceTypes,
             timeProvider);
+        TrustCentreHandler = new TrustCentreRequestHandler(
+            database.CreateOverviewQueryService(timeProvider),
+            database.CreateProjectQueryService(timeProvider),
+            timeProvider);
     }
 
     public TrustEvidenceQueryService QueryService { get; }
+
+    public TrustCentreRequestHandler TrustCentreHandler { get; }
 
     public IBackupAdapter BackupAdapter
     {

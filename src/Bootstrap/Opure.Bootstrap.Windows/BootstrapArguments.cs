@@ -17,7 +17,9 @@ internal sealed record BootstrapOptions(
     bool ShowHelp,
     TimeSpan? RuntimeTestCrashAfterReadyDelay,
     int RuntimeTestCrashCount,
-    string? TestLocalApplicationDataRoot);
+    string? TestLocalApplicationDataRoot,
+    bool TestDesktopReconnect,
+    TimeSpan? TestShutdownAfterDelay);
 
 internal static class BootstrapArguments
 {
@@ -47,6 +49,8 @@ internal static class BootstrapArguments
         int? runtimeCrashAfterReadyMilliseconds = null;
         int runtimeCrashCount = 0;
         string? testLocalApplicationDataRoot = null;
+        bool testDesktopReconnect = false;
+        int? testShutdownAfterMilliseconds = null;
         bool showHelp = false;
 
         for (int index = 0; index < arguments.Count; index++)
@@ -210,6 +214,47 @@ internal static class BootstrapArguments
                         localApplicationDataValue);
                     break;
 
+                case "--test-desktop-reconnect":
+                    if (!testMode)
+                    {
+                        options = null;
+                        error =
+                            "--test-desktop-reconnect is restricted to the Bootstrap test harness.";
+                        return false;
+                    }
+
+                    testDesktopReconnect = true;
+                    break;
+
+                case "--test-shutdown-after-ms":
+                    if (!testMode)
+                    {
+                        options = null;
+                        error =
+                            "--test-shutdown-after-ms is restricted to the Bootstrap test harness.";
+                        return false;
+                    }
+
+                    if (!TryReadValue(
+                            arguments,
+                            ref index,
+                            out string? shutdownAfterValue) ||
+                        !int.TryParse(
+                            shutdownAfterValue,
+                            NumberStyles.None,
+                            CultureInfo.InvariantCulture,
+                            out int parsedShutdownAfterMilliseconds) ||
+                        parsedShutdownAfterMilliseconds is < 1_000 or > 120_000)
+                    {
+                        options = null;
+                        error =
+                            "--test-shutdown-after-ms must be between 1000 and 120000.";
+                        return false;
+                    }
+
+                    testShutdownAfterMilliseconds = parsedShutdownAfterMilliseconds;
+                    break;
+
                 case "--help":
                 case "-h":
                     showHelp = true;
@@ -245,7 +290,11 @@ internal static class BootstrapArguments
                 : TimeSpan.FromMilliseconds(
                     runtimeCrashAfterReadyMilliseconds.Value),
             runtimeCrashCount,
-            testLocalApplicationDataRoot);
+            testLocalApplicationDataRoot,
+            testDesktopReconnect,
+            testShutdownAfterMilliseconds is null
+                ? null
+                : TimeSpan.FromMilliseconds(testShutdownAfterMilliseconds.Value));
 
         error = null;
         return true;

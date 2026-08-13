@@ -8,6 +8,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Opure.TrustEvidence.Contracts\Opure.TrustEvidence.Contracts.csproj" />
     <ProjectReference Include="..\Opure.TrustEvidence.Sqlite\Opure.TrustEvidence.Sqlite.csproj" />
+    <ProjectReference Include="..\Opure.TrustEvidence.Protocol\Opure.TrustEvidence.Protocol.csproj" />
   </ItemGroup>
 
 </Project>

@@ -465,6 +465,7 @@
         "type": "Project",
         "dependencies": {
           "Opure.TrustEvidence.Contracts": "[1.0.0, )",
+          "Opure.TrustEvidence.Protocol": "[1.0.0, )",
           "Opure.TrustEvidence.Sqlite": "[1.0.0, )"
         }
       },

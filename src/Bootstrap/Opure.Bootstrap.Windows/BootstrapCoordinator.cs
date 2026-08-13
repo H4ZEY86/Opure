@@ -12,7 +12,8 @@ internal sealed record BootstrapPlan(
     TimeSpan? DesktopAutomaticCloseDelay,
     BootstrapRestartPolicy? RuntimeRestartPolicy = null,
     TimeSpan? RuntimeTestCrashAfterReadyDelay = null,
-    int RuntimeTestCrashCount = 0);
+    int RuntimeTestCrashCount = 0,
+    bool TestDesktopReconnect = false);
 
 internal sealed record RuntimeEndpointDescriptor(
     string BootId,
@@ -57,6 +58,7 @@ internal sealed class BootstrapCoordinator
         OwnedBootstrapProcess? runtime = null;
         OwnedBootstrapProcess? desktop = null;
         BootstrapExitCode result = BootstrapExitCode.Success;
+        bool desktopReconnectCompleted = false;
 
         await BootstrapEventWriter.WriteLifecycleAsync(
             output,
@@ -168,6 +170,34 @@ internal sealed class BootstrapCoordinator
                     await DisposeOwnedProcessAsync(desktop).ConfigureAwait(false);
                     desktop = null;
 
+                    if (desktopExitCode == 0 &&
+                        plan.TestDesktopReconnect &&
+                        !desktopReconnectCompleted &&
+                        !runtime.Process.HasExited)
+                    {
+                        desktopReconnectCompleted = true;
+                        await BootstrapEventWriter.WriteSupervisorStateAsync(
+                            output,
+                            BootstrapSupervisorMode.Normal,
+                            BootstrapProcessHealth.Ready,
+                            restartBudget.TotalAttempts,
+                            "desktop_closed_runtime_ready").ConfigureAwait(false);
+                        desktop = await StartDesktopAsync(
+                            plan,
+                            BootstrapSupervisorMode.Normal,
+                            restartBudget.TotalAttempts,
+                            runtimeAvailable: true,
+                            runtime.RuntimeEndpoint,
+                            suppressAutomaticClose: true).ConfigureAwait(false);
+                        await BootstrapEventWriter.WriteSupervisorStateAsync(
+                            output,
+                            BootstrapSupervisorMode.Normal,
+                            BootstrapProcessHealth.Ready,
+                            restartBudget.TotalAttempts,
+                            "desktop_reconnected").ConfigureAwait(false);
+                        continue;
+                    }
+
                     if (desktopExitCode != 0)
                     {
                         await BootstrapEventWriter.WriteFailureAsync(
@@ -260,7 +290,9 @@ internal sealed class BootstrapCoordinator
                         BootstrapSupervisorMode.Normal,
                         restartBudget.TotalAttempts,
                         runtimeAvailable: true,
-                        runtime.RuntimeEndpoint).ConfigureAwait(false);
+                        runtime.RuntimeEndpoint,
+                        suppressAutomaticClose: desktopReconnectCompleted)
+                        .ConfigureAwait(false);
                 }
                 catch (Exception exception)
                 {
@@ -580,7 +612,8 @@ if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("OPURE_BOOTSTRAP_TE
         BootstrapSupervisorMode mode,
         int restartCount,
         bool runtimeAvailable,
-        RuntimeEndpointDescriptor? runtimeEndpoint)
+        RuntimeEndpointDescriptor? runtimeEndpoint,
+        bool suppressAutomaticClose = false)
     {
         IReadOnlyDictionary<string, string> environment =
             CreateAttemptEnvironment(
@@ -592,7 +625,12 @@ if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("OPURE_BOOTSTRAP_TE
                 runtimeEndpoint);
 
         IBootstrapOwnedProcess process = launcher.Start(
-            CreateDesktopRequest(plan, environment));
+            CreateDesktopRequest(
+                plan,
+                environment,
+                suppressAutomaticClose
+                    ? null
+                    : plan.DesktopAutomaticCloseDelay));
 
         try
         {
@@ -742,15 +780,16 @@ if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("OPURE_BOOTSTRAP_TE
 
     private static BootstrapProcessStartRequest CreateDesktopRequest(
         BootstrapPlan plan,
-        IReadOnlyDictionary<string, string> environment)
+        IReadOnlyDictionary<string, string> environment,
+        TimeSpan? automaticCloseDelay)
     {
         List<string> arguments = [];
 
-        if (plan.DesktopAutomaticCloseDelay is not null)
+        if (automaticCloseDelay is not null)
         {
             arguments.Add("--close-after-ms");
             arguments.Add(
-                ((int)plan.DesktopAutomaticCloseDelay.Value.TotalMilliseconds)
+                ((int)automaticCloseDelay.Value.TotalMilliseconds)
                 .ToString(CultureInfo.InvariantCulture));
         }
 

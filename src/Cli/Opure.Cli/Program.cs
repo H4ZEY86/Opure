@@ -14,6 +14,7 @@ using Opure.Runtime.Contracts.Health.V1;
 using Opure.TrustEvidence.Protocol;
 using Opure.TrustEvidence.Protocol.Configuration.V1;
 using Opure.TrustEvidence.Protocol.Overview.V1;
+using Opure.TrustEvidence.Protocol.Project.V1;
 using DomainVolumeClass = Opure.Filesystem.Contracts.FilesystemVolumeClass;
 using ProjectListChannel = Opure.Project.Protocol.List.V1.ProjectListReleaseChannel;
 using ProjectOpenChannel = Opure.Project.Protocol.Open.V1.ProjectReleaseChannel;
@@ -52,7 +53,7 @@ internal static class Program
                 "1",
                 StringComparison.Ordinal) ||
             args.Length != 4 ||
-            !string.Equals(args[0], "probe", StringComparison.Ordinal) ||
+            args[0] is not ("probe" or "post-restart" or "recovery") ||
             !string.Equals(args[1], "--channel", StringComparison.Ordinal) ||
             !string.Equals(args[3], "--path-stdin", StringComparison.Ordinal))
         {
@@ -67,6 +68,15 @@ internal static class Program
             Console.Error.WriteLine("Channel must be Development, Preview or Stable.");
             return 1;
         }
+
+        bool postRestart = string.Equals(
+            args[0],
+            "post-restart",
+            StringComparison.Ordinal);
+        bool recoveryProbe = string.Equals(
+            args[0],
+            "recovery",
+            StringComparison.Ordinal);
 
         int health = await HandleHealthAsync().ConfigureAwait(false);
         if (health != 0)
@@ -90,6 +100,14 @@ internal static class Program
             return 1;
         }
 
+        if (recoveryProbe)
+        {
+            return await RunGateARecoverySequenceAsync(
+                endpoint,
+                sessionMaterial,
+                channel).ConfigureAwait(false);
+        }
+
         int opened = await OpenProjectAsync(
             endpoint,
             sessionMaterial,
@@ -109,6 +127,34 @@ internal static class Program
             return listed;
         }
 
+        if (postRestart)
+        {
+            TrustConfigurationSnapshotMessage? durableConfiguration =
+                await QueryGateAConfigurationAsync(
+                    endpoint,
+                    sessionMaterial,
+                    "DurableAfterRestart").ConfigureAwait(false);
+            if (durableConfiguration is null ||
+                durableConfiguration.ProjectGeneration < 1)
+            {
+                return 1;
+            }
+
+            if (await QueryGateATrustCentreAsync(
+                    endpoint,
+                    sessionMaterial,
+                    durableConfiguration.ProjectId,
+                    "Final").ConfigureAwait(false) != 0)
+            {
+                return 1;
+            }
+
+            return await RunGateARecoverySequenceAsync(
+                endpoint,
+                sessionMaterial,
+                channel).ConfigureAwait(false);
+        }
+
         int configuration = await RunGateAConfigurationSequenceAsync(
             endpoint,
             sessionMaterial,
@@ -119,7 +165,127 @@ internal static class Program
             return configuration;
         }
 
+        TrustConfigurationSnapshotMessage? current =
+            await QueryGateAConfigurationAsync(
+                endpoint,
+                sessionMaterial,
+                "TrustCentre").ConfigureAwait(false);
+        if (current is null ||
+            await QueryGateATrustCentreAsync(
+                endpoint,
+                sessionMaterial,
+                current.ProjectId,
+                "Initial").ConfigureAwait(false) != 0)
+        {
+            return 1;
+        }
+
         return await VerifyInvalidSessionDenialAsync().ConfigureAwait(false);
+    }
+
+    private static async Task<int> QueryGateATrustCentreAsync(
+        RuntimeHealthEndpoint endpoint,
+        RuntimeHealthSessionMaterial sessionMaterial,
+        string projectId,
+        string stage)
+    {
+        await using NamedPipeTrustEvidenceClient client = new(
+            endpoint,
+            sessionMaterial);
+        TrustOverviewResponseMessage overview = await client.QueryOverviewAsync(
+            new TrustOverviewRequestMessage
+            {
+                ContractRevision = Opure.TrustEvidence.Contracts.TrustOverviewRequest.CurrentContractRevision,
+                QueryId = Guid.NewGuid().ToString("N"),
+                ReleaseChannel = TrustEvidenceReleaseChannel.Development,
+                ProjectId = projectId
+            },
+            CancellationToken.None).ConfigureAwait(false);
+        TrustProjectResponseMessage project = await client.QueryProjectAsync(
+            new TrustProjectRequestMessage
+            {
+                ContractRevision = Opure.TrustEvidence.Contracts.TrustProjectRequest.CurrentContractRevision,
+                QueryId = Guid.NewGuid().ToString("N"),
+                ReleaseChannel = TrustEvidenceReleaseChannel.Development,
+                ProjectId = projectId
+            },
+            CancellationToken.None).ConfigureAwait(false);
+        if (overview.Disposition != TrustEvidenceQueryDisposition.Computed ||
+            overview.Snapshot is null ||
+            project.Disposition != TrustEvidenceQueryDisposition.Computed ||
+            project.Snapshot is null)
+        {
+            Console.Error.WriteLine("The Gate A Trust Centre projections were unavailable.");
+            return 1;
+        }
+
+        Console.WriteLine($"Trust Centre stage: {stage}");
+        Console.WriteLine(
+            $"Trust Overview: owner={overview.Snapshot.OwnerAvailability} completeness={overview.Snapshot.Completeness} records={overview.Snapshot.TotalRecordCount} generation={overview.Snapshot.ProjectionGeneration}");
+        Console.WriteLine(
+            $"Trust Project: project={project.Snapshot.ProjectId} owner={project.Snapshot.OwnerAvailability} completeness={project.Snapshot.Completeness} events={project.Snapshot.Events.Count} workspace={project.Snapshot.CurrentWorkspaceGeneration}");
+        Console.WriteLine("Trust Configuration: projection=Computed authority=ConfigurationService");
+        return 0;
+    }
+
+    private static async Task<int> RunGateARecoverySequenceAsync(
+        RuntimeHealthEndpoint endpoint,
+        RuntimeHealthSessionMaterial sessionMaterial,
+        string channel)
+    {
+        await using NamedPipeRecoveryPointClient client = new(
+            endpoint,
+            sessionMaterial);
+        CreateRecoveryPointResponseMessage created =
+            await client.CreateRecoveryPointAsync(
+                new CreateRecoveryPointRequestMessage
+                {
+                    ContractRevision = RecoveryPointContractPolicy.CurrentRevision,
+                    ReleaseChannel = channel
+                },
+                CancellationToken.None).ConfigureAwait(false);
+        if (!created.IsSuccess ||
+            !Guid.TryParse(created.RecoveryPointId, out Guid recoveryPointId))
+        {
+            Console.Error.WriteLine("Gate A could not create a local Recovery Point.");
+            return 1;
+        }
+
+        VerifyRecoveryPointResponseMessage verified =
+            await client.VerifyRecoveryPointAsync(
+                new VerifyRecoveryPointRequestMessage
+                {
+                    ContractRevision = RecoveryPointContractPolicy.CurrentRevision,
+                    ReleaseChannel = channel,
+                    RecoveryPointId = recoveryPointId.ToString("N")
+                },
+                CancellationToken.None).ConfigureAwait(false);
+        ListRecoveryPointsResponseMessage listed =
+            await client.ListRecoveryPointsAsync(
+                new ListRecoveryPointsRequestMessage
+                {
+                    ContractRevision = RecoveryPointContractPolicy.CurrentRevision,
+                    ReleaseChannel = channel
+                },
+                CancellationToken.None).ConfigureAwait(false);
+        RecoveryPointSummaryMessage? summary = listed.Points.FirstOrDefault(
+            point => string.Equals(
+                point.RecoveryPointId,
+                recoveryPointId.ToString("N"),
+                StringComparison.Ordinal));
+        if (!verified.IsSuccess ||
+            summary is null ||
+            !string.Equals(summary.ScopeClass, "same-device", StringComparison.Ordinal) ||
+            !string.Equals(summary.VerificationState, "Structural", StringComparison.Ordinal))
+        {
+            Console.Error.WriteLine("Gate A Recovery Point verification was incomplete.");
+            return 1;
+        }
+
+        Console.WriteLine($"Recovery Point: {recoveryPointId:N}");
+        Console.WriteLine(
+            $"Recovery verification: {summary.VerificationState} scope={summary.ScopeClass} owners={summary.OwnerCount} receipts={summary.Receipts.Count}");
+        return 0;
     }
 
     private static async Task<int> VerifyInvalidSessionDenialAsync()

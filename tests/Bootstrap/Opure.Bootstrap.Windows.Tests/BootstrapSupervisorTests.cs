@@ -245,6 +245,35 @@ public sealed class BootstrapSupervisorTests
     }
 
     [Fact]
+    public void Desktop_reconnect_and_shutdown_controls_are_bounded_to_test_harness()
+    {
+        bool rejected = BootstrapArguments.TryParse(
+            ["--test-desktop-reconnect"],
+            testMode: false,
+            out BootstrapOptions? rejectedOptions,
+            out string? rejectedError);
+
+        Assert.False(rejected);
+        Assert.Null(rejectedOptions);
+        Assert.Contains("restricted", rejectedError, StringComparison.Ordinal);
+
+        bool parsed = BootstrapArguments.TryParse(
+            [
+                "--test-desktop-reconnect",
+                "--test-shutdown-after-ms",
+                "55000"
+            ],
+            testMode: true,
+            out BootstrapOptions? options,
+            out string? error);
+
+        Assert.True(parsed, error);
+        Assert.NotNull(options);
+        Assert.True(options.TestDesktopReconnect);
+        Assert.Equal(TimeSpan.FromSeconds(55), options.TestShutdownAfterDelay);
+    }
+
+    [Fact]
     public void Restart_budget_applies_bounded_exponential_backoff()
     {
         BootstrapRestartBudget budget = new(

@@ -176,7 +176,11 @@ public sealed class RuntimeApplication
                 projectOpenRequestHandler: projectService.OpenHandler,
                 projectListRequestHandler: projectService.ListHandler,
                 recoveryPointRequestHandler: recoveryPointHandler,
-                trustConfigurationRequestHandler: configurationService)
+                trustConfigurationRequestHandler: configurationService,
+                trustOverviewRequestHandler:
+                    trustEvidenceService.TrustCentreHandler,
+                trustProjectRequestHandler:
+                    trustEvidenceService.TrustCentreHandler)
                 .ConfigureAwait(false);
 
             lifecycle.TransitionTo(RuntimeLifecycleState.Ready);

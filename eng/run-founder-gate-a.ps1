@@ -174,11 +174,90 @@ function Get-ConfigurationStageEvidence {
     }
 }
 
+function Get-TrustCentreStageEvidence {
+    param(
+        [Parameter(Mandatory)][string] $Output,
+        [Parameter(Mandatory)][string] $Stage
+    )
+
+    $escapedStage = [regex]::Escape($Stage)
+    $block = [regex]::Match(
+        $Output,
+        "(?ms)^Trust Centre stage:\s*$escapedStage\s*`r?`n(?<body>.*?)(?=^Trust Centre stage:|^Invalid session:|^Recovery Point:|\z)").Groups['body'].Value
+    if ([string]::IsNullOrWhiteSpace($block)) {
+        throw "The Gate A Trust Centre stage '$Stage' was not reported."
+    }
+
+    return [ordered]@{
+        overviewOwner = [regex]::Match($block, 'Trust Overview:\s*owner=(?<value>\S+)').Groups['value'].Value
+        overviewCompleteness = [regex]::Match($block, 'Trust Overview:.*?completeness=(?<value>\S+)').Groups['value'].Value
+        overviewRecordCount = [int][regex]::Match($block, 'Trust Overview:.*?records=(?<value>\d+)').Groups['value'].Value
+        projectId = [regex]::Match($block, 'Trust Project:\s*project=(?<value>[0-9a-f]{32})').Groups['value'].Value
+        projectOwner = [regex]::Match($block, 'Trust Project:.*?owner=(?<value>\S+)').Groups['value'].Value
+        projectCompleteness = [regex]::Match($block, 'Trust Project:.*?completeness=(?<value>\S+)').Groups['value'].Value
+        projectEventCount = [int][regex]::Match($block, 'Trust Project:.*?events=(?<value>\d+)').Groups['value'].Value
+        configurationComputed = $block -match '(?m)^Trust Configuration:\s*projection=Computed\s+authority=ConfigurationService\s*$'
+    }
+}
+
+function Get-DatabaseStateHash {
+    param([Parameter(Mandatory)][string] $DataRoot)
+
+    $files = @(Get-ChildItem -LiteralPath $DataRoot -Recurse -Force -File -Filter '*.db' |
+        Where-Object { $_.FullName -notmatch '[\\/]Backup[\\/]' } |
+        Sort-Object FullName)
+    $lines = foreach ($file in $files) {
+        $relative = [IO.Path]::GetRelativePath($DataRoot, $file.FullName).Replace('\', '/')
+        $file.Refresh()
+        "$relative|$($file.Length)|$($file.LastWriteTimeUtc.Ticks)"
+    }
+    $bytes = [Text.Encoding]::UTF8.GetBytes(($lines -join "`n"))
+    return [Convert]::ToHexString(
+        [Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant()
+}
+
+function Invoke-DisposableRecoveryRestore {
+    param(
+        [Parameter(Mandatory)][string] $RecoveryRoot,
+        [Parameter(Mandatory)][string] $RecoveryPointId,
+        [Parameter(Mandatory)][string] $DestinationRoot
+    )
+
+    $source = Join-Path $RecoveryRoot $RecoveryPointId
+    if (-not (Test-Path -LiteralPath $source -PathType Container)) {
+        throw 'The committed Gate A Recovery Point directory is missing.'
+    }
+    Copy-Item -LiteralPath $source -Destination $DestinationRoot -Recurse
+    $manifestPath = Join-Path $DestinationRoot 'manifest.json'
+    $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json -Depth 20
+    $validatedFiles = 0
+    foreach ($owner in $manifest.Owners.PSObject.Properties) {
+        foreach ($file in $owner.Value.Files) {
+            $restoredPath = Join-Path (Join-Path $DestinationRoot $owner.Name) $file.RelativePath
+            $actualHash = (Get-FileHash -LiteralPath $restoredPath -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($actualHash -ne [string]$file.Sha256Hash) {
+                throw 'A disposable restored owner snapshot did not match its manifest hash.'
+            }
+            $validatedFiles++
+        }
+    }
+    if ($validatedFiles -lt 1) {
+        throw 'The disposable restore contained no owner snapshots.'
+    }
+    return [ordered]@{
+        destinationIsDisposable = $true
+        ownerCount = @($manifest.Owners.PSObject.Properties).Count
+        validatedFileCount = $validatedFiles
+        activeRootUsedAsDestination = $false
+    }
+}
+
 function Invoke-ProjectEvidenceProbe {
     param(
         [Parameter(Mandatory)][string] $CliExecutable,
         [Parameter(Mandatory)][string] $FixtureRoot,
-        [Parameter(Mandatory)][pscustomobject] $Session
+        [Parameter(Mandatory)][pscustomobject] $Session,
+        [Parameter()][ValidateSet('probe', 'post-restart', 'recovery')][string] $Command = 'probe'
     )
 
     $environment = [Collections.Generic.Dictionary[string, string]]::new(
@@ -191,12 +270,12 @@ function Invoke-ProjectEvidenceProbe {
 
     $opened = Invoke-CapturedProcess `
         -Executable $CliExecutable `
-        -Arguments @('gate-a', 'probe', '--channel', 'Development', '--path-stdin') `
+        -Arguments @('gate-a', $Command, '--channel', 'Development', '--path-stdin') `
         -Environment $environment `
         -StandardInput $FixtureRoot
     if ($opened.ExitCode -ne 0 -or
         -not [string]::IsNullOrWhiteSpace($opened.StandardError)) {
-        throw "The authenticated Project-open CLI probe failed: $($opened.StandardError)"
+        throw "The authenticated Gate A CLI probe '$Command' failed after safe output '$($opened.StandardOutput.Trim())': $($opened.StandardError)"
     }
 
     $status = [regex]::Match(
@@ -223,7 +302,12 @@ function Invoke-ProjectEvidenceProbe {
                 state = $_.Groups['state'].Value
             }
         })
-    $invalidDenied = $opened.StandardOutput -match '(?m)^Invalid session:\s*Denied\s*$'
+    if ($Command -eq 'recovery') {
+        return [ordered]@{ rawOutput = $opened.StandardOutput }
+    }
+
+    $invalidDenied = $Command -eq 'post-restart' -or
+        $opened.StandardOutput -match '(?m)^Invalid session:\s*Denied\s*$'
     if ($bootId -ne [string]$Session.OPURE_RUNTIME_BOOT_ID -or
         $serviceCount -lt 1 -or $services.Count -ne $serviceCount -or
         -not $invalidDenied) {
@@ -273,13 +357,23 @@ function Invoke-ProjectEvidenceProbe {
         throw 'The opened fixture was not projected as an observed Git repository.'
     }
 
-    $configuration = [ordered]@{
-        initial = Get-ConfigurationStageEvidence -Output $opened.StandardOutput -Stage 'Initial'
-        validChange = Get-ConfigurationStageEvidence -Output $opened.StandardOutput -Stage 'ValidChange'
-        invalidSource = Get-ConfigurationStageEvidence -Output $opened.StandardOutput -Stage 'InvalidSource'
-        repaired = Get-ConfigurationStageEvidence -Output $opened.StandardOutput -Stage 'Repaired'
+    if ($Command -eq 'post-restart') {
+        $configuration = [ordered]@{
+            durableAfterRestart = Get-ConfigurationStageEvidence `
+                -Output $opened.StandardOutput `
+                -Stage 'DurableAfterRestart'
+        }
     }
-    if ($configuration.initial.productDefaultsRevision -lt 1 -or
+    else {
+        $configuration = [ordered]@{
+            initial = Get-ConfigurationStageEvidence -Output $opened.StandardOutput -Stage 'Initial'
+            validChange = Get-ConfigurationStageEvidence -Output $opened.StandardOutput -Stage 'ValidChange'
+            invalidSource = Get-ConfigurationStageEvidence -Output $opened.StandardOutput -Stage 'InvalidSource'
+            repaired = Get-ConfigurationStageEvidence -Output $opened.StandardOutput -Stage 'Repaired'
+        }
+    }
+    if ($Command -ne 'post-restart' -and (
+        $configuration.initial.productDefaultsRevision -lt 1 -or
         [string]::IsNullOrWhiteSpace($configuration.initial.productDefaultsSha256) -or
         $configuration.initial.userProfileId -ne 'user.base' -or
         $configuration.initial.userProfileRevision -lt 1 -or
@@ -296,7 +390,7 @@ function Invoke-ProjectEvidenceProbe {
         $configuration.invalidSource.sourceError -ne 'Present' -or
         $configuration.repaired.configurationGeneration -le $configuration.validChange.configurationGeneration -or
         $configuration.repaired.latestValidWorkspaceGeneration -le $configuration.validChange.workspaceGeneration -or
-        $configuration.repaired.sourceError -ne 'None') {
+        $configuration.repaired.sourceError -ne 'None')) {
         throw 'The Gate A configuration evidence did not prove valid, invalid, last-known-good and repaired states.'
     }
 
@@ -325,6 +419,7 @@ function Invoke-ProjectEvidenceProbe {
             workspaceGenerationSha256 = $workspaceGenerationSha256
         }
         configuration = $configuration
+        rawOutput = $opened.StandardOutput
     }
 }
 
@@ -356,6 +451,8 @@ $fixtureRoot = Join-Path $workRoot 'fixture'
 $receiptDirectory = Join-Path $repositoryRoot 'artifacts\evidence\founder-gate-a'
 $receiptPath = Join-Path $receiptDirectory 'launch-receipt.json'
 $process = $null
+$observedProcesses = @{}
+$networkEndpointCount = 0
 
 try {
     [IO.Directory]::CreateDirectory($isolatedLocalApplicationData) | Out-Null
@@ -391,6 +488,10 @@ try {
         '--configuration', $Configuration,
         '--channel', 'Development',
         '--desktop-close-after-ms', [string]$DesktopCloseAfterMilliseconds,
+        '--test-desktop-reconnect',
+        '--runtime-crash-after-ready-ms', '30000',
+        '--runtime-crash-count', '1',
+        '--test-shutdown-after-ms', '55000',
         '--test-local-app-data-root', $isolatedLocalApplicationData)) {
         [void]$startInfo.ArgumentList.Add($argument)
     }
@@ -442,10 +543,75 @@ try {
         -Session $session
     $healthEvidence = $controlPlaneEvidence.health
     $projectEvidence = $controlPlaneEvidence.project
+    $initialTrustEvidence = Get-TrustCentreStageEvidence `
+        -Output $controlPlaneEvidence.rawOutput `
+        -Stage 'Initial'
     Write-Host 'Gate A authenticated health, Project and denial probes passed.' -ForegroundColor DarkGray
+    $initialDescendants = @(Get-DescendantProcesses -RootProcessId $process.Id)
+    foreach ($child in $initialDescendants) {
+        $observedProcesses[[int]$child.ProcessId] = [string]$child.Name
+    }
+    $initialProcessIds = @($initialDescendants | ForEach-Object { [uint32]$_.ProcessId })
+    $networkEndpointCount += @(Get-NetTCPConnection -ErrorAction Stop |
+        Where-Object { [uint32]$_.OwningProcess -in $initialProcessIds }).Count
+    $networkEndpointCount += @(Get-NetUDPEndpoint -ErrorAction Stop |
+        Where-Object { [uint32]$_.OwningProcess -in $initialProcessIds }).Count
+    $restartSession = $null
+    $restartDeadline = [DateTimeOffset]::UtcNow.AddSeconds(40)
+    while ($null -eq $restartSession -and [DateTimeOffset]::UtcNow -lt $restartDeadline) {
+        $line = $process.StandardOutput.ReadLineAsync().WaitAsync(
+            [TimeSpan]::FromSeconds(40)).GetAwaiter().GetResult()
+        if ($null -eq $line) { break }
+        $value = $line | ConvertFrom-Json -ErrorAction Stop
+        if ($value.PSObject.Properties['kind']?.Value -eq 'ipc.session' -and
+            $value.OPURE_RUNTIME_BOOT_ID -ne $session.OPURE_RUNTIME_BOOT_ID) {
+            $restartSession = $value
+        }
+        else {
+            $safeOutputLines.Add($line)
+        }
+    }
+    if ($null -eq $restartSession) {
+        throw 'The Runtime supervisor did not publish a rotated authenticated session after restart.'
+    }
+
+    $activeDataRoot = Join-Path $isolatedLocalApplicationData 'Opure\Development'
+    $postRestartProbe = Invoke-ProjectEvidenceProbe `
+        -CliExecutable $cliExecutable `
+        -FixtureRoot $fixtureRoot `
+        -Session $restartSession `
+        -Command 'post-restart'
+    $restartedDescendants = @(Get-DescendantProcesses -RootProcessId $process.Id)
+    foreach ($child in $restartedDescendants) {
+        $observedProcesses[[int]$child.ProcessId] = [string]$child.Name
+    }
+    $restartedProcessIds = @($restartedDescendants | ForEach-Object { [uint32]$_.ProcessId })
+    $networkEndpointCount += @(Get-NetTCPConnection -ErrorAction Stop |
+        Where-Object { [uint32]$_.OwningProcess -in $restartedProcessIds }).Count
+    $networkEndpointCount += @(Get-NetUDPEndpoint -ErrorAction Stop |
+        Where-Object { [uint32]$_.OwningProcess -in $restartedProcessIds }).Count
+    $databaseHashBeforeRestore = Get-DatabaseStateHash -DataRoot $activeDataRoot
+    $recoveryMatch = [regex]::Match(
+        $postRestartProbe.rawOutput,
+        '(?m)^Recovery Point:\s*(?<value>[0-9a-f]{32})\s*$')
+    if (-not $recoveryMatch.Success) {
+        throw 'The post-restart probe did not report a Recovery Point.'
+    }
+    $recoveryPointId = $recoveryMatch.Groups['value'].Value
+    $recoveryRoot = Join-Path $activeDataRoot 'Backup\recovery-points'
+    $restoreRoot = Join-Path $workRoot 'disposable-restore'
+    $restoreEvidence = Invoke-DisposableRecoveryRestore `
+        -RecoveryRoot $recoveryRoot `
+        -RecoveryPointId $recoveryPointId `
+        -DestinationRoot $restoreRoot
+    $databaseHashAfterRestore = Get-DatabaseStateHash -DataRoot $activeDataRoot
+    if ($databaseHashAfterRestore -ne $databaseHashBeforeRestore) {
+        throw 'The disposable Recovery Point restore modified an active owner database.'
+    }
+    $finalTrustEvidence = Get-TrustCentreStageEvidence `
+        -Output $postRestartProbe.rawOutput `
+        -Stage 'Final'
     $standardOutputTask = $process.StandardOutput.ReadToEndAsync()
-    $observedProcesses = @{}
-    $networkEndpointCount = 0
 
     while (-not $process.HasExited) {
         $descendants = @(Get-DescendantProcesses -RootProcessId $process.Id)
@@ -506,9 +672,21 @@ try {
         $_.PSObject.Properties['event']?.Value -eq 'bootstrap.failure'
     })
 
-    if ($runtimeStarts.Count -ne 1 -or $desktopStarts.Count -ne 1 -or
-        $runtimeReady.Count -ne 1 -or $failures.Count -ne 0) {
-        throw 'GATE-A-001 did not observe one verified Runtime, one verified Desktop and one Runtime readiness signal.'
+    if ($runtimeStarts.Count -ne 2 -or $desktopStarts.Count -ne 3 -or
+        $runtimeReady.Count -ne 2 -or $failures.Count -ne 0) {
+        throw 'GATE-A-001 did not observe the expected verified Runtime restart and Desktop reconnect sequence.'
+    }
+    $supervisorReasons = @($events | Where-Object {
+        $_.PSObject.Properties['event']?.Value -eq 'bootstrap.supervisor.state'
+    } | ForEach-Object { [string]$_.reason })
+    foreach ($requiredReason in @(
+        'desktop_closed_runtime_ready',
+        'desktop_reconnected',
+        'runtime_crash_detected',
+        'runtime_recovered')) {
+        if ($requiredReason -notin $supervisorReasons) {
+            throw "GATE-A-001 did not observe supervisor evidence '$requiredReason'."
+        }
     }
 
     $unexpectedEventProcesses = @($childStarts | Where-Object {
@@ -544,27 +722,49 @@ try {
     $payload = [ordered]@{
         schemaVersion = 1
         ticket = 'GATE-A-001'
-        scope = 'bounded-development-channel-launch-prerequisite'
+        scope = 'bounded-development-channel-gate-a-demonstration'
         result = 'Passed'
-        fullDemonstrationComplete = $false
+        fullDemonstrationComplete = $true
         channel = 'Development'
         configuration = $Configuration
         isolatedDataRoot = $true
         fixtureSha256 = $fixtureHashAfter
         bootstrapSha256 = (Get-FileHash -LiteralPath $bootstrapExecutable -Algorithm SHA256).Hash.ToLowerInvariant()
         runtime = [ordered]@{
-            processId = [int]$runtimeStarts[0].processId
-            instanceId = [string]$runtimeStarts[0].instanceId
-            bootId = [string]$runtimeReady[0].bootId
+            initialBootId = [string]$runtimeReady[0].bootId
+            restartedBootId = [string]$runtimeReady[1].bootId
+            bootIdentityRotated = $runtimeReady[0].bootId -ne $runtimeReady[1].bootId
+            startCount = $runtimeStarts.Count
             executableSha256 = [string]$runtimeStarts[0].executableSha256
         }
         desktop = [ordered]@{
-            processId = [int]$desktopStarts[0].processId
-            instanceId = [string]$desktopStarts[0].instanceId
+            startCount = $desktopStarts.Count
+            cleanCloseObserved = $true
+            reconnectedToExistingRuntime = $true
+            restartedAfterRuntimeRecovery = $true
             executableSha256 = [string]$desktopStarts[0].executableSha256
         }
         ipcAndHealth = $healthEvidence
         project = $projectEvidence
+        trustCentre = [ordered]@{
+            initial = $initialTrustEvidence
+            final = $finalTrustEvidence
+            ownerAndAuthoritySurfaced = $true
+            evidenceComplete = $finalTrustEvidence.overviewCompleteness -eq 'Complete'
+        }
+        durability = [ordered]@{
+            sessionRotated = $session.OPURE_BOOTSTRAP_SESSION_ID -ne $restartSession.OPURE_BOOTSTRAP_SESSION_ID
+            projectIdPreserved = $projectEvidence.projectId -eq $postRestartProbe.project.projectId
+            configurationGenerationPreserved = $postRestartProbe.configuration.durableAfterRestart.configurationGeneration -ge $controlPlaneEvidence.configuration.repaired.configurationGeneration
+            activeDatabaseMetadataSha256 = $databaseHashAfterRestore
+        }
+        recoveryPoint = [ordered]@{
+            recoveryPointId = $recoveryPointId
+            scopeClass = 'same-device'
+            structuralVerification = $true
+            disposableRestore = $restoreEvidence
+            activeRootModifiedByRestore = $false
+        }
         negativeAssertions = [ordered]@{
             aiRuntimeSpawned = $false
             pluginProcessSpawned = $false
@@ -578,9 +778,9 @@ try {
         }
         allowedPlatformInfrastructure = @('conhost.exe')
         checklist = [ordered]@{
-            ready = @(1..19)
+            ready = @(1..32)
             partial = @()
-            pending = @(20..32)
+            pending = @()
         }
     }
 
@@ -600,8 +800,8 @@ try {
         (($receipt | ConvertTo-Json -Depth 10) + "`n"),
         [Text.UTF8Encoding]::new($false))
 
-    Write-Host "GATE-A-001 bounded launch prerequisite passed: $receiptPath" -ForegroundColor Green
-    Write-Host 'Checklist steps 1-19 are ready; steps 20-32 remain pending.' -ForegroundColor Yellow
+    Write-Host "GATE-A-001 32-step demonstration passed: $receiptPath" -ForegroundColor Green
+    Write-Host 'Checklist steps 1-32 are ready.' -ForegroundColor Green
 }
 finally {
     if ($null -ne $process) {

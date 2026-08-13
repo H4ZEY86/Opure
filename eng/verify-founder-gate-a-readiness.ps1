@@ -33,8 +33,8 @@ foreach ($requiredPath in @(
 $checklistContent = [IO.File]::ReadAllText($checklistPath)
 $checklist = $checklistContent | ConvertFrom-Json
 if ($checklist.ticket -ne 'GATE-A-001' -or
-    $checklist.status -ne 'InProgress' -or
-    $checklist.fullDemonstrationComplete -ne $false -or
+    $checklist.status -ne 'Ready' -or
+    $checklist.fullDemonstrationComplete -ne $true -or
     $checklist.steps.Count -ne 32) {
     throw 'GATE-A-001 checklist does not retain its bounded in-progress state.'
 }
@@ -48,8 +48,8 @@ for ($index = 0; $index -lt 32; $index++) {
 $readyStepIds = @($checklist.steps |
     Where-Object { $_.status -eq 'Ready' } |
     ForEach-Object { [int]$_.id })
-if (($readyStepIds -join ',') -ne (@(1..19) -join ',')) {
-    throw 'GATE-A-001 checklist readiness must remain bounded to proven steps 1 through 19.'
+if (($readyStepIds -join ',') -ne (@(1..32) -join ',')) {
+    throw 'GATE-A-001 checklist readiness must include all 32 proven steps.'
 }
 
 foreach ($requiredAssertion in @(
@@ -68,7 +68,7 @@ foreach ($requiredAssertion in @(
 $runnerContent = [IO.File]::ReadAllText(
     (Join-Path $repositoryRoot 'eng\run-founder-gate-a.ps1'))
 foreach ($requiredProbe in @(
-    "'gate-a', 'probe'",
+    "@('gate-a', `$Command",
     'serverProofVerified',
     'invalidSessionDenied',
     'rootIdentityVerified',
@@ -76,7 +76,11 @@ foreach ($requiredProbe in @(
     'workspaceGenerationSha256',
     'productDefaultsSha256',
     'latestValidWorkspaceGeneration',
-    'provenanceEntryCount')) {
+    'provenanceEntryCount',
+    'desktop_closed_runtime_ready',
+    'runtime_crash_detected',
+    'Invoke-DisposableRecoveryRestore',
+    'ready = @(1..32)')) {
     if (-not $runnerContent.Contains($requiredProbe, [StringComparison]::Ordinal)) {
         throw "GATE-A-001 live probe assertion is missing: $requiredProbe"
     }
@@ -120,9 +124,9 @@ foreach ($prohibited in @('C:\Users\', 'ghp_', 'github_pat_', 'Authorization:', 
 }
 $evidence = $evidenceContent | ConvertFrom-Json
 if ($evidence.ticket -ne 'GATE-A-001' -or
-    $evidence.status -ne 'InProgress' -or
+    $evidence.status -ne 'Ready' -or
     $evidence.result -ne 'Passed' -or
-    $evidence.fullDemonstrationComplete -ne $false -or
+    $evidence.fullDemonstrationComplete -ne $true -or
     $evidence.activeDataRootModified -ne $false -or
     $evidence.networkAuthorityAdded -ne $false -or
     $evidence.fixtureRevision -ne 2 -or
@@ -153,4 +157,4 @@ foreach ($requiredBehaviour in @(
 }
 
 Write-Host "Fixture SHA-256: $fixtureHash"
-Write-Host 'GATE-A-001 readiness verification passed; the complete demonstration remains pending.' -ForegroundColor Green
+Write-Host 'GATE-A-001 readiness verification passed for all 32 automated steps.' -ForegroundColor Green

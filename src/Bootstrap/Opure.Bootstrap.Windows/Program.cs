@@ -181,7 +181,13 @@ internal static class Program
                 options.DesktopAutomaticCloseDelay,
                 RuntimeRestartPolicy: null,
                 options.RuntimeTestCrashAfterReadyDelay,
-                options.RuntimeTestCrashCount);
+                options.RuntimeTestCrashCount,
+                options.TestDesktopReconnect);
+
+            if (options.TestShutdownAfterDelay is not null)
+            {
+                shutdown.CancelAfter(options.TestShutdownAfterDelay.Value);
+            }
 
             using SystemBootstrapProcessLauncher launcher = new();
             BootstrapCoordinator coordinator = new(

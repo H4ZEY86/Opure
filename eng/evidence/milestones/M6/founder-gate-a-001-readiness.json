@@ -1,17 +1,14 @@
 {
   "ticket": "GATE-A-001",
-  "status": "InProgress",
+  "status": "Ready",
   "result": "Passed",
-  "scope": "Repeatable demonstration readiness only",
+  "scope": "Repeatable automated 32-step Development-channel demonstration",
   "fixtureRevision": 2,
   "fixtureSha256": "595e2c60c516a1b63de9849cbb54fb5fc6beffb742e185ae5762af28f5c2d78f",
-  "fullDemonstrationComplete": false,
+  "fullDemonstrationComplete": true,
   "activeDataRootModified": false,
   "networkAuthorityAdded": false,
   "pending": [
-    "Automate the complete clean Development-channel launch sequence",
-    "Capture the 32-step demonstration checklist",
-    "Record safe UI evidence",
     "Record the founder decision"
   ]
 }
