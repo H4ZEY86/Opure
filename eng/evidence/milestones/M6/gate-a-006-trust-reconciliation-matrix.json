@@ -1,0 +1,41 @@
+{
+  "schema": "opure.gate-a-006-trust-reconciliation-matrix/1",
+  "ticket": "GATE-A-006",
+  "status": "Ready",
+  "result": "Passed",
+  "scenarioCount": 15,
+  "scenarios": [
+    { "id": 1, "scenario": "owner impersonation", "proofMember": "Authenticated_owner_cannot_impersonate_another_owner", "result": "Passed" },
+    { "id": 2, "scenario": "wrong Evidence Type owner", "proofMember": "Unknown_or_mismatched_type_cannot_ingest_as_trusted", "result": "Passed" },
+    { "id": 3, "scenario": "authority elevation", "proofMember": "Authority_change_between_revisions_is_rejected", "result": "Passed" },
+    { "id": 4, "scenario": "duplicate matching record", "proofMember": "Matching_retry_after_restart_returns_the_stable_receipt", "result": "Passed" },
+    { "id": 5, "scenario": "duplicate conflicting record", "proofMember": "Same_message_identity_with_changed_record_is_quarantined", "result": "Passed" },
+    { "id": 6, "scenario": "sequence gap", "proofMember": "Sequence_gap_is_recorded_and_projection_is_incomplete", "result": "Passed" },
+    { "id": 7, "scenario": "sequence replay", "proofMember": "SequenceReplayWithChangedIdentityIsQuarantined", "result": "Passed" },
+    { "id": 8, "scenario": "payload-hash substitution", "proofMember": "Payload_hash_mismatch_fails_before_inbox_admission", "result": "Passed" },
+    { "id": 9, "scenario": "record-hash substitution", "proofMember": "Payload_hash_mismatch_fails_before_inbox_admission", "result": "Passed" },
+    { "id": 10, "scenario": "relationship forgery", "proofMember": "Unsupported_contract_and_relationship_are_rejected_before_inbox", "result": "Passed" },
+    { "id": 11, "scenario": "cross-project query", "proofMember": "CrossProjectRequestIsDeniedBeforeDatabaseAccess", "result": "Passed" },
+    { "id": 12, "scenario": "owner unavailable", "proofMember": "OwnerFailureRemainsDurablyVisible", "result": "Passed" },
+    { "id": 13, "scenario": "owner record deleted", "proofMember": "OwnerFailureRemainsDurablyVisible", "result": "Passed" },
+    { "id": 14, "scenario": "projection loss", "proofMember": "ProjectionLossRebuildsFromRetainedVerifiedRecords", "result": "Passed" },
+    { "id": 15, "scenario": "Trust database rebuild", "proofMember": "FreshTrustDatabaseCanBeRebuiltFromExactOwnerRecords", "result": "Passed" }
+  ],
+  "acceptanceProofMembers": [
+    "MissingRangeIsRepairedExactlyOnceAndGapCloses",
+    "HashSubstitutionIsQuarantinedWithoutOverwrite",
+    "CrossProjectCapabilityIsDeniedBeforeOwnerAccess",
+    "ProjectCapabilityCannotRetrieveGlobalOwnerRecord",
+    "Projection_rebuild_does_not_elevate_unverified_legacy_record",
+    "RestartResumesOpenGapAndAcceptsIdempotentOwnerReplay",
+    "Projection_reset_preserves_evidence_and_reports_incompleteness",
+    "OpenOwnerGapIsReportedAsIncomplete"
+  ],
+  "evidence": [
+    "eng/evidence/milestones/M6/gate-a-006-evidence-forgery.md",
+    "eng/evidence/milestones/M6/gate-a-006-reconciliation-demonstration.md",
+    "eng/evidence/milestones/M6/gate-a-006-projection-rebuild.md",
+    "eng/evidence/milestones/M6/gate-a-006-authority-label-review.md",
+    "eng/evidence/milestones/M6/gate-a-006-completeness-wording-review.md"
+  ]
+}

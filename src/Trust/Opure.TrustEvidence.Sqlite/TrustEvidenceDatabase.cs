@@ -36,6 +36,12 @@ public sealed record TrustProjectionResetResult(
     string ProjectionCompleteness,
     string SafeDetail);
 
+public sealed record TrustProjectionRebuildResult(
+    int RebuiltProjectionRecords,
+    int RebuiltOwnerCheckpoints,
+    string ProjectionCompleteness,
+    string SafeDetail);
+
 public sealed class TrustEvidenceDatabaseOpenResult
 {
     internal TrustEvidenceDatabaseOpenResult(
@@ -236,6 +242,158 @@ public sealed class TrustEvidenceDatabase : IDisposable
             cancellationToken);
     }
 
+    public TrustProjectionRebuildResult RebuildProjectionFromRetainedEvidence(
+        CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        DateTimeOffset rebuiltAt = DateTimeOffset.UtcNow;
+        return database.ExecuteTransaction(
+            (connection, transaction) =>
+            {
+                _ = ExecuteDelete(connection, transaction, TrustEvidenceDatabaseSchema.ProjectionRecordTable);
+                _ = ExecuteDelete(connection, transaction, TrustEvidenceDatabaseSchema.ProjectionCheckpointTable);
+                string rebuiltAtText = rebuiltAt.ToString("O", CultureInfo.InvariantCulture);
+
+                using (SqliteCommand records = connection.CreateCommand())
+                {
+                    records.Transaction = transaction;
+                    records.CommandText = $"""
+                        INSERT INTO {TrustEvidenceDatabaseSchema.ProjectionRecordTable} (
+                            evidence_id,
+                            projection_generation,
+                            evidence_type_id,
+                            owner_service_id,
+                            project_id,
+                            operation_id,
+                            action,
+                            outcome,
+                            occurred_at_utc,
+                            projected_at_utc,
+                            completeness_state,
+                            verification_class)
+                        SELECT r.evidence_id,
+                               s.projection_generation,
+                               r.evidence_type_id,
+                               r.owner_service_id,
+                               r.project_id,
+                               r.operation_id,
+                               r.action,
+                               r.outcome,
+                               r.occurred_at_utc,
+                               $rebuiltAt,
+                               CASE
+                                   WHEN EXISTS (
+                                       SELECT 1
+                                         FROM {TrustEvidenceDatabaseSchema.OwnerReconciliationTable} AS x
+                                        WHERE x.owner_service_id = r.owner_service_id
+                                          AND x.state IN ('OwnerUnavailable', 'OwnerRecordDeleted'))
+                                       THEN 'OwnerUnavailable'
+                                   WHEN EXISTS (
+                                       SELECT 1
+                                         FROM {TrustEvidenceDatabaseSchema.OwnerGapTable} AS g
+                                        WHERE g.owner_service_id = r.owner_service_id
+                                          AND g.state = 'Open')
+                                       THEN 'Incomplete'
+                                   ELSE 'Complete'
+                               END,
+                               'VerifiedServiceReceipt'
+                          FROM {TrustEvidenceDatabaseSchema.EvidenceRecordTable} AS r
+                          CROSS JOIN {TrustEvidenceDatabaseSchema.ProjectionStateTable} AS s
+                         WHERE s.state_id = 1
+                           AND EXISTS (
+                               SELECT 1
+                                 FROM {TrustEvidenceDatabaseSchema.IngestionReceiptTable} AS receipt
+                                WHERE receipt.evidence_id = r.evidence_id
+                                  AND receipt.record_sha256 = r.record_sha256
+                                  AND receipt.disposition IN ('Applied', 'Duplicate'));
+                        """;
+                    _ = records.Parameters.AddWithValue("$rebuiltAt", rebuiltAtText);
+                    _ = records.ExecuteNonQuery();
+                }
+
+                using (SqliteCommand checkpoints = connection.CreateCommand())
+                {
+                    checkpoints.Transaction = transaction;
+                    checkpoints.CommandText = $"""
+                        INSERT INTO {TrustEvidenceDatabaseSchema.ProjectionCheckpointTable} (
+                            owner_service_id,
+                            projection_generation,
+                            last_owner_sequence,
+                            last_evidence_id,
+                            updated_at_utc)
+                        SELECT sequence.owner_service_id,
+                               state.projection_generation,
+                               MAX(sequence.owner_sequence),
+                               (
+                                   SELECT latest.evidence_id
+                                     FROM {TrustEvidenceDatabaseSchema.EvidenceOwnerSequenceTable} AS latest
+                                    WHERE latest.owner_service_id = sequence.owner_service_id
+                                    ORDER BY latest.owner_sequence DESC
+                                    LIMIT 1),
+                               $rebuiltAt
+                          FROM {TrustEvidenceDatabaseSchema.EvidenceOwnerSequenceTable} AS sequence
+                          CROSS JOIN {TrustEvidenceDatabaseSchema.ProjectionStateTable} AS state
+                         WHERE state.state_id = 1
+                         GROUP BY sequence.owner_service_id;
+                        """;
+                    _ = checkpoints.Parameters.AddWithValue("$rebuiltAt", rebuiltAtText);
+                    _ = checkpoints.ExecuteNonQuery();
+                }
+
+                using (SqliteCommand state = connection.CreateCommand())
+                {
+                    state.Transaction = transaction;
+                    state.CommandText = $"""
+                        UPDATE {TrustEvidenceDatabaseSchema.ProjectionStateTable}
+                           SET rebuilt_at_utc = $rebuiltAt,
+                               updated_at_utc = $rebuiltAt,
+                               projection_status = 'Current'
+                         WHERE state_id = 1;
+                        """;
+                    _ = state.Parameters.AddWithValue("$rebuiltAt", rebuiltAtText);
+                    if (state.ExecuteNonQuery() != 1)
+                    {
+                        throw new InvalidOperationException("The Trust projection state singleton is missing.");
+                    }
+                }
+
+                int recordCount = CountRows(
+                    connection,
+                    transaction,
+                    TrustEvidenceDatabaseSchema.ProjectionRecordTable);
+                int checkpointCount = CountRows(
+                    connection,
+                    transaction,
+                    TrustEvidenceDatabaseSchema.ProjectionCheckpointTable);
+                bool incompleteProjection = HasRows(
+                    connection,
+                    transaction,
+                    $"SELECT 1 FROM {TrustEvidenceDatabaseSchema.ProjectionRecordTable} WHERE completeness_state <> 'Complete' LIMIT 1;");
+                bool unverifiedRetainedRecord = HasRows(
+                    connection,
+                    transaction,
+                    $"""
+                    SELECT 1
+                      FROM {TrustEvidenceDatabaseSchema.EvidenceRecordTable} AS record
+                     WHERE NOT EXISTS (
+                         SELECT 1
+                           FROM {TrustEvidenceDatabaseSchema.IngestionReceiptTable} AS receipt
+                          WHERE receipt.evidence_id = record.evidence_id
+                            AND receipt.record_sha256 = record.record_sha256
+                            AND receipt.disposition IN ('Applied', 'Duplicate'))
+                     LIMIT 1;
+                    """);
+                return new TrustProjectionRebuildResult(
+                    recordCount,
+                    checkpointCount,
+                    incompleteProjection || unverifiedRetainedRecord
+                        ? "Incomplete"
+                        : "Complete",
+                    "The Trust projection was rebuilt from retained verified owner records; integrity remains a local consistency signal.");
+            },
+            cancellationToken);
+    }
+
     public TrustEvidenceIngestionPipeline CreateIngestionPipeline(
         EvidenceTypeCatalogue evidenceTypes,
         TimeProvider? timeProvider = null)
@@ -245,6 +403,18 @@ public sealed class TrustEvidenceDatabase : IDisposable
             database,
             evidenceTypes,
             timeProvider);
+    }
+
+    public TrustEvidenceOwnerReconciliationService CreateOwnerReconciliationService(
+        EvidenceTypeCatalogue evidenceTypes,
+        TimeProvider? timeProvider = null)
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        TimeProvider clock = timeProvider ?? TimeProvider.System;
+        return new TrustEvidenceOwnerReconciliationService(
+            database,
+            new TrustEvidenceIngestionPipeline(database, evidenceTypes, clock),
+            clock);
     }
 
     public TrustEvidenceQueryService CreateQueryService(
@@ -401,6 +571,17 @@ public sealed class TrustEvidenceDatabase : IDisposable
         command.Transaction = transaction;
         command.CommandText = string.Concat("DELETE FROM ", tableName, ";");
         return command.ExecuteNonQuery();
+    }
+
+    private static int CountRows(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        string tableName)
+    {
+        using SqliteCommand command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = string.Concat("SELECT COUNT(*) FROM ", tableName, ";");
+        return Convert.ToInt32(command.ExecuteScalar(), CultureInfo.InvariantCulture);
     }
 
     private static void ResetProjectionState(

@@ -250,6 +250,7 @@ Completed and committed:
 * GATE-A-003 — Run IPC Security Suite.
 * GATE-A-004 — Run Filesystem Adversarial Suite.
 * GATE-A-005 — Run Configuration Adversarial Suite.
+* GATE-A-006 — Run Trust Evidence Forgery and Reconciliation Suite.
 
 Locally implemented, verified and committed; pending reviewed pushes:
 
@@ -258,7 +259,7 @@ Locally implemented, verified and committed; pending reviewed pushes:
 The next planned ticket is:
 
 ```text
-GATE-A-006 — Run Trust Evidence Forgery and Reconciliation Suite
+GATE-A-007 — Establish Performance Baseline
 ```
 
 GATE-A-001 passed its repeatable 32-step Development-channel demonstration and
@@ -294,8 +295,16 @@ stale approvals and last-known-good/Trust projection behaviour have executable
 proof. Its run-specific ignored receipt had payload SHA-256
 `d02c9acaab502d689f3b84f0ea0eb59fb5000815f2f925a9eb4c49af80dcf60c`.
 
-This proves GATE-A-001 through GATE-A-005 only. It does not record Founder Gate
-A acceptance. GATE-A-006 through GATE-A-009, the explicit GATE-A-010 founder
+GATE-A-006 passed its 15-scenario Trust Evidence forgery and reconciliation
+matrix and the complete Release verification with 755 tests, zero warnings and
+zero errors. Exact owner-range repair, unavailable and deleted owner states,
+hash-conflict quarantine, project/global capability separation, restart resume
+and projection/database rebuild now have executable proof. Its run-specific
+ignored receipt had payload SHA-256
+`1188163b02681b160ad31e3cb1eda6202bea81fe7f19ecd566d13ed5725bcbd0`.
+
+This proves GATE-A-001 through GATE-A-006 only. It does not record Founder Gate
+A acceptance. GATE-A-007 through GATE-A-009, the explicit GATE-A-010 founder
 review and
 GATE-A-011 controlled-mutation backlog remain required before Phase 7 begins.
 The next programme phase is Controlled Mutation: deterministic reviewable file

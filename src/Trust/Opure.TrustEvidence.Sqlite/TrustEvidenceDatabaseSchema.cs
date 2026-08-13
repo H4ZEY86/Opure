@@ -10,7 +10,7 @@ namespace Opure.TrustEvidence.Sqlite;
 /// </summary>
 public static class TrustEvidenceDatabaseSchema
 {
-    public const int CurrentVersion = 5;
+    public const int CurrentVersion = 6;
     public const string EvidenceTypeDefinitionTable = "evidence_type_definitions";
     public const string EvidenceTypeRevisionTable = "evidence_type_revisions";
     public const string EvidenceRecordTable = "evidence_records";
@@ -24,6 +24,8 @@ public static class TrustEvidenceDatabaseSchema
     public const string IngestionQuarantineTable =
         "evidence_ingestion_quarantine";
     public const string OwnerGapTable = "evidence_owner_gaps";
+    public const string OwnerReconciliationTable = "evidence_owner_reconciliation";
+    public const string ReconciliationQuarantineTable = "evidence_reconciliation_quarantine";
     public const string ProjectionStateTable = "trust_projection_state";
     public const string OwnerSequenceIndex = "ix_evidence_records_owner_sequence";
     public const string ProjectQueryIndex = "ix_trust_projection_project_query";
@@ -368,6 +370,44 @@ public static class TrustEvidenceDatabaseSchema
             """
         ]);
 
+    private static readonly ReadOnlyCollection<string> ReconciliationCommands =
+        Array.AsReadOnly(
+        [
+            $"""
+            CREATE TABLE {OwnerReconciliationTable} (
+                owner_service_id TEXT NOT NULL,
+                missing_from_sequence INTEGER NOT NULL CHECK (missing_from_sequence > 0),
+                missing_to_sequence INTEGER NOT NULL CHECK (missing_to_sequence >= missing_from_sequence),
+                release_channel TEXT NOT NULL,
+                project_id TEXT NULL,
+                state TEXT NOT NULL CHECK (state IN ('Open', 'Repaired', 'OwnerUnavailable', 'OwnerRecordDeleted', 'ConflictQuarantined', 'IncompleteRange')),
+                attempt_count INTEGER NOT NULL CHECK (attempt_count BETWEEN 1 AND 2147483647),
+                last_stable_code TEXT NOT NULL,
+                last_attempted_at_utc TEXT NOT NULL,
+                receipt_id TEXT NOT NULL CHECK (length(receipt_id) = 64),
+                PRIMARY KEY (owner_service_id, missing_from_sequence, missing_to_sequence),
+                FOREIGN KEY (owner_service_id, missing_from_sequence, missing_to_sequence)
+                    REFERENCES {OwnerGapTable} (owner_service_id, missing_from_sequence, missing_to_sequence)
+                    ON DELETE RESTRICT
+            ) STRICT
+            """,
+            $"""
+            CREATE TABLE {ReconciliationQuarantineTable} (
+                receipt_id TEXT PRIMARY KEY CHECK (length(receipt_id) = 64),
+                owner_service_id TEXT NOT NULL,
+                owner_sequence INTEGER NOT NULL CHECK (owner_sequence > 0),
+                evidence_id TEXT NOT NULL,
+                record_sha256 TEXT NOT NULL CHECK (length(record_sha256) = 64),
+                reason_code TEXT NOT NULL,
+                detected_at_utc TEXT NOT NULL
+            ) STRICT
+            """,
+            $"""
+            CREATE INDEX ix_evidence_owner_reconciliation_state
+                ON {OwnerReconciliationTable} (state, owner_service_id, missing_from_sequence)
+            """
+        ]);
+
     public static SqliteMigrationCatalogue CreateCatalogue(
         int targetVersion = CurrentVersion)
     {
@@ -427,6 +467,16 @@ public static class TrustEvidenceDatabaseSchema
                 QueryCommands));
         }
 
+        if (targetVersion >= 6)
+        {
+            migrations.Add(new SqliteMigration(
+                "trust-evidence-reconciliation-v6",
+                sourceVersion: 5,
+                targetVersion: 6,
+                "Creates durable owner reconciliation and bounded conflict quarantine state.",
+                ReconciliationCommands));
+        }
+
         return new SqliteMigrationCatalogue(
             migrations,
             CreateValidations(targetVersion));
@@ -450,6 +500,8 @@ public static class TrustEvidenceDatabaseSchema
             IngestionReceiptTable,
             IngestionQuarantineTable,
             OwnerGapTable,
+            OwnerReconciliationTable,
+            ReconciliationQuarantineTable,
             ProjectionStateTable,
             OwnerSequenceIndex,
             ProjectQueryIndex,
@@ -459,6 +511,7 @@ public static class TrustEvidenceDatabaseSchema
             QuarantineLatestIndex,
             OwnerGapStateIndex,
             ProjectChannelQueryIndex,
+            "ix_evidence_owner_reconciliation_state",
             "__opure_inbox_conflicts_latest",
             "__opure_inbox_receipts_immutable",
             "__opure_inbox_receipts_retained",
@@ -561,6 +614,23 @@ public static class TrustEvidenceDatabaseSchema
                     "trust-query-project-channel-index-present",
                     minimumSchemaVersion: 5,
                     $"SELECT COUNT(*) FROM sqlite_schema WHERE type = 'index' AND name = '{ProjectChannelQueryIndex}'",
+                    "1")
+            ]);
+        }
+
+        if (targetVersion >= 6)
+        {
+            validations.AddRange(
+            [
+                new SqliteSchemaValidation(
+                    "trust-reconciliation-tables-present",
+                    minimumSchemaVersion: 6,
+                    $"SELECT COUNT(*) FROM sqlite_schema WHERE type = 'table' AND name IN ('{OwnerReconciliationTable}', '{ReconciliationQuarantineTable}')",
+                    "2"),
+                new SqliteSchemaValidation(
+                    "trust-reconciliation-index-present",
+                    minimumSchemaVersion: 6,
+                    "SELECT COUNT(*) FROM sqlite_schema WHERE type = 'index' AND name = 'ix_evidence_owner_reconciliation_state'",
                     "1")
             ]);
         }

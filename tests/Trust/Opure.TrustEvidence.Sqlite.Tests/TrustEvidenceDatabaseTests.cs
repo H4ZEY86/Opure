@@ -74,7 +74,9 @@ public sealed class TrustEvidenceDatabaseTests
         Assert.Equal(
             TrustEvidenceDatabaseSchema.CurrentVersion,
             database.MigrationReport.CurrentVersion);
-        Assert.Equal(4, database.MigrationReport.AppliedMigrations.Count);
+            Assert.Equal(
+                TrustEvidenceDatabaseSchema.CurrentVersion - 1,
+                database.MigrationReport.AppliedMigrations.Count);
         Assert.All(
             database.MigrationReport.SchemaValidations,
             static validation => Assert.True(validation.Passed));
@@ -344,6 +346,34 @@ public sealed class TrustEvidenceDatabaseTests
         Assert.Equal(0, ReadInt64(
             verification,
             $"SELECT COUNT(*) FROM {TrustEvidenceDatabaseSchema.ProjectionCheckpointTable};"));
+    }
+
+    [Fact]
+    public void Projection_rebuild_does_not_elevate_unverified_legacy_record()
+    {
+        using TestDataRoot testRoot = new();
+        string databasePath = CreateDatabase(testRoot.ChannelRoot);
+        using (SqliteConnection connection = OpenDirect(databasePath))
+        {
+            InsertEvidenceType(connection);
+            InsertEvidenceRecord(connection, EvidenceIdOne, ownerSequence: 1);
+        }
+
+        using TrustEvidenceDatabase database = TrustEvidenceDatabase.Open(
+            testRoot.ChannelRoot,
+            TestContext.Current.CancellationToken);
+        TrustProjectionRebuildResult result = database.RebuildProjectionFromRetainedEvidence(
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(0, result.RebuiltProjectionRecords);
+        Assert.Equal("Incomplete", result.ProjectionCompleteness);
+        using SqliteConnection verification = OpenDirect(databasePath);
+        Assert.Equal(1, ReadInt64(
+            verification,
+            $"SELECT COUNT(*) FROM {TrustEvidenceDatabaseSchema.EvidenceRecordTable};"));
+        Assert.Equal(0, ReadInt64(
+            verification,
+            $"SELECT COUNT(*) FROM {TrustEvidenceDatabaseSchema.ProjectionRecordTable};"));
     }
 
     [Fact]

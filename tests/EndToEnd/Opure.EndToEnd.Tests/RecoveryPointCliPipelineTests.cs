@@ -103,7 +103,20 @@ public sealed class RecoveryPointCliPipelineTests : IDisposable
         Assert.NotEmpty(root.GetProperty("CheckpointHashes").EnumerateArray());
         Assert.Equal(2, root.GetProperty("VerificationReceipts").GetArrayLength());
         Assert.Equal(2, root.GetProperty("Owners").EnumerateObject().Count());
-        Assert.Equal(2, root.GetProperty("SupportedSchemas").GetArrayLength());
+        uint[] ownerSchemaVersions = root.GetProperty("Owners")
+            .EnumerateObject()
+            .Select(static owner => owner.Value
+                .GetProperty("Identity")
+                .GetProperty("SupportedSchemaVersion")
+                .GetUInt32())
+            .Distinct()
+            .Order()
+            .ToArray();
+        uint[] manifestSchemaVersions = root.GetProperty("SupportedSchemas")
+            .EnumerateArray()
+            .Select(static schema => schema.GetUInt32())
+            .ToArray();
+        Assert.Equal(ownerSchemaVersions, manifestSchemaVersions);
         Assert.True(File.Exists(Path.Combine(
             recoveryRoot,
             recoveryPointId.ToString("N"),

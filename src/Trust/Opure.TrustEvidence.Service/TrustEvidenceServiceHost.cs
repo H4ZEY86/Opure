@@ -31,6 +31,9 @@ public sealed class TrustEvidenceServiceHost : IDisposable
         QueryService = database.CreateQueryService(
             evidenceTypes,
             timeProvider);
+        ReconciliationService = database.CreateOwnerReconciliationService(
+            evidenceTypes,
+            timeProvider);
         TrustCentreHandler = new TrustCentreRequestHandler(
             database.CreateOverviewQueryService(timeProvider),
             database.CreateProjectQueryService(timeProvider),
@@ -38,6 +41,8 @@ public sealed class TrustEvidenceServiceHost : IDisposable
     }
 
     public TrustEvidenceQueryService QueryService { get; }
+
+    public TrustEvidenceOwnerReconciliationService ReconciliationService { get; }
 
     public TrustCentreRequestHandler TrustCentreHandler { get; }
 
