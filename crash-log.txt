@@ -1,3 +1,0 @@
-System.ArgumentOutOfRangeException: Specified argument was out of the range of valid values. (Parameter 'releaseChannel')
-   at Opure.Project.Sqlite.ProjectOpenService.CreateSnapshotRequest(String projectId, String rootReferenceId, String operationId, ProjectReleaseChannel releaseChannel) in C:\Opure\src\Project\Opure.Project.Sqlite\ProjectOpenService.cs:line 369
-   at Opure.Project.Sqlite.ProjectOpenService.HandleAsync(OpenProjectRequest request, CancellationToken cancellationToken) in C:\Opure\src\Project\Opure.Project.Sqlite\ProjectOpenService.cs:line 168

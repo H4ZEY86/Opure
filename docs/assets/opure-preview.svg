@@ -68,7 +68,7 @@
     <text x="0" y="150" class="small">Opure is a local-first software engineering platform that helps developers inspect, plan, build, test, and apply reviewable patches while keeping them in control of privacy, providers and flow.</text>
 
     <!-- CTA button-like -->
-    <a href="https://h4zey86.github.io/Opure/">
+    <a href="https://github.com/H4ZEY86/Opure">
       <rect x="0" y="196" width="220" height="44" rx="8" fill="#111827" stroke="#1f2937" />
       <text x="24" y="228" fill="#ffffff" font-family="Inter, Roboto, Arial, sans-serif" font-size="16">Open demo · Opure</text>
     </a>

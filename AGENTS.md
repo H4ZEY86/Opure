@@ -215,18 +215,21 @@ Completed and committed:
 * FND-057 — Add Trust Centre IPC Gateway.
 * FND-058 — Add Backup Adapter Contract.
 * FND-059 — Add SQLite Online Backup.
-* GATE-A-001 — Out-of-band architecture hardening and headless E2E.
+* FND-060 — Add Local Recovery Point View.
 
 Locally implemented, verified and committed; pending reviewed pushes:
+
+* None.
 
 The next planned ticket is:
 
 ```text
-FND-060 — Add Local Recovery Point View
+GATE-A-001 — Run the End-to-End Foundation Demonstration
 ```
 
-Do not assume FND-060 is complete until the Add Local Recovery Point View verifier
-passes and the changes are reviewed, committed and pushed.
+FND-060 passed its ticket verifier and was reviewed, committed and pushed.
+Do not assume GATE-A-001 is complete until its repeatable clean-root demonstration,
+evidence, Release verification, review, commit and push are complete.
 
 ## Build policy
 
@@ -405,5 +408,4 @@ A foundation ticket is complete only when:
 * generated artefacts are excluded;
 * the implementation is reviewed, committed and pushed;
 * the working tree is clean and up to date with `origin/main`.
-
 

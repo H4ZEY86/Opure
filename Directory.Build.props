@@ -36,6 +36,9 @@
 
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/H4ZEY86/Opure.git</RepositoryUrl>
+    <Authors>H4ZEY86;DevMediaDesign</Authors>
+    <Company>H4ZEY86 and DevMediaDesign</Company>
+    <Copyright>Copyright © H4ZEY86 and DevMediaDesign</Copyright>
 
 
     <NBGV_ThisAssemblyIncludesPackageVersion>true</NBGV_ThisAssemblyIncludesPackageVersion>

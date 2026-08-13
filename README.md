@@ -1,99 +1,68 @@
-# Ctrl_Alt_Haze 🎧💻
+# Opure
 
-<p align="center">
-  <img src="https://streak-stats.demolab.com?user=H4ZEY86&theme=tokyonight" alt="GitHub Streak" />
-</p>
+> Developer Respect. Local Intelligence. Complete Control.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/C%23-%231572B6?style=for-the-badge&logo=c-sharp&logoColor=white" alt="C#" />
-  <img src="https://img.shields.io/badge/.NET%2010-%239530E8?style=for-the-badge&logo=dotnet&logoColor=white" alt=".NET 10" />
-  <img src="https://img.shields.io/badge/Python-%2314354C?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
-  <img src="https://img.shields.io/badge/Java-%23ED8B00?style=for-the-badge&logo=java&logoColor=white" alt="Java" />
-  <img src="https://img.shields.io/badge/HTML5-%23E34F26?style=for-the-badge&logo=html5&logoColor=white" alt="HTML5" />
-  <img src="https://img.shields.io/badge/WebGL-%2300AEEF?style=for-the-badge&logo=webgl&logoColor=white" alt="WebGL" />
-  <img src="https://img.shields.io/badge/CUDA-%23FF7F00?style=for-the-badge&logo=nvidia&logoColor=white" alt="CUDA" />
-</p>
+Opure is a local-first, developer-controlled software engineering platform for
+Windows 11. It helps developers design, understand, modify, build, test and
+operate software without surrendering authority to autonomous behaviour.
 
-**Solo developer • Music maker • Founder of Opure** — professional, creative, and focused on shipping surprising, delightful software.
+The repository contains the trusted Runtime, Avalonia Desktop, Bootstrap,
+`opure` CLI, service contracts, persistence libraries, verification tooling and
+the specifications that govern their behaviour.
 
-[Opure site → https://h4zey86.github.io/Opure/](https://h4zey86.github.io/Opure/)
-[Opure repo → https://github.com/H4ZEY86/Opure](https://github.com/H4ZEY86/Opure) 
-[SoundCloud → https://soundcloud.com/ctrl_alt_haze/sets/my-mix-1](https://soundcloud.com/ctrl_alt_haze/sets/my-mix-1)
+## Current status
 
----
+Foundation tickets FND-001 through FND-060 are implemented. The active roadmap
+work is Founder Gate A, beginning with the repeatable end-to-end foundation
+demonstration.
 
-## Quick intro
+Opure remains pre-release software. The current recovery capability is explicitly
+same-device only and is not a substitute for an independent device-loss backup.
 
-I’m Ctrl_Alt_Haze — solo developer and music maker. I build Opure, a local-first, developer-first software engineering platform, and I produce music in my free time. My work focuses on development of Opure.
+## Build and verify
 
-- 🔭 Currently shipping: **Opure** — software engineering platform (Preview release).
-- 🌱 Main implementation choices: **C# / .NET 10** (primary), **Avalonia** desktop framework.
-- ⚙️ Local provider / initial AI integration: **Ollama** (Opure is local-by-design; cloud optional).
-- 🚫 Availability: Not open for work (no recruiters, please).
+The repository requires the .NET SDK pinned by `global.json`.
 
----
+```powershell
+pwsh ./build.ps1 verify -Configuration Release
+```
 
-## Contact & socials
+Useful bounded launch commands:
 
-- Email: ctddestiny@outlook.com (preferred contact)
-- SoundCloud: https://soundcloud.com/ctrl_alt_haze
-- GitHub: https://github.com/H4ZEY86/Opure
-- / project site: https://h4zey86.github.io/Opure/
+```powershell
+pwsh ./build.ps1 runtime -RuntimeDurationMilliseconds 500
+pwsh ./build.ps1 desktop -DesktopDurationMilliseconds 1500
+pwsh ./build.ps1 bootstrap -Configuration Release -BootstrapDurationMilliseconds 3000
+```
 
----
+Run the Local Recovery Point acceptance verifier with:
 
-## Tech stack & strengths 🛠️
+```powershell
+pwsh ./build.ps1 local-recovery-point-policy
+```
 
-- Primary: **C# (.NET 10)**
-- Also: **Python**, **Java**
-- Patterns & practices: SOLID, Clean Architecture, Test-Driven Development (TDD / CTD)
-- Areas: Audio / DSP prototyping, backend APIs, local-first engineering tooling, game prototypes, developer ergonomics
-- DevOps & infra: Docker, CI pipelines, automated testing
-- Work style: small incremental PRs, documented APIs, reviewable patches, thorough tests
+## Documentation
 
----
+- [Product documentation](docs/README.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Foundation roadmap](specs/ROADMAP-001-foundation-implementation-sequence.md)
+- [Foundation backlog](specs/BACKLOG-001-foundation-first-12-weeks.md)
+- [Architecture decisions](adr/)
+- [Engineering commands](eng/README.md)
 
-## Featured projects — short notes 🔮
+The public website has deliberately been removed from this repository. It will
+be rebuilt as a complete web application closer to public launch.
 
-- **Opure** — software engineering platform ⚙️
-  - Local-first, dev-first engineering platform focused on developer ergonomics, reproducible local previews, and an architecture that preserves developer control.
-    
-  - Project site: https://h4zey86.github.io/Opure/
-    
-  - Repo: https://github.com/H4ZEY86/Opure
----
+## Maintainers and attribution
 
-## How I work ⚙️
+Opure is maintained and attributed exclusively to:
 
-- Test-driven, evidence-gated development with visible, reviewable patches.
-- Local-first operation: cloud providers are optional and replaceable.
-- Focused on developer respect, reproducibility, and explicit trust & permissions.
+- **H4ZEY86**
+- **DevMediaDesign**
 
----
+Automated tools are not recognised as contributors or authors. See
+[CONTRIBUTORS.md](CONTRIBUTORS.md) for the repository attribution policy.
 
-## Fun facts & offline life 🌲
+## Repository
 
-- 🎧 I make and produce music in my free time.
-- 🎮 I enjoy gaming and prototyping playful interactions.
-- 🚶 I recharge with walks in nature and creative thinking away from the screen.
-
----
-
-## Tag cloud
-
-C# · .NET 10 · SoloDev · Full-Stack · Backend · AudioDev · GameDev · TDD · CleanCode · Docker · CI/CD · Python · Java · DSP · Realtime · Open-Source
-
----
-
-## Opure — quick snapshot (from the repo)
-
-- Tagline: "Developer Respect. Local Intelligence. Complete Control."
-- Current phase: Foundation Implementation — In Progress (Founding specs approved; runtime skeleton & foundation tickets underway).
-- Primary target: Windows 11.
-- Core commitments: developer respect, local-by-design, human-in-control, visible & reviewable changes, replaceable intelligence.
-- Key repo artifacts: specs (CHARTER-001, SPEC-001..SPEC-012), ARCHITECTURE.md, ADRs, eng tooling and evidence gates.
-
----
-
-## For full project documentation and the canonical README, see [`https://github.com/H4ZEY86/opure/docs/README.md`](https://github.com/H4ZEY86/Opure/blob/main/docs/README.md).
----
+[github.com/H4ZEY86/Opure](https://github.com/H4ZEY86/Opure)
