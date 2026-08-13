@@ -163,6 +163,36 @@ public sealed class LocalRecoveryPointServiceTests : IDisposable
         Assert.Equal(prior.RecoveryPointId, Assert.Single(listed).RecoveryPointId);
     }
 
+    [Fact]
+    public async Task CreateRecoveryPointAsync_WorkerFailureLeavesNoIncompletePoint()
+    {
+        string recoveryRoot = Path.Combine(testRoot, "recovery");
+        LocalRecoveryPointService successfulService = CreateService();
+        RecoveryPointManifest prior = await successfulService.CreateRecoveryPointAsync(
+            "Development",
+            recoveryRoot,
+            TestContext.Current.CancellationToken);
+        LocalRecoveryPointService failingService = new(
+            [new TestBackupAdapter(
+                Path.Combine(testRoot, "active"),
+                failCheckpointAfterWrite: true)],
+            "1.2.3-test");
+
+        IOException exception = await Assert.ThrowsAsync<IOException>(
+            () => failingService.CreateRecoveryPointAsync(
+                "Development",
+                recoveryRoot,
+                TestContext.Current.CancellationToken));
+
+        Assert.Contains("worker", exception.Message, StringComparison.OrdinalIgnoreCase);
+        IReadOnlyList<RecoveryPointManifest> listed =
+            await LocalRecoveryPointService.ListRecoveryPointsAsync(
+                recoveryRoot,
+                TestContext.Current.CancellationToken);
+        Assert.Equal(prior.RecoveryPointId, Assert.Single(listed).RecoveryPointId);
+        Assert.Single(Directory.GetDirectories(recoveryRoot));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(testRoot))
@@ -177,7 +207,8 @@ public sealed class LocalRecoveryPointServiceTests : IDisposable
 
     private sealed class TestBackupAdapter(
         string activeRoot,
-        bool refusePreparation = false) : IBackupAdapter
+        bool refusePreparation = false,
+        bool failCheckpointAfterWrite = false) : IBackupAdapter
     {
         private const string SnapshotFileName = "owner.sqlite3";
 
@@ -221,6 +252,11 @@ public sealed class LocalRecoveryPointServiceTests : IDisposable
                 Path.Combine(ownerRoot, SnapshotFileName),
                 "consistent-snapshot",
                 cancellationToken);
+            if (failCheckpointAfterWrite)
+            {
+                throw new IOException("The test backup worker terminated after writing staged state.");
+            }
+
             return BackupCheckpointResult.Success();
         }
 

@@ -150,7 +150,14 @@ public sealed class TrustEvidenceServiceHost : IDisposable
                 now,
                 now.Add(SessionLifetime));
 
-            if (Environment.GetEnvironmentVariable("OPURE_TEST_CRASH_POINT") == "TrustEvidenceIngestion")
+            if (string.Equals(
+                    Environment.GetEnvironmentVariable("OPURE_BOOTSTRAP_TEST_MODE"),
+                    "1",
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    Environment.GetEnvironmentVariable("OPURE_TEST_CRASH_POINT"),
+                    "TrustEvidenceIngestion",
+                    StringComparison.Ordinal))
             {
                 Environment.Exit(71);
             }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -41,6 +42,8 @@ public class ServiceCrashRecoveryTests
 
         using var harness = new EndToEndHarness(environmentVariables: envVars);
         var env = await harness.GetTestSessionAsync(TestContext.Current.CancellationToken);
+        var originalRuntime = await GetRuntimeProcessAsync(harness.BootstrapProcess.Id);
+        int originalRuntimeId = originalRuntime.Id;
         
         var endpoint = new RuntimeHealthEndpoint(env["OPURE_IPC_PIPE"], env.TryGetValue("OPURE_RUNTIME_BOOT_ID", out var bootId) ? bootId : new string('0', 32));
         var session = new RuntimeHealthSessionMaterial(env["OPURE_BOOTSTRAP_SESSION_ID"], env["OPURE_BOOTSTRAP_SESSION_SECRET"]);
@@ -67,6 +70,9 @@ public class ServiceCrashRecoveryTests
         await Task.Delay(3000, TestContext.Current.CancellationToken);
         
         var newEnv = await harness.GetTestSessionAsync(TestContext.Current.CancellationToken);
+        var restartedRuntime = await GetRuntimeProcessAsync(harness.BootstrapProcess.Id);
+        Assert.NotEqual(originalRuntimeId, restartedRuntime.Id);
+        Assert.NotEqual(env["OPURE_RUNTIME_BOOT_ID"], newEnv["OPURE_RUNTIME_BOOT_ID"]);
         
         // Ensure Runtime is healthy again
         var newEndpoint = new RuntimeHealthEndpoint(newEnv["OPURE_IPC_PIPE"], newEnv.TryGetValue("OPURE_RUNTIME_BOOT_ID", out var newBootId) ? newBootId : new string('0', 32));
@@ -95,6 +101,8 @@ public class ServiceCrashRecoveryTests
 
         using var harness = new EndToEndHarness(environmentVariables: envVars);
         var env = await harness.GetTestSessionAsync(TestContext.Current.CancellationToken);
+        var originalRuntime = await GetRuntimeProcessAsync(harness.BootstrapProcess.Id);
+        int originalRuntimeId = originalRuntime.Id;
         
         var endpoint = new RuntimeHealthEndpoint(env["OPURE_IPC_PIPE"], env.TryGetValue("OPURE_RUNTIME_BOOT_ID", out var bootId) ? bootId : new string('0', 32));
         var session = new RuntimeHealthSessionMaterial(env["OPURE_BOOTSTRAP_SESSION_ID"], env["OPURE_BOOTSTRAP_SESSION_SECRET"]);
@@ -130,6 +138,9 @@ public class ServiceCrashRecoveryTests
         await Task.Delay(3000, TestContext.Current.CancellationToken);
         
         var newEnv = await harness.GetTestSessionAsync(TestContext.Current.CancellationToken);
+        var restartedRuntime = await GetRuntimeProcessAsync(harness.BootstrapProcess.Id);
+        Assert.NotEqual(originalRuntimeId, restartedRuntime.Id);
+        Assert.NotEqual(env["OPURE_RUNTIME_BOOT_ID"], newEnv["OPURE_RUNTIME_BOOT_ID"]);
         
         var newEndpoint = new RuntimeHealthEndpoint(newEnv["OPURE_IPC_PIPE"], newEnv.TryGetValue("OPURE_RUNTIME_BOOT_ID", out var newBootId) ? newBootId : new string('0', 32));
         var newSession = new RuntimeHealthSessionMaterial(newEnv["OPURE_BOOTSTRAP_SESSION_ID"], newEnv["OPURE_BOOTSTRAP_SESSION_SECRET"]);
@@ -137,5 +148,113 @@ public class ServiceCrashRecoveryTests
         
         var newSnapshot = await newHealthSource.RefreshAsync(TestContext.Current.CancellationToken);
         Assert.Equal(DesktopRuntimeConnectionState.Connected, newSnapshot.ConnectionState);
+    }
+
+    [Theory]
+    [InlineData("WorkspaceGenerationBeforeCommit")]
+    [InlineData("ConfigurationBeforeCommit")]
+    [InlineData("ConfigurationAfterCommitBeforeOutbox")]
+    public async Task OwnerCommitCrashPoint_RestartsRuntimeWithoutLosingProject(
+        string crashPoint)
+    {
+        string crashArmFile = Path.Combine(
+            Environment.GetFolderPath(
+                Environment.SpecialFolder.LocalApplicationData,
+                Environment.SpecialFolderOption.DoNotVerify),
+            "Opure",
+            "Test",
+            "owner-commit-crash.arm");
+        var environmentVariables = new Dictionary<string, string>
+        {
+            ["OPURE_TEST_CRASH_POINT"] = crashPoint,
+            ["OPURE_TEST_CRASH_ARM_FILE"] = crashArmFile
+        };
+        using var harness = new EndToEndHarness(environmentVariables: environmentVariables);
+        var environment = await harness.GetTestSessionAsync(
+            TestContext.Current.CancellationToken);
+        var originalRuntime = await GetRuntimeProcessAsync(harness.BootstrapProcess.Id);
+        int originalRuntimeId = originalRuntime.Id;
+        var receiver = RuntimeHealthGatewayClient.CreateProjectRootReceiver("Test");
+        string projectRoot = Path.Combine(harness.DataRoot, $"Project-{crashPoint}");
+        Directory.CreateDirectory(projectRoot);
+        File.WriteAllText(Path.Combine(projectRoot, "Opure.slnx"), "<Solution />");
+        VerifiedWorkspaceRootReference reference =
+            WindowsPathReferenceResolver.AcquireRoot(new UntrustedPathText(projectRoot));
+
+        if (crashPoint.StartsWith("Configuration", StringComparison.Ordinal))
+        {
+            _ = await receiver.ReceiveAsync(
+                reference,
+                TestContext.Current.CancellationToken);
+            var initialProjects = await RuntimeHealthGatewayClient
+                .CreateProjectListSource("Test")
+                .RefreshAsync(TestContext.Current.CancellationToken);
+            var project = Assert.Single(
+                initialProjects.Projects,
+                project => project.DisplayName == Path.GetFileName(projectRoot));
+            string settingsRoot = Path.Combine(projectRoot, ".opure");
+            Directory.CreateDirectory(settingsRoot);
+            await File.WriteAllTextAsync(
+                Path.Combine(settingsRoot, "project.settings.json"),
+                JsonSerializer.Serialize(new
+                {
+                    schema = "opure.project-settings/1",
+                    project_id = project.ProjectId,
+                    settings = new Dictionary<string, string>
+                    {
+                        ["logging.level.default"] = "debug"
+                    }
+                }),
+                TestContext.Current.CancellationToken);
+            reference = WindowsPathReferenceResolver.AcquireRoot(
+                new UntrustedPathText(projectRoot));
+        }
+
+        await File.WriteAllTextAsync(
+            crashArmFile,
+            "armed",
+            TestContext.Current.CancellationToken);
+
+        try
+        {
+            _ = await receiver.ReceiveAsync(
+                reference,
+                TestContext.Current.CancellationToken);
+        }
+        catch (Exception exception) when (exception is
+            ProjectOpenGatewayException or
+            IOException or
+            InvalidOperationException or
+            OperationCanceledException)
+        {
+        }
+
+        var newEnvironment = await harness.GetTestSessionAsync(
+            TestContext.Current.CancellationToken);
+        var restartedRuntime = await GetRuntimeProcessAsync(harness.BootstrapProcess.Id);
+        Assert.NotEqual(originalRuntimeId, restartedRuntime.Id);
+        Assert.NotEqual(
+            environment["OPURE_RUNTIME_BOOT_ID"],
+            newEnvironment["OPURE_RUNTIME_BOOT_ID"]);
+
+        var endpoint = new RuntimeHealthEndpoint(
+            newEnvironment["OPURE_IPC_PIPE"],
+            newEnvironment["OPURE_RUNTIME_BOOT_ID"]);
+        var session = new RuntimeHealthSessionMaterial(
+            newEnvironment["OPURE_BOOTSTRAP_SESSION_ID"],
+            newEnvironment["OPURE_BOOTSTRAP_SESSION_SECRET"]);
+        var healthSource = RuntimeHealthGatewayClient.CreateProjectionSource(
+            "1.0.0",
+            DesktopSupervisorProjection.Disconnected,
+            endpoint,
+            session);
+        var health = await healthSource.RefreshAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(DesktopRuntimeConnectionState.Connected, health.ConnectionState);
+
+        var projectList = RuntimeHealthGatewayClient.CreateProjectListSource("Test");
+        var projection = await projectList.RefreshAsync(TestContext.Current.CancellationToken);
+        Assert.Contains(
+            projection.Projects,
+            project => project.DisplayName == Path.GetFileName(projectRoot));
     }
 }

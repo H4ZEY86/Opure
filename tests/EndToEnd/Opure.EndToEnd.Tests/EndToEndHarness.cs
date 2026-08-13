@@ -53,7 +53,7 @@ public sealed class EndToEndHarness : IDisposable
         };
 
         // Tell bootstrap to start in test mode so we can control desktop lifecycle
-        startInfo.Environment["OPURE_BOOTSTRAP_TEST_MODE"] = "true";
+        startInfo.Environment["OPURE_BOOTSTRAP_TEST_MODE"] = "1";
 
         if (environmentVariables != null)
         {

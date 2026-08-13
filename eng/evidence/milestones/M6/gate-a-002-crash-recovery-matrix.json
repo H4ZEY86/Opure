@@ -1,0 +1,96 @@
+{
+  "ticket": "GATE-A-002",
+  "status": "Ready",
+  "result": "Passed",
+  "scenarioCount": 12,
+  "scenarios": [
+    {
+      "id": 1,
+      "scenario": "Desktop crash",
+      "proofFile": "tests/Bootstrap/Opure.Bootstrap.Windows.Tests/BootstrapCoordinatorTests.cs",
+      "proofMember": "Unexpected_desktop_exit_is_actionable_and_stops_runtime"
+    },
+    {
+      "id": 2,
+      "scenario": "Desktop ordinary close",
+      "proofFile": "eng/evidence/milestones/M6/founder-gate-a-001-checklist.json",
+      "proofMember": "Close Desktop."
+    },
+    {
+      "id": 3,
+      "scenario": "Runtime crash",
+      "proofFile": "tests/EndToEnd/Opure.EndToEnd.Tests/RuntimeCrashRecoveryTests.cs",
+      "proofMember": "MidFlight_RuntimeTermination_Recovers"
+    },
+    {
+      "id": 4,
+      "scenario": "Runtime crash loop",
+      "proofFile": "tests/Bootstrap/Opure.Bootstrap.Windows.Tests/BootstrapSupervisorTests.cs",
+      "proofMember": "Rapid_runtime_crash_loop_enters_visible_safe_mode"
+    },
+    {
+      "id": 5,
+      "scenario": "Project Service crash",
+      "proofFile": "tests/EndToEnd/Opure.EndToEnd.Tests/ServiceCrashRecoveryTests.cs",
+      "proofMember": "ProjectService_CrashMidFlight_RecoversCorrectly"
+    },
+    {
+      "id": 6,
+      "scenario": "Workspace Service crash during generation",
+      "proofFile": "tests/EndToEnd/Opure.EndToEnd.Tests/ServiceCrashRecoveryTests.cs",
+      "proofMember": "WorkspaceGenerationBeforeCommit"
+    },
+    {
+      "id": 7,
+      "scenario": "Configuration Service crash before commit",
+      "proofFile": "tests/EndToEnd/Opure.EndToEnd.Tests/ServiceCrashRecoveryTests.cs",
+      "proofMember": "ConfigurationBeforeCommit"
+    },
+    {
+      "id": 8,
+      "scenario": "Configuration Service crash after commit before evidence delivery",
+      "proofFile": "tests/EndToEnd/Opure.EndToEnd.Tests/ServiceCrashRecoveryTests.cs",
+      "proofMember": "ConfigurationAfterCommitBeforeOutbox"
+    },
+    {
+      "id": 9,
+      "scenario": "Trust Evidence crash during ingestion",
+      "proofFile": "tests/EndToEnd/Opure.EndToEnd.Tests/ServiceCrashRecoveryTests.cs",
+      "proofMember": "TrustEvidence_CrashDuringIngestion_RecoversCleanly"
+    },
+    {
+      "id": 10,
+      "scenario": "Backup cancellation",
+      "proofFile": "tests/Recovery/Opure.Recovery.Service.Tests/LocalRecoveryPointServiceTests.cs",
+      "proofMember": "CreateRecoveryPointAsync_CancellationLeavesPriorPointIntact"
+    },
+    {
+      "id": 11,
+      "scenario": "Backup worker failure during staged copy",
+      "proofFile": "tests/Recovery/Opure.Recovery.Service.Tests/LocalRecoveryPointServiceTests.cs",
+      "proofMember": "CreateRecoveryPointAsync_WorkerFailureLeavesNoIncompletePoint"
+    },
+    {
+      "id": 12,
+      "scenario": "Process restart during evidence reconciliation",
+      "proofFile": "tests/Project/Opure.Project.Sqlite.Tests/ProjectOpenTrustReceiptTests.cs",
+      "proofMember": "PendingReceiptResumesAfterProjectAndTrustRestart"
+    }
+  ],
+  "durabilityProofs": [
+    "eng/evidence/milestones/M1/supervisor-crash-loop.json",
+    "eng/evidence/milestones/M3/sqlite-outbox-crash-matrix.json",
+    "eng/evidence/milestones/M3/sqlite-inbox-idempotency-report.json",
+    "eng/evidence/milestones/M3/sqlite-schema-validation-report.json",
+    "eng/evidence/milestones/M4/project-open-trust-recovery.json",
+    "eng/evidence/milestones/M4/workspace-atomic-generation-report.json",
+    "eng/evidence/milestones/M4/workspace-snapshot-recovery-report.json",
+    "eng/evidence/milestones/M6/recovery-point-structural-verification.json"
+  ],
+  "negativeAssertions": [
+    "Crash injection requires the exact Bootstrap test-mode marker.",
+    "No committed owner state is discarded or reset automatically.",
+    "No incomplete Workspace, Configuration snapshot or Recovery Point becomes authoritative.",
+    "No session secret, project path or database content is written to the execution receipt."
+  ]
+}

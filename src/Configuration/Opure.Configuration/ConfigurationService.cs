@@ -258,7 +258,7 @@ public sealed class ConfigurationService
             throw new InvalidOperationException("Cannot commit an invalid transaction preview.");
         }
 
-        if (Environment.GetEnvironmentVariable("OPURE_TEST_CRASH_POINT") == "ConfigurationBeforeCommit")
+        if (IsTestCrashPoint("ConfigurationBeforeCommit"))
         {
             Environment.Exit(71);
         }
@@ -274,7 +274,7 @@ public sealed class ConfigurationService
             $"{{\"transaction_id\":\"{transactionId}\",\"is_valid\":true,\"error_count\":0}}",
             EvidenceDataClassification.Safe);
 
-        if (Environment.GetEnvironmentVariable("OPURE_TEST_CRASH_POINT") == "ConfigurationAfterCommitBeforeOutbox")
+        if (IsTestCrashPoint("ConfigurationAfterCommitBeforeOutbox"))
         {
             Environment.Exit(71);
         }
@@ -518,7 +518,17 @@ public sealed class ConfigurationService
             snapshotGeneration);
 
         // Record valid state and snapshot
+        if (IsTestCrashPoint("ConfigurationBeforeCommit"))
+        {
+            Environment.Exit(71);
+        }
+
         database.SaveSnapshot(buildResult, "Project", cancellationToken);
+
+        if (IsTestCrashPoint("ConfigurationAfterCommitBeforeOutbox"))
+        {
+            Environment.Exit(71);
+        }
 
         ProjectSourceObservationState validState = new(
             projectId,
@@ -532,5 +542,20 @@ public sealed class ConfigurationService
 
         database.RecordProjectObservation(validState, cancellationToken);
         return validState;
+    }
+
+    private static bool IsTestCrashPoint(string crashPoint)
+    {
+        string? armFile = Environment.GetEnvironmentVariable(
+            "OPURE_TEST_CRASH_ARM_FILE");
+        return string.Equals(
+            Environment.GetEnvironmentVariable("OPURE_BOOTSTRAP_TEST_MODE"),
+            "1",
+            StringComparison.Ordinal) &&
+        string.Equals(
+            Environment.GetEnvironmentVariable("OPURE_TEST_CRASH_POINT"),
+            crashPoint,
+            StringComparison.Ordinal) &&
+        (string.IsNullOrWhiteSpace(armFile) || File.Exists(armFile));
     }
 }

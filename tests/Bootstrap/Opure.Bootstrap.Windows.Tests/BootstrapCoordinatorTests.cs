@@ -84,6 +84,30 @@ public sealed class BootstrapCoordinatorTests
     }
 
     [Fact]
+    public async Task Unexpected_desktop_exit_is_actionable_and_stops_runtime()
+    {
+        FakeProcessLauncher launcher = new()
+        {
+            DesktopExitCode = 17
+        };
+
+        using StringWriter output = new(CultureInfo.InvariantCulture);
+        BootstrapCoordinator coordinator = new(launcher, output);
+
+        BootstrapExitCode exitCode = await coordinator.RunAsync(
+            CreatePlan(),
+            CancellationToken.None);
+
+        Assert.Equal(BootstrapExitCode.DesktopStartFailure, exitCode);
+        Assert.True(launcher.RuntimeProcess.GracefulStopRequested);
+        Assert.True(launcher.RuntimeProcess.HasExited);
+        Assert.Contains(
+            "\"category\":\"desktop_exit_failure\"",
+            output.ToString(),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Cancellation_closes_desktop_before_runtime()
     {
         FakeProcessLauncher launcher = new()
@@ -150,6 +174,8 @@ public sealed class BootstrapCoordinatorTests
 
         internal bool FailDesktopStart { get; init; }
 
+        internal int DesktopExitCode { get; init; }
+
         internal bool KeepDesktopRunning { get; init; }
 
         internal bool RuntimeReportsReady { get; init; } = true;
@@ -196,7 +222,7 @@ public sealed class BootstrapCoordinatorTests
 
             if (!KeepDesktopRunning)
             {
-                DesktopProcess.Complete(0);
+                DesktopProcess.Complete(DesktopExitCode);
             }
 
             DesktopStarted.TrySetResult();

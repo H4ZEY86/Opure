@@ -134,7 +134,15 @@ public sealed class WorkspaceReconciliationService
                     batch.PeakPendingHintCount);
             }
 
-            if (Environment.GetEnvironmentVariable("OPURE_TEST_CRASH_POINT") == "WorkspaceGenerationBeforeCommit")
+            if (string.Equals(
+                    Environment.GetEnvironmentVariable("OPURE_BOOTSTRAP_TEST_MODE"),
+                    "1",
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    Environment.GetEnvironmentVariable("OPURE_TEST_CRASH_POINT"),
+                    "WorkspaceGenerationBeforeCommit",
+                    StringComparison.Ordinal) &&
+                IsCrashInjectionArmed())
             {
                 Environment.Exit(71);
             }
@@ -169,6 +177,13 @@ public sealed class WorkspaceReconciliationService
         {
             serialiser.Release();
         }
+    }
+
+    private static bool IsCrashInjectionArmed()
+    {
+        string? armFile = Environment.GetEnvironmentVariable(
+            "OPURE_TEST_CRASH_ARM_FILE");
+        return string.IsNullOrWhiteSpace(armFile) || File.Exists(armFile);
     }
 
     private static WorkspaceReconciliationResult Deferred(

@@ -157,7 +157,14 @@ public sealed class ProjectOpenService : IProjectOpenRequestHandler
                 "A committed Open Project operation returned no project.");
         WorkspaceSnapshotRequestResult initialSnapshot;
 
-        if (Environment.GetEnvironmentVariable("OPURE_TEST_CRASH_POINT") == "ProjectServiceMidFlight")
+        if (string.Equals(
+                Environment.GetEnvironmentVariable("OPURE_BOOTSTRAP_TEST_MODE"),
+                "1",
+                StringComparison.Ordinal) &&
+            string.Equals(
+                Environment.GetEnvironmentVariable("OPURE_TEST_CRASH_POINT"),
+                "ProjectServiceMidFlight",
+                StringComparison.Ordinal))
         {
             Environment.Exit(71);
         }
