@@ -255,6 +255,7 @@ Completed and committed:
 * GATE-A-008 — Establish Accessibility Baseline.
 * GATE-A-009 — Update ADR Evidence Matrix.
 * GATE-A-010 — Founder Gate A Review.
+* GATE-A-011 — Prepare Controlled Mutation Backlog.
 
 Locally implemented, verified and committed; pending reviewed pushes:
 
@@ -263,7 +264,7 @@ Locally implemented, verified and committed; pending reviewed pushes:
 The next planned ticket is:
 
 ```text
-GATE-A-011 — Prepare Controlled Mutation Backlog
+CM-001 — Version Patch Contracts and Exact UTF-8 Operation
 ```
 
 GATE-A-001 passed its repeatable 32-step Development-channel demonstration and
@@ -350,9 +351,19 @@ and five owned/date-bound amendments are recorded against build
 `0a25b3425abe325c78ee8e9deaaf37984448a07e`. The complete Release verification
 passed 765 tests with zero warnings and zero errors.
 
-This proves GATE-A-001 through GATE-A-010 and records Founder Gate A acceptance
-with amendments. GATE-A-011 controlled-mutation backlog preparation remains
-required before Phase 7 implementation begins.
+GATE-A-011 defines and machine-verifies the dependency-ready Phase 7 backlog as
+CM-001 through CM-016. Deterministic exact UTF-8 mutation, unified patch safety,
+approval, staged/atomic writes, identity revalidation, recovery, Trust receipts
+and accessible review precede typed read-only tool templates and the restricted
+command worker. Every story links ADR/specification authority and records security,
+recovery/compensation and acceptance evidence. Gate A amendments are carried
+forward, no arbitrary shell exists, and no AI-generated patch is authorised before
+Founder Gate B. The complete Release verification passed 765 tests with zero
+warnings and zero errors.
+
+This completes GATE-A-001 through GATE-A-011 and records Founder Gate A acceptance
+with amendments. Phase 7 implementation begins at CM-001 under the verified
+Controlled Mutation backlog.
 The next programme phase is Controlled Mutation: deterministic reviewable file
 patches first, followed by capability-bound curated commands. Local intelligence
 follows Founder Gate B. Remote providers, plugins and MCP remain Phase 9 work
