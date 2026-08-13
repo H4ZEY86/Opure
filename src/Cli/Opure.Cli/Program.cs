@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using Opure.Filesystem.Contracts;
 using Opure.Filesystem.Windows;
 using Opure.Ipc.Abstractions;
@@ -10,6 +11,9 @@ using Opure.Recovery.Protocol;
 using Opure.Recovery.Protocol.Point.V1;
 using Opure.Runtime.Contracts;
 using Opure.Runtime.Contracts.Health.V1;
+using Opure.TrustEvidence.Protocol;
+using Opure.TrustEvidence.Protocol.Configuration.V1;
+using Opure.TrustEvidence.Protocol.Overview.V1;
 using DomainVolumeClass = Opure.Filesystem.Contracts.FilesystemVolumeClass;
 using ProjectListChannel = Opure.Project.Protocol.List.V1.ProjectListReleaseChannel;
 using ProjectOpenChannel = Opure.Project.Protocol.Open.V1.ProjectReleaseChannel;
@@ -70,9 +74,28 @@ internal static class Program
             return health;
         }
 
-        int opened = await HandleProjectAsync(
-            ["open", "--channel", channel, "--path-stdin"])
-            .ConfigureAwait(false);
+        if (!TryGetRuntimeEndpoint(
+                out RuntimeHealthEndpoint? endpoint,
+                out RuntimeHealthSessionMaterial? sessionMaterial))
+        {
+            Console.Error.WriteLine("The Gate A session is unavailable.");
+            return 1;
+        }
+
+        string? fixturePath = await Console.In.ReadLineAsync().ConfigureAwait(false);
+        if (string.IsNullOrWhiteSpace(fixturePath) ||
+            !Path.IsPathFullyQualified(fixturePath))
+        {
+            Console.Error.WriteLine("The Gate A probe requires one absolute fixture path.");
+            return 1;
+        }
+
+        int opened = await OpenProjectAsync(
+            endpoint,
+            sessionMaterial,
+            channel,
+            readPathFromStandardInput: true,
+            fixturePath).ConfigureAwait(false);
         if (opened != 0)
         {
             return opened;
@@ -84,6 +107,16 @@ internal static class Program
         if (listed != 0)
         {
             return listed;
+        }
+
+        int configuration = await RunGateAConfigurationSequenceAsync(
+            endpoint,
+            sessionMaterial,
+            channel,
+            fixturePath).ConfigureAwait(false);
+        if (configuration != 0)
+        {
+            return configuration;
         }
 
         return await VerifyInvalidSessionDenialAsync().ConfigureAwait(false);
@@ -131,6 +164,210 @@ internal static class Program
 
         Console.Error.WriteLine("The Runtime accepted invalid Gate A session material.");
         return 1;
+    }
+
+    private static async Task<int> RunGateAConfigurationSequenceAsync(
+        RuntimeHealthEndpoint endpoint,
+        RuntimeHealthSessionMaterial sessionMaterial,
+        string channel,
+        string fixturePath)
+    {
+        TrustConfigurationSnapshotMessage? initial =
+            await QueryGateAConfigurationAsync(
+                endpoint,
+                sessionMaterial,
+                "Initial").ConfigureAwait(false);
+        if (initial is null || string.IsNullOrWhiteSpace(initial.ProjectId))
+        {
+            return 1;
+        }
+
+        string settingsDirectory = Path.Combine(fixturePath, ".opure");
+        string settingsPath = Path.Combine(
+            settingsDirectory,
+            "project.settings.json");
+        Directory.CreateDirectory(settingsDirectory);
+        try
+        {
+            WriteGateAProjectSettings(
+                settingsPath,
+                initial.ProjectId,
+                "debug");
+            if (await ReopenGateAProjectAsync(
+                    endpoint,
+                    sessionMaterial,
+                    channel,
+                    fixturePath).ConfigureAwait(false) != 0)
+            {
+                return 1;
+            }
+
+            TrustConfigurationSnapshotMessage? changed =
+                await QueryGateAConfigurationAsync(
+                    endpoint,
+                    sessionMaterial,
+                    "ValidChange").ConfigureAwait(false);
+            if (changed is null ||
+                changed.Generation <= initial.Generation ||
+                changed.ProjectGeneration <= initial.ProjectGeneration)
+            {
+                Console.Error.WriteLine(
+                    "The valid project-settings change did not advance both generations.");
+                return 1;
+            }
+
+            File.WriteAllText(
+                settingsPath,
+                "{\"schema\":",
+                new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+            if (await ReopenGateAProjectAsync(
+                    endpoint,
+                    sessionMaterial,
+                    channel,
+                    fixturePath).ConfigureAwait(false) != 0)
+            {
+                return 1;
+            }
+
+            TrustConfigurationSnapshotMessage? invalid =
+                await QueryGateAConfigurationAsync(
+                    endpoint,
+                    sessionMaterial,
+                    "InvalidSource").ConfigureAwait(false);
+            if (invalid is null ||
+                invalid.Generation != changed.Generation ||
+                invalid.LatestObservedGeneration <= changed.ProjectGeneration ||
+                invalid.LatestValidGeneration != changed.ProjectGeneration ||
+                string.IsNullOrWhiteSpace(invalid.LastError))
+            {
+                Console.Error.WriteLine(
+                    "Invalid project settings replaced or obscured the last-known-good snapshot.");
+                return 1;
+            }
+
+            WriteGateAProjectSettings(
+                settingsPath,
+                initial.ProjectId,
+                "warning");
+            if (await ReopenGateAProjectAsync(
+                    endpoint,
+                    sessionMaterial,
+                    channel,
+                    fixturePath).ConfigureAwait(false) != 0)
+            {
+                return 1;
+            }
+
+            TrustConfigurationSnapshotMessage? repaired =
+                await QueryGateAConfigurationAsync(
+                    endpoint,
+                    sessionMaterial,
+                    "Repaired").ConfigureAwait(false);
+            if (repaired is null ||
+                repaired.Generation <= changed.Generation ||
+                repaired.LatestValidGeneration <= changed.ProjectGeneration ||
+                !string.IsNullOrWhiteSpace(repaired.LastError))
+            {
+                Console.Error.WriteLine(
+                    "The repaired project settings did not become the current valid snapshot.");
+                return 1;
+            }
+
+            return 0;
+        }
+        finally
+        {
+            if (File.Exists(settingsPath))
+            {
+                File.Delete(settingsPath);
+            }
+        }
+    }
+
+    private static async Task<int> ReopenGateAProjectAsync(
+        RuntimeHealthEndpoint endpoint,
+        RuntimeHealthSessionMaterial sessionMaterial,
+        string channel,
+        string fixturePath) =>
+        await OpenProjectAsync(
+            endpoint,
+            sessionMaterial,
+            channel,
+            readPathFromStandardInput: true,
+            fixturePath).ConfigureAwait(false);
+
+    private static async Task<TrustConfigurationSnapshotMessage?>
+        QueryGateAConfigurationAsync(
+            RuntimeHealthEndpoint endpoint,
+            RuntimeHealthSessionMaterial sessionMaterial,
+            string stage)
+    {
+        await using NamedPipeTrustEvidenceClient client = new(
+            endpoint,
+            sessionMaterial);
+        TrustConfigurationResponseMessage response =
+            await client.QueryConfigurationAsync(
+                new TrustConfigurationRequestMessage
+                {
+                    ContractRevision = TrustConfigurationContractPolicy.CurrentRevision,
+                    QueryId = Guid.NewGuid().ToString("N"),
+                    ReleaseChannel = TrustEvidenceReleaseChannel.Development,
+                    Scope = "Project"
+                },
+                CancellationToken.None).ConfigureAwait(false);
+        if (response.Disposition != TrustEvidenceQueryDisposition.Computed ||
+            response.Snapshot is null)
+        {
+            Console.Error.WriteLine(
+                $"Configuration query failed: {response.StableCode} - {response.SafeDetail}");
+            return null;
+        }
+
+        TrustConfigurationSnapshotMessage snapshot = response.Snapshot;
+        Console.WriteLine($"Configuration stage: {stage}");
+        Console.WriteLine(
+            $"Product Defaults: revision {snapshot.ProductDefaultsRevision} SHA-256 {snapshot.ProductDefaultsSha256}");
+        Console.WriteLine(
+            $"User Base Profile: {snapshot.UserProfileId} revision {snapshot.UserProfileRevision}");
+        Console.WriteLine(
+            $"Project settings content SHA-256: {snapshot.ProjectContentHash}");
+        Console.WriteLine(
+            $"Effective Configuration: {snapshot.SnapshotId} generation {snapshot.Generation}");
+        Console.WriteLine(
+            $"Configuration Workspace generation: {snapshot.ProjectGeneration}");
+        Console.WriteLine(
+            $"Latest observed Workspace generation: {snapshot.LatestObservedGeneration}");
+        Console.WriteLine(
+            $"Latest valid Workspace generation: {snapshot.LatestValidGeneration}");
+        Console.WriteLine(
+            $"Configuration source error: {(string.IsNullOrWhiteSpace(snapshot.LastError) ? "None" : "Present")}");
+        foreach (TrustConfigurationEntryMessage entry in snapshot.Entries)
+        {
+            Console.WriteLine(
+                $"  Configuration key {entry.SettingId}: requested={entry.RequestedValueJson} effective={entry.EffectiveValueJson} source={entry.WinningSource} provenance={entry.MergeTraceJson}");
+        }
+
+        return snapshot;
+    }
+
+    private static void WriteGateAProjectSettings(
+        string settingsPath,
+        string projectId,
+        string logLevel)
+    {
+        string json = $$"""
+            {
+              "schema": "opure.project-settings/1",
+              "project_id": "{{projectId}}",
+              "settings": {
+                "logging.level.default": "{{logLevel}}"
+              }
+            }
+            """;
+        File.WriteAllText(
+            settingsPath,
+            json,
+            new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
     }
 
     private static int HandleVersion()
@@ -191,7 +428,8 @@ internal static class Program
                     endpoint,
                     sessionMaterial,
                     channel,
-                    readPathFromStandardInput),
+                    readPathFromStandardInput,
+                    suppliedPath: null),
                 "list" when !readPathFromStandardInput =>
                     await ListProjectsAsync(endpoint, sessionMaterial, channel),
                 "list" => InvalidProjectListArguments(),
@@ -219,7 +457,8 @@ internal static class Program
         RuntimeHealthEndpoint endpoint,
         RuntimeHealthSessionMaterial sessionMaterial,
         string channel,
-        bool readPathFromStandardInput)
+        bool readPathFromStandardInput,
+        string? suppliedPath)
     {
         if (!readPathFromStandardInput)
         {
@@ -234,7 +473,8 @@ internal static class Program
             return 1;
         }
 
-        string? path = await Console.In.ReadLineAsync().ConfigureAwait(false);
+        string? path = suppliedPath ??
+            await Console.In.ReadLineAsync().ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(path) || !Path.IsPathFullyQualified(path))
         {
             Console.Error.WriteLine("Project open requires one absolute path on standard input.");

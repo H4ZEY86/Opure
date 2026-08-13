@@ -217,6 +217,7 @@
           "Opure.Recovery.Contracts": "[1.0.0, )",
           "Opure.Recovery.ServiceAdapters": "[1.0.0, )",
           "Opure.TrustEvidence.Contracts": "[1.0.0, )",
+          "Opure.TrustEvidence.Protocol": "[1.0.0, )",
           "Opure.Workspace.Contracts": "[1.0.0, )"
         }
       },
@@ -253,6 +254,14 @@
       "opure.trustevidence.contracts": {
         "type": "Project"
       },
+      "opure.trustevidence.protocol": {
+        "type": "Project",
+        "dependencies": {
+          "Google.Protobuf": "[3.35.1, )",
+          "Grpc.Core.Api": "[2.80.0, )",
+          "Opure.TrustEvidence.Contracts": "[1.0.0, )"
+        }
+      },
       "opure.workspace.contracts": {
         "type": "Project"
       },
@@ -284,6 +293,18 @@
           "Opure.Filesystem.Windows": "[1.0.0, )",
           "Opure.Workspace.Contracts": "[1.0.0, )"
         }
+      },
+      "Google.Protobuf": {
+        "type": "CentralTransitive",
+        "requested": "[3.35.1, )",
+        "resolved": "3.35.1",
+        "contentHash": "pxtkuXhR8svkvDTQrYew9GZQt6eWhblz/V/WKUFrQgkHYlQPsumJTeF6ppHRJpe6j9ffukkd5lQULiiKaek4xA=="
+      },
+      "Grpc.Core.Api": {
+        "type": "CentralTransitive",
+        "requested": "[2.80.0, )",
+        "resolved": "2.80.0",
+        "contentHash": "i/8s+MOrYa6n7BmZ5bilcbHk+EMJDQHm2MKLhwGAT+urQqlZ6cpjvSivYvuULjebuX+UKieLYZbLRCmVQxFRkw=="
       },
       "JsonSchema.Net": {
         "type": "CentralTransitive",

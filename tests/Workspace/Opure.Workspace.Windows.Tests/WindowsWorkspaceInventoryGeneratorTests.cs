@@ -57,6 +57,39 @@ public sealed class WindowsWorkspaceInventoryGeneratorTests : IDisposable
     }
 
     [Fact]
+    public void CanonicalProjectSettingsAreIncludedWithoutExposingOtherPrivateFiles()
+    {
+        string privateDirectory = Directory.CreateDirectory(
+            Path.Combine(rootPath, ".opure")).FullName;
+        File.WriteAllText(
+            Path.Combine(privateDirectory, "project.settings.json"),
+            "{\"schemaVersion\":1,\"settings\":{}}");
+        File.WriteAllText(Path.Combine(privateDirectory, "private.txt"), "private");
+        string nestedDirectory = Directory.CreateDirectory(
+            Path.Combine(privateDirectory, "nested")).FullName;
+        File.WriteAllText(Path.Combine(nestedDirectory, "private.txt"), "private");
+
+        WorkspaceInventoryResult result = Generate(
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        WorkspaceInventoryEntry settings = Assert.Single(
+            result.Entries,
+            entry => entry.LogicalPath == ".opure/project.settings.json");
+        Assert.Equal(WorkspaceInventoryDisposition.Included, settings.Disposition);
+        Assert.Equal(64, settings.IdentitySha256.Length);
+        Assert.Contains(result.Entries, entry =>
+            entry.LogicalPath == ".opure/private.txt" &&
+            entry.Disposition == WorkspaceInventoryDisposition.Excluded &&
+            entry.StableReasonCode == "OPURE_PRIVATE_FILE_EXCLUDED");
+        Assert.Contains(result.Entries, entry =>
+            entry.LogicalPath == ".opure/nested" &&
+            entry.Disposition == WorkspaceInventoryDisposition.Excluded &&
+            entry.StableReasonCode == "OPURE_PRIVATE_DIRECTORY_EXCLUDED");
+        Assert.DoesNotContain(result.Entries, entry =>
+            entry.LogicalPath == ".opure/nested/private.txt");
+    }
+
+    [Fact]
     public void EntryCountLimitReturnsPartialWithoutOverflow()
     {
         for (int index = 0; index < 40; index++)

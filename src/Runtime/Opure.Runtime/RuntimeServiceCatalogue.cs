@@ -91,7 +91,62 @@ internal static class RuntimeServiceCatalogue
             Requirement = RuntimeDependencyRequirement.Optional
         });
 
-        return [health, trustEvidence, project];
+        RuntimeServiceDescriptor workspace = new()
+        {
+            ServiceId = "workspace.service",
+            ServiceRevision = 1,
+            ContractRevision = 1,
+            DisplayName = "Workspace Service",
+            OwnerId = "opure.workspace",
+            Classification = RuntimeServiceClassification.CriticalCore,
+            LifecycleState = RuntimeServiceLifecycleState.Registered,
+            ProcessPlacement = RuntimeServiceProcessPlacement.RuntimeProcess,
+            HealthReference = new RuntimeServiceHealthReference
+            {
+                HealthServiceId = health.ServiceId,
+                ContractRevision = 1
+            }
+        };
+        workspace.Capabilities.Add(new RuntimeCapabilitySummary
+        {
+            CapabilityId = "workspace.snapshot",
+            ContractRevision = 1,
+            SafeSummary =
+                "Creates immutable, bounded Workspace generations from verified roots."
+        });
+
+        RuntimeServiceDescriptor configuration = new()
+        {
+            ServiceId = "configuration.service",
+            ServiceRevision = 1,
+            ContractRevision = 1,
+            DisplayName = "Configuration Service",
+            OwnerId = "opure.configuration",
+            Classification = RuntimeServiceClassification.CriticalCore,
+            LifecycleState = RuntimeServiceLifecycleState.Registered,
+            ProcessPlacement = RuntimeServiceProcessPlacement.RuntimeProcess,
+            HealthReference = new RuntimeServiceHealthReference
+            {
+                HealthServiceId = health.ServiceId,
+                ContractRevision = 1
+            }
+        };
+        configuration.Capabilities.Add(new RuntimeCapabilitySummary
+        {
+            CapabilityId = "configuration.query",
+            ContractRevision = 1,
+            SafeSummary =
+                "Projects policy-evaluated configuration and per-key provenance."
+        });
+        configuration.Dependencies.Add(new RuntimeServiceDependency
+        {
+            Kind = RuntimeDependencyKind.Service,
+            TargetId = workspace.ServiceId,
+            MinimumContractRevision = 1,
+            Requirement = RuntimeDependencyRequirement.Required
+        });
+
+        return [health, trustEvidence, project, workspace, configuration];
     }
 
     internal static IReadOnlyList<RuntimeManagedServiceDefinition>

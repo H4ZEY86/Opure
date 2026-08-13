@@ -217,6 +217,16 @@ public sealed class RuntimeHealthRequestHandlerTests
             RuntimeServiceLifecycleState.Ready,
             sequence: 1,
             failure: null);
+        registry.UpdateLifecycle(
+            "workspace.service",
+            RuntimeServiceLifecycleState.Ready,
+            sequence: 1,
+            failure: null);
+        registry.UpdateLifecycle(
+            "configuration.service",
+            RuntimeServiceLifecycleState.Ready,
+            sequence: 1,
+            failure: null);
     }
 
     private static GetRuntimeHealthRequest CreateRequest()

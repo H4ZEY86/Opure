@@ -13,11 +13,13 @@ namespace Opure.Workspace.Windows;
 [SupportedOSPlatform("windows")]
 public sealed class WindowsWorkspaceInventoryGenerator
 {
+    private const string ProjectSettingsDirectory = ".opure";
+    private const string ProjectSettingsFile = "project.settings.json";
+
     private static readonly ReadOnlySet<string> ExcludedDirectories =
         new(new HashSet<string>(
         [
             ".git",
-            ".opure",
             ".vs",
             ".idea",
             ".cache",
@@ -271,7 +273,7 @@ public sealed class WindowsWorkspaceInventoryGenerator
             else if (value.ObjectType == FilesystemObjectType.Directory)
             {
                 entryClass = WorkspaceInventoryEntryClass.Directory;
-                reason = GetDirectoryExclusion(leafName);
+                reason = GetDirectoryExclusion(parent.LogicalPath, leafName);
                 disposition = reason.Length == 0
                     ? WorkspaceInventoryDisposition.Included
                     : WorkspaceInventoryDisposition.Excluded;
@@ -296,7 +298,7 @@ public sealed class WindowsWorkspaceInventoryGenerator
             else
             {
                 entryClass = WorkspaceInventoryEntryClass.RegularFile;
-                reason = GetFileExclusion(leafName);
+                reason = GetFileExclusion(parent.LogicalPath, leafName);
                 disposition = reason.Length == 0
                     ? WorkspaceInventoryDisposition.Included
                     : WorkspaceInventoryDisposition.Excluded;
@@ -324,8 +326,18 @@ public sealed class WindowsWorkspaceInventoryGenerator
         }
     }
 
-    private static string GetDirectoryExclusion(string leafName)
+    private static string GetDirectoryExclusion(
+        LogicalWorkspacePath parent,
+        string leafName)
     {
+        if (string.Equals(
+                parent.Value,
+                ProjectSettingsDirectory,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return "OPURE_PRIVATE_DIRECTORY_EXCLUDED";
+        }
+
         if (CredentialDirectories.Contains(leafName))
         {
             return "KNOWN_CREDENTIAL_STORE_EXCLUDED";
@@ -348,8 +360,22 @@ public sealed class WindowsWorkspaceInventoryGenerator
         return LogicalWorkspacePath.Parse(new UntrustedPathText(value));
     }
 
-    private static string GetFileExclusion(string leafName)
+    private static string GetFileExclusion(
+        LogicalWorkspacePath parent,
+        string leafName)
     {
+        if (string.Equals(
+                parent.Value,
+                ProjectSettingsDirectory,
+                StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(
+                leafName,
+                ProjectSettingsFile,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return "OPURE_PRIVATE_FILE_EXCLUDED";
+        }
+
         return leafName.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase) ||
             leafName.EndsWith(".temp", StringComparison.OrdinalIgnoreCase) ||
             leafName.StartsWith('~')

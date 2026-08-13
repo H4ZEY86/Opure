@@ -1,7 +1,10 @@
 using System.Security.Cryptography;
+using System.Runtime.Versioning;
 using System.Text;
 using Opure.Configuration;
 using Opure.Configuration.Contracts;
+using Opure.Filesystem.Contracts;
+using Opure.Filesystem.Windows;
 using Opure.Workspace.Contracts;
 using Opure.Workspace.Service;
 using Opure.Workspace.Sqlite;
@@ -130,6 +133,7 @@ public sealed class ProjectSettingsAcquisitionTests : IDisposable
     }
 
     [Fact]
+    [SupportedOSPlatform("windows")]
     public void ProviderRejectsOversizedFile()
     {
         string channelDataRoot = Path.Combine(testRoot, "channel_oversized");
@@ -168,7 +172,8 @@ public sealed class ProjectSettingsAcquisitionTests : IDisposable
 
         var provider = new WorkspaceSourceProvider(
             store,
-            _ => workspacePath);
+            _ => WindowsPathReferenceResolver.AcquireRoot(
+                new UntrustedPathText(workspacePath)));
 
         // Since GetByGeneration is checked, if we don't commit it to store it won't exist.
         // Let's mock or seed the store, or verify using a mock provider that Acquire handles the error message.
@@ -184,6 +189,7 @@ public sealed class ProjectSettingsAcquisitionTests : IDisposable
     }
 
     [Fact]
+    [SupportedOSPlatform("windows")]
     public void ProviderRejectsMutatedFileAfterSnapshot()
     {
         string channelDataRoot = Path.Combine(testRoot, "channel_mutated");
@@ -276,7 +282,8 @@ public sealed class ProjectSettingsAcquisitionTests : IDisposable
 
         var provider = new WorkspaceSourceProvider(
             store,
-            _ => workspacePath);
+            _ => WindowsPathReferenceResolver.AcquireRoot(
+                new UntrustedPathText(workspacePath)));
 
         // Mutate the file on disk after committing snapshot
         File.WriteAllText(settingsPath, "mutated content");

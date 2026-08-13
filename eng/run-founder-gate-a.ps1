@@ -120,6 +120,60 @@ function Invoke-CapturedProcess {
     }
 }
 
+function Get-ConfigurationStageEvidence {
+    param(
+        [Parameter(Mandatory)][string] $Output,
+        [Parameter(Mandatory)][string] $Stage
+    )
+
+    $escapedStage = [regex]::Escape($Stage)
+    $block = [regex]::Match(
+        $Output,
+        "(?ms)^Configuration stage:\s*$escapedStage\s*`r?`n(?<body>.*?)(?=^Configuration stage:|^Invalid session:|\z)").Groups['body'].Value
+    if ([string]::IsNullOrWhiteSpace($block)) {
+        throw "The Gate A configuration stage '$Stage' was not reported."
+    }
+
+    return [ordered]@{
+        productDefaultsRevision = [int][regex]::Match(
+            $block,
+            'Product Defaults:\s*revision\s*(?<value>\d+)').Groups['value'].Value
+        productDefaultsSha256 = [regex]::Match(
+            $block,
+            'Product Defaults:.*?SHA-256\s*(?<value>[0-9a-f]{64})').Groups['value'].Value
+        userProfileId = [regex]::Match(
+            $block,
+            'User Base Profile:\s*(?<value>\S+)').Groups['value'].Value
+        userProfileRevision = [int][regex]::Match(
+            $block,
+            'User Base Profile:.*?revision\s*(?<value>\d+)').Groups['value'].Value
+        projectContentSha256 = [regex]::Match(
+            $block,
+            'Project settings content SHA-256:\s*(?<value>[0-9a-f]{64})').Groups['value'].Value
+        snapshotId = [regex]::Match(
+            $block,
+            'Effective Configuration:\s*(?<value>[0-9a-f]{32})').Groups['value'].Value
+        configurationGeneration = [long][regex]::Match(
+            $block,
+            'Effective Configuration:.*?generation\s*(?<value>\d+)').Groups['value'].Value
+        workspaceGeneration = [long][regex]::Match(
+            $block,
+            'Configuration Workspace generation:\s*(?<value>\d+)').Groups['value'].Value
+        latestObservedWorkspaceGeneration = [long][regex]::Match(
+            $block,
+            'Latest observed Workspace generation:\s*(?<value>\d+)').Groups['value'].Value
+        latestValidWorkspaceGeneration = [long][regex]::Match(
+            $block,
+            'Latest valid Workspace generation:\s*(?<value>\d+)').Groups['value'].Value
+        sourceError = [regex]::Match(
+            $block,
+            'Configuration source error:\s*(?<value>\S+)').Groups['value'].Value
+        provenanceEntryCount = @([regex]::Matches(
+            $block,
+            '(?m)^\s+Configuration key\s+')).Count
+    }
+}
+
 function Invoke-ProjectEvidenceProbe {
     param(
         [Parameter(Mandatory)][string] $CliExecutable,
@@ -219,6 +273,33 @@ function Invoke-ProjectEvidenceProbe {
         throw 'The opened fixture was not projected as an observed Git repository.'
     }
 
+    $configuration = [ordered]@{
+        initial = Get-ConfigurationStageEvidence -Output $opened.StandardOutput -Stage 'Initial'
+        validChange = Get-ConfigurationStageEvidence -Output $opened.StandardOutput -Stage 'ValidChange'
+        invalidSource = Get-ConfigurationStageEvidence -Output $opened.StandardOutput -Stage 'InvalidSource'
+        repaired = Get-ConfigurationStageEvidence -Output $opened.StandardOutput -Stage 'Repaired'
+    }
+    if ($configuration.initial.productDefaultsRevision -lt 1 -or
+        [string]::IsNullOrWhiteSpace($configuration.initial.productDefaultsSha256) -or
+        $configuration.initial.userProfileId -ne 'user.base' -or
+        $configuration.initial.userProfileRevision -lt 1 -or
+        $configuration.initial.configurationGeneration -lt 1 -or
+        $configuration.initial.workspaceGeneration -ne $workspaceGeneration -or
+        $configuration.initial.provenanceEntryCount -lt 1 -or
+        $configuration.initial.sourceError -ne 'None' -or
+        $configuration.validChange.configurationGeneration -le $configuration.initial.configurationGeneration -or
+        $configuration.validChange.workspaceGeneration -le $configuration.initial.workspaceGeneration -or
+        [string]::IsNullOrWhiteSpace($configuration.validChange.projectContentSha256) -or
+        $configuration.invalidSource.configurationGeneration -ne $configuration.validChange.configurationGeneration -or
+        $configuration.invalidSource.latestObservedWorkspaceGeneration -le $configuration.validChange.workspaceGeneration -or
+        $configuration.invalidSource.latestValidWorkspaceGeneration -ne $configuration.validChange.workspaceGeneration -or
+        $configuration.invalidSource.sourceError -ne 'Present' -or
+        $configuration.repaired.configurationGeneration -le $configuration.validChange.configurationGeneration -or
+        $configuration.repaired.latestValidWorkspaceGeneration -le $configuration.validChange.workspaceGeneration -or
+        $configuration.repaired.sourceError -ne 'None') {
+        throw 'The Gate A configuration evidence did not prove valid, invalid, last-known-good and repaired states.'
+    }
+
     return [ordered]@{
         health = [ordered]@{
             authenticated = $true
@@ -243,6 +324,7 @@ function Invoke-ProjectEvidenceProbe {
             workspaceGeneration = $workspaceGeneration
             workspaceGenerationSha256 = $workspaceGenerationSha256
         }
+        configuration = $configuration
     }
 }
 
@@ -338,7 +420,19 @@ try {
         }
     }
     if ($null -eq $session) {
-        throw 'Bootstrap did not emit the bounded in-memory Gate A session hand-off.'
+        $safeEventNames = @($safeOutputLines | ForEach-Object {
+            ($_ | ConvertFrom-Json -ErrorAction Stop).PSObject.Properties['event']?.Value
+        } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+        $safeFailure = @($safeOutputLines | ForEach-Object {
+            $_ | ConvertFrom-Json -ErrorAction Stop
+        } | Where-Object { $_.event -eq 'bootstrap.failure' } | Select-Object -Last 1)
+        $failureSummary = if ($safeFailure.Count -eq 1) {
+            "$($safeFailure[0].category): $($safeFailure[0].message) ($($safeFailure[0].exceptionType))"
+        }
+        else {
+            'none'
+        }
+        throw "Bootstrap did not emit the bounded in-memory Gate A session hand-off. Safe events: $($safeEventNames -join ', '). Failure: $failureSummary."
     }
 
     Write-Host 'Gate A session hand-off acquired in memory.' -ForegroundColor DarkGray
@@ -484,9 +578,9 @@ try {
         }
         allowedPlatformInfrastructure = @('conhost.exe')
         checklist = [ordered]@{
-            ready = @(1, 2, 3, 4, 5, 6, 7, 8, 9)
+            ready = @(1..19)
             partial = @()
-            pending = @(10..32)
+            pending = @(20..32)
         }
     }
 
@@ -507,7 +601,7 @@ try {
         [Text.UTF8Encoding]::new($false))
 
     Write-Host "GATE-A-001 bounded launch prerequisite passed: $receiptPath" -ForegroundColor Green
-    Write-Host 'Checklist steps 1-9 are ready; steps 10-32 remain pending.' -ForegroundColor Yellow
+    Write-Host 'Checklist steps 1-19 are ready; steps 20-32 remain pending.' -ForegroundColor Yellow
 }
 finally {
     if ($null -ne $process) {

@@ -20,12 +20,9 @@ public sealed class SettingMergerTests
     [Fact]
     public void ProductOnlyMergeResolvesDefaults()
     {
-        // Vault reference is requiredFromSource, so we supply it via base profile
-        var userValues = new Dictionary<string, string>
-        {
-            ["provider.credential.vault-reference"] = "\"vault:credential-1\""
-        };
-        var userProfile = CreateProfile("user.base", userValues);
+        var userProfile = CreateProfile(
+            "user.base",
+            new Dictionary<string, string>());
 
         SettingMergeResult result = SettingMerger.Merge(catalogue, productDefaults, userProfile);
 
@@ -40,6 +37,9 @@ public sealed class SettingMergerTests
         Assert.Equal(SettingSource.ProductDefault, keyResult.WinningSource);
         Assert.Equal("\"balanced\"", keyResult.MergedValueJson);
         Assert.NotEmpty(keyResult.Trace);
+        Assert.Null(
+            result.MergedSettings["provider.credential.vault-reference"]
+                .MergedValueJson);
     }
 
     [Fact]
@@ -144,7 +144,7 @@ public sealed class SettingMergerTests
     }
 
     [Fact]
-    public void MissingRequiredSourceFailsMerge()
+    public void MissingRequiredSourceRemainsDormantWithoutInventedValue()
     {
         var requiredDef = CreateTestDefinition(
             "security.mandatory-key",
@@ -169,8 +169,8 @@ public sealed class SettingMergerTests
 
         SettingMergeResult result = SettingMerger.Merge(testCatalogue, testDefaults);
 
-        Assert.False(result.Success);
-        Assert.Contains("Required setting 'security.mandatory-key' has no value", result.FailureReason);
+        Assert.True(result.Success, result.FailureReason);
+        Assert.Null(result.MergedSettings["security.mandatory-key"].MergedValueJson);
     }
 
     [Fact]
@@ -314,11 +314,6 @@ public sealed class SettingMergerTests
     private static ConfigurationProfile CreateProfile(string profileId, IDictionary<string, string> values)
     {
         var dict = new Dictionary<string, string>(values, StringComparer.Ordinal);
-        if (!dict.ContainsKey("provider.credential.vault-reference"))
-        {
-            dict["provider.credential.vault-reference"] = "\"vault:credential-1\"";
-        }
-
         return new ConfigurationProfile(
             profileId,
             revision: 1,

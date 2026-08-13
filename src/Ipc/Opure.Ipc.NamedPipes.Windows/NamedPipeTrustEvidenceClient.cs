@@ -72,7 +72,7 @@ public sealed class NamedPipeTrustEvidenceClient : IAsyncDisposable
     public Task<TrustOverviewResponseMessage> QueryOverviewAsync(
         TrustOverviewRequestMessage request, CancellationToken cancellationToken) =>
         InvokeAsync(
-            "opure.trust.overview.v1.TrustOverviewService/QueryOverview",
+            TrustOverviewContractPolicy.Method,
             request,
             (headers, deadline) => overviewClient.QueryOverviewAsync(request, headers, deadline, cancellationToken),
             cancellationToken);
@@ -80,7 +80,7 @@ public sealed class NamedPipeTrustEvidenceClient : IAsyncDisposable
     public Task<TrustProjectResponseMessage> QueryProjectAsync(
         TrustProjectRequestMessage request, CancellationToken cancellationToken) =>
         InvokeAsync(
-            "opure.trust.project.v1.TrustProjectService/QueryProject",
+            TrustProjectContractPolicy.Method,
             request,
             (headers, deadline) => projectClient.QueryProjectAsync(request, headers, deadline, cancellationToken),
             cancellationToken);
@@ -88,7 +88,7 @@ public sealed class NamedPipeTrustEvidenceClient : IAsyncDisposable
     public Task<TrustConfigurationResponseMessage> QueryConfigurationAsync(
         TrustConfigurationRequestMessage request, CancellationToken cancellationToken) =>
         InvokeAsync(
-            "opure.trust.configuration.v1.TrustConfigurationService/QueryConfiguration",
+            TrustConfigurationContractPolicy.Method,
             request,
             (headers, deadline) => configurationClient.QueryConfigurationAsync(request, headers, deadline, cancellationToken),
             cancellationToken);

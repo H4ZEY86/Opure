@@ -6,6 +6,8 @@ namespace Opure.TrustEvidence.Protocol;
 
 public static class TrustConfigurationContractPolicy
 {
+    public const string Method =
+        "/opure.trust.configuration.v1.TrustConfigurationService/QueryConfiguration";
     public const int MaximumRequestBytes = 32 * 1024; // 32 KB
     public const int MaximumResponseBytes = 10 * 1024 * 1024; // 10 MB
     public const uint CurrentRevision = 1;

@@ -207,15 +207,10 @@ public static class SettingMerger
             }
             else
             {
-                // No candidate value was provided/allowed
-                if (def.RequiredFromSource)
-                {
-                    return new SettingMergeResult(
-                        new ReadOnlyDictionary<string, KeyMergeResult>(keyResults),
-                        success: false,
-                        failureReason: $"Required setting '{def.SettingId}' has no value provided by any allowed source.");
-                }
-
+                // No candidate value was provided. RequiredFromSource means
+                // that a value cannot be invented from a default; it does not
+                // activate an otherwise dormant capability such as a provider
+                // credential.
                 keyResults[def.SettingId] = new KeyMergeResult(
                     def.SettingId,
                     mergedValueJson: null,

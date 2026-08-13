@@ -48,8 +48,8 @@ for ($index = 0; $index -lt 32; $index++) {
 $readyStepIds = @($checklist.steps |
     Where-Object { $_.status -eq 'Ready' } |
     ForEach-Object { [int]$_.id })
-if (($readyStepIds -join ',') -ne '1,2,3,4,5,6,7,8,9') {
-    throw 'GATE-A-001 checklist readiness must remain bounded to proven steps 1 through 9.'
+if (($readyStepIds -join ',') -ne (@(1..19) -join ',')) {
+    throw 'GATE-A-001 checklist readiness must remain bounded to proven steps 1 through 19.'
 }
 
 foreach ($requiredAssertion in @(
@@ -73,7 +73,10 @@ foreach ($requiredProbe in @(
     'invalidSessionDenied',
     'rootIdentityVerified',
     'repositoryClass',
-    'workspaceGenerationSha256')) {
+    'workspaceGenerationSha256',
+    'productDefaultsSha256',
+    'latestValidWorkspaceGeneration',
+    'provenanceEntryCount')) {
     if (-not $runnerContent.Contains($requiredProbe, [StringComparison]::Ordinal)) {
         throw "GATE-A-001 live probe assertion is missing: $requiredProbe"
     }
@@ -122,7 +125,7 @@ if ($evidence.ticket -ne 'GATE-A-001' -or
     $evidence.fullDemonstrationComplete -ne $false -or
     $evidence.activeDataRootModified -ne $false -or
     $evidence.networkAuthorityAdded -ne $false -or
-    $evidence.fixtureRevision -ne 1 -or
+    $evidence.fixtureRevision -ne 2 -or
     $evidence.fixtureSha256 -ne $fixtureHash) {
     throw 'GATE-A-001 readiness evidence does not match the deterministic fixture or bounded status.'
 }

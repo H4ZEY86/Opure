@@ -1,4 +1,6 @@
+using System.Runtime.Versioning;
 using Opure.Runtime.Contracts;
+using Opure.Configuration;
 using Opure.Ipc.Abstractions;
 using Opure.Ipc.NamedPipes.Windows;
 using Opure.Observability;
@@ -43,6 +45,7 @@ public sealed class RuntimeApplication
         ProjectServiceHost? projectService = null;
         TrustEvidenceServiceHost? trustEvidenceService = null;
         WorkspaceServiceHost? workspaceService = null;
+        ConfigurationServiceHost? configurationService = null;
         int sequence = 0;
 
         try
@@ -110,10 +113,15 @@ public sealed class RuntimeApplication
             trustEvidenceService = TrustEvidenceServiceHost.Start(
                 dataRoot.FullPath,
                 cancellationToken: shutdownSignal.Token);
+            configurationService = ConfigurationServiceHost.Start(
+                dataRoot.FullPath,
+                trustEvidenceService.BindOwner("opure.configuration"),
+                shutdownSignal.Token);
             workspaceService = WorkspaceServiceHost.Start(
                 dataRoot.FullPath,
                 trustEvidenceService.BindOwner("opure.workspace"),
                 shutdownSignal.Token);
+            SubscribeConfiguration(workspaceService, configurationService);
             projectService = await ProjectServiceHost.StartAsync(
                 dataRoot.FullPath,
                 releaseChannel,
@@ -137,7 +145,8 @@ public sealed class RuntimeApplication
                 [
                     trustEvidenceService.BackupAdapter,
                     projectService.BackupAdapter,
-                    workspaceService.BackupAdapter
+                    workspaceService.BackupAdapter,
+                    configurationService.BackupAdapter
                 ],
                 bootSnapshot.ProductVersion);
             var recoveryPointHandler = new Opure.Runtime.Handlers.RecoveryPointRequestHandler(
@@ -166,7 +175,8 @@ public sealed class RuntimeApplication
                         operationalLogger),
                 projectOpenRequestHandler: projectService.OpenHandler,
                 projectListRequestHandler: projectService.ListHandler,
-                recoveryPointRequestHandler: recoveryPointHandler)
+                recoveryPointRequestHandler: recoveryPointHandler,
+                trustConfigurationRequestHandler: configurationService)
                 .ConfigureAwait(false);
 
             lifecycle.TransitionTo(RuntimeLifecycleState.Ready);
@@ -289,6 +299,7 @@ public sealed class RuntimeApplication
             serviceLifecycle?.Dispose();
             projectService?.Dispose();
             workspaceService?.Dispose();
+            configurationService?.Dispose();
             trustEvidenceService?.Dispose();
             traceSession?.Dispose();
 
@@ -301,6 +312,19 @@ public sealed class RuntimeApplication
                 await operationalSink.DisposeAsync().ConfigureAwait(false);
             }
         }
+    }
+
+    [SupportedOSPlatform("windows")]
+    private static void SubscribeConfiguration(
+        WorkspaceServiceHost workspaceService,
+        ConfigurationServiceHost configurationService)
+    {
+        workspaceService.SnapshotReady += (projectId, generation, cancellationToken) =>
+            configurationService.ObserveProjectSettings(
+                projectId,
+                generation,
+                workspaceService.SourceProvider,
+                cancellationToken);
     }
 
     private static async Task ScheduleAutomaticShutdownAsync(

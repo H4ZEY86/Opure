@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Runtime.Versioning;
 using Opure.Filesystem.Contracts;
 using Opure.Filesystem.Windows;
@@ -15,6 +16,8 @@ public sealed class WorkspaceServiceHost : IWindowsWorkspaceSnapshotRequester, I
     private readonly WorkspaceDatabase database;
     private readonly WorkspaceReconciliationService reconciliation;
     private readonly WorkspaceTrustReceiptDispatchService trustReceiptDispatcher;
+    private readonly ConcurrentDictionary<string, VerifiedWorkspaceRootReference> roots =
+        new(StringComparer.Ordinal);
     private bool disposed;
 
     private WorkspaceServiceHost(
@@ -27,6 +30,9 @@ public sealed class WorkspaceServiceHost : IWindowsWorkspaceSnapshotRequester, I
         trustReceiptDispatcher = new WorkspaceTrustReceiptDispatchService(
             database,
             trustEvidenceIngestion);
+        SourceProvider = new WorkspaceSourceProvider(
+            database.CreateGenerationStore(),
+            ResolveRoot);
     }
 
     public IBackupAdapter BackupAdapter
@@ -37,6 +43,10 @@ public sealed class WorkspaceServiceHost : IWindowsWorkspaceSnapshotRequester, I
             return database.CreateBackupAdapter();
         }
     }
+
+    public IWorkspaceSourceProvider SourceProvider { get; }
+
+    public event Action<string, long, CancellationToken>? SnapshotReady;
 
     public static WorkspaceServiceHost Start(
         string channelDataRoot,
@@ -77,6 +87,7 @@ public sealed class WorkspaceServiceHost : IWindowsWorkspaceSnapshotRequester, I
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(root);
         ValidateRequest(request);
+        roots[request.ProjectId] = root;
 
         WorkspaceReconciliationResult result = await reconciliation.ReconcileAsync(
             request.ProjectId,
@@ -96,6 +107,12 @@ public sealed class WorkspaceServiceHost : IWindowsWorkspaceSnapshotRequester, I
                 WorkspaceSnapshotRequestDisposition.Requested,
                 result.StableReasonCode);
         }
+
+
+        SnapshotReady?.Invoke(
+            request.ProjectId,
+            snapshot.Generation,
+            cancellationToken);
 
         return new WorkspaceSnapshotRequestResult(
             WorkspaceSnapshotRequestDisposition.Ready,
@@ -132,5 +149,14 @@ public sealed class WorkspaceServiceHost : IWindowsWorkspaceSnapshotRequester, I
                 "The Workspace snapshot request contains invalid root authority or bounds.",
                 nameof(request));
         }
+    }
+
+    private VerifiedWorkspaceRootReference ResolveRoot(string projectId)
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        return roots.TryGetValue(projectId, out VerifiedWorkspaceRootReference? root)
+            ? root
+            : throw new InvalidOperationException(
+                "No verified Workspace root authority is active for the Project.");
     }
 }

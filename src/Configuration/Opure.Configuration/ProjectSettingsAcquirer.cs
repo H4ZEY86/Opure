@@ -1,5 +1,6 @@
 using Opure.Configuration.Contracts;
 using Opure.Workspace.Contracts;
+using System.Security.Cryptography;
 
 namespace Opure.Configuration;
 
@@ -48,32 +49,37 @@ public static class ProjectSettingsAcquirer
         byte[] contentBytes = result.SourceBytes
             ?? throw new InvalidOperationException("Project settings content bytes are null.");
 
-        // 2. Parse UTF-8 bytes strictly (limits size, depth, properties, strings, numbers, duplicates)
-        StrictJsonNode root = StrictJsonParser.Parse(contentBytes);
-
-        // 3. Validate against local schema registry (fails remote/file refs)
-        string canonicalJson = root.ToCanonicalJson();
-        LocalSchemaRegistry.Validate("opure.project-settings/1", canonicalJson);
-
-        // 4. Extract individual setting values
-        Dictionary<string, string> settingsDict = [];
-        if (root is StrictJsonObject obj &&
-            obj.Properties.TryGetValue("settings", out StrictJsonNode? settingsNode))
+        try
         {
-            if (settingsNode is StrictJsonObject settingsObj)
+            // 2. Parse UTF-8 bytes strictly (limits size, depth, properties, strings, numbers, duplicates)
+            StrictJsonNode root = StrictJsonParser.Parse(contentBytes);
+
+            // 3. Validate against local schema registry (fails remote/file refs)
+            string canonicalJson = root.ToCanonicalJson();
+            LocalSchemaRegistry.Validate("opure.project-settings/1", canonicalJson);
+
+            // 4. Extract individual setting values
+            Dictionary<string, string> settingsDict = [];
+            if (root is StrictJsonObject obj &&
+                obj.Properties.TryGetValue("settings", out StrictJsonNode? settingsNode) &&
+                settingsNode is StrictJsonObject settingsObj)
             {
                 foreach (KeyValuePair<string, StrictJsonNode> kvp in settingsObj.Properties)
                 {
                     settingsDict.Add(kvp.Key, kvp.Value.ToCanonicalJson());
                 }
             }
-        }
 
-        return new ProjectSettingsSource(
-            projectId,
-            generation,
-            result.ContentHash,
-            settingsDict,
-            exists: true);
+            return new ProjectSettingsSource(
+                projectId,
+                generation,
+                result.ContentHash,
+                settingsDict,
+                exists: true);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(contentBytes);
+        }
     }
 }

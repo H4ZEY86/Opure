@@ -436,33 +436,20 @@ public sealed class ConfigurationService
         catch (Exception ex) when (ex is StrictJsonException || ex is ArgumentException || ex is InvalidOperationException)
         {
             // Parse or schema validation failed
+            ProjectSourceObservationState? current =
+                database.GetProjectObservationState(projectId, cancellationToken);
             ProjectSourceObservationState failedState = new(
                 projectId,
                 generation,
                 string.Empty, // Unknown hash if parse failed completely before hash calculation
                 observedAt,
-                null, null, null,
+                current?.LatestValidGeneration,
+                current?.LatestValidContentHash,
+                current?.LatestValidSnapshotId,
                 $"Parse or validation failed: {ex.Message}");
             
             database.RecordProjectObservation(failedState, cancellationToken);
             return failedState;
-        }
-
-        if (!source.Exists)
-        {
-            // Valid empty state
-            ProjectSourceObservationState emptyState = new(
-                projectId,
-                generation,
-                source.ContentHash,
-                observedAt,
-                generation,
-                source.ContentHash,
-                null,
-                null);
-            
-            database.RecordProjectObservation(emptyState, cancellationToken);
-            return emptyState;
         }
 
         // Merge and Policy
@@ -477,12 +464,16 @@ public sealed class ConfigurationService
 
         if (!mergeResult.Success)
         {
+            ProjectSourceObservationState? current =
+                database.GetProjectObservationState(projectId, cancellationToken);
             ProjectSourceObservationState mergeFailState = new(
                 projectId,
                 generation,
                 source.ContentHash,
                 observedAt,
-                null, null, null,
+                current?.LatestValidGeneration,
+                current?.LatestValidContentHash,
+                current?.LatestValidSnapshotId,
                 $"Merge failed: {mergeResult.FailureReason}");
             
             database.RecordProjectObservation(mergeFailState, cancellationToken);
@@ -496,12 +487,16 @@ public sealed class ConfigurationService
 
         if (!policyReceipt.Success)
         {
+            ProjectSourceObservationState? current =
+                database.GetProjectObservationState(projectId, cancellationToken);
             ProjectSourceObservationState policyFailState = new(
                 projectId,
                 generation,
                 source.ContentHash,
                 observedAt,
-                null, null, null,
+                current?.LatestValidGeneration,
+                current?.LatestValidContentHash,
+                current?.LatestValidSnapshotId,
                 $"Policy failed: {policyReceipt.FailureReason}");
             
             database.RecordProjectObservation(policyFailState, cancellationToken);
@@ -509,6 +504,9 @@ public sealed class ConfigurationService
         }
 
         // Build valid snapshot
+        uint snapshotGeneration = checked(
+            (database.GetCurrentSnapshot("Project", cancellationToken)
+                ?.SnapshotGeneration ?? 0) + 1);
         EffectiveConfigurationSnapshotBuildResult buildResult = EffectiveConfigurationSnapshotBuilder.Build(
             settingCatalogue,
             productDefaults,
@@ -516,7 +514,8 @@ public sealed class ConfigurationService
             mergeResult,
             policyReceipt,
             userProfile,
-            source);
+            source,
+            snapshotGeneration);
 
         // Record valid state and snapshot
         database.SaveSnapshot(buildResult, "Project", cancellationToken);

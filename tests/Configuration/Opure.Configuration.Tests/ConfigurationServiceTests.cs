@@ -1,5 +1,6 @@
 using System.Runtime.Versioning;
 using Opure.Configuration.Contracts;
+using Opure.Workspace.Contracts;
 using Xunit;
 
 namespace Opure.Configuration.Tests;
@@ -192,6 +193,59 @@ public sealed class ConfigurationServiceTests : IDisposable
         Assert.Equal("\"system\"", themeItem.DefaultValueJson);
     }
 
+    [Fact]
+    public void InvalidObservationPreservesLatestValidSnapshotUntilRepair()
+    {
+        using ConfigurationDatabase db = ConfigurationDatabase.Open(
+            ChannelRoot,
+            TestContext.Current.CancellationToken);
+        ConfigurationService service = new(
+            db,
+            catalogue,
+            FoundationProductDefaultsCatalogue.Current,
+            FoundationPolicyDefinitionCatalogue.Current,
+            new TestEvidenceIngestionPort());
+        const string projectId = "11111111111111111111111111111111";
+        MutableWorkspaceSourceProvider provider = new(projectId);
+
+        provider.Set(1, "{\"schema\":\"opure.project-settings/1\",\"project_id\":\"11111111111111111111111111111111\",\"settings\":{\"logging.level.default\":\"debug\"}}");
+        ProjectSourceObservationState valid = service.ObserveProjectSettings(
+            projectId,
+            1,
+            provider,
+            TestContext.Current.CancellationToken);
+        Assert.Null(valid.LastError);
+        EffectiveConfigurationSnapshot first = Assert.IsType<EffectiveConfigurationSnapshot>(
+            db.GetCurrentSnapshot("Project", TestContext.Current.CancellationToken));
+
+        provider.Set(2, "{invalid");
+        ProjectSourceObservationState invalid = service.ObserveProjectSettings(
+            projectId,
+            2,
+            provider,
+            TestContext.Current.CancellationToken);
+        EffectiveConfigurationSnapshot retained = Assert.IsType<EffectiveConfigurationSnapshot>(
+            db.GetCurrentSnapshot("Project", TestContext.Current.CancellationToken));
+
+        Assert.True(invalid.IsStale);
+        Assert.Equal(valid.LatestValidGeneration, invalid.LatestValidGeneration);
+        Assert.Equal(valid.LatestValidSnapshotId, invalid.LatestValidSnapshotId);
+        Assert.Equal(first.SnapshotId, retained.SnapshotId);
+
+        provider.Set(3, "{\"schema\":\"opure.project-settings/1\",\"project_id\":\"11111111111111111111111111111111\",\"settings\":{\"logging.level.default\":\"warning\"}}");
+        ProjectSourceObservationState repaired = service.ObserveProjectSettings(
+            projectId,
+            3,
+            provider,
+            TestContext.Current.CancellationToken);
+        EffectiveConfigurationSnapshot replacement = Assert.IsType<EffectiveConfigurationSnapshot>(
+            db.GetCurrentSnapshot("Project", TestContext.Current.CancellationToken));
+
+        Assert.False(repaired.IsStale);
+        Assert.NotEqual(first.SnapshotId, replacement.SnapshotId);
+        Assert.Equal(first.SnapshotGeneration + 1, replacement.SnapshotGeneration);
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(testRoot))
@@ -203,4 +257,35 @@ public sealed class ConfigurationServiceTests : IDisposable
     }
 
     private string ChannelRoot => Path.Combine(testRoot, "channel");
+
+    private sealed class MutableWorkspaceSourceProvider(string projectId)
+        : IWorkspaceSourceProvider
+    {
+        private long generation;
+        private byte[] sourceBytes = [];
+
+        public void Set(long nextGeneration, string content)
+        {
+            generation = nextGeneration;
+            sourceBytes = System.Text.Encoding.UTF8.GetBytes(content);
+        }
+
+        public WorkspaceSourceResult GetSourceBytes(
+            string requestedProjectId,
+            long requestedGeneration,
+            string logicalPath)
+        {
+            Assert.Equal(projectId, requestedProjectId);
+            Assert.Equal(generation, requestedGeneration);
+            Assert.Equal(ProjectSettingsAcquirer.ProjectSettingsLogicalPath, logicalPath);
+            byte[] returnedBytes = sourceBytes.ToArray();
+            return new WorkspaceSourceResult(
+                projectId,
+                generation,
+                logicalPath,
+                Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(returnedBytes)),
+                returnedBytes,
+                Exists: true);
+        }
+    }
 }
