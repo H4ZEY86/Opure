@@ -245,6 +245,7 @@ Completed and committed:
 * FND-058 — Add Backup Adapter Contract.
 * FND-059 — Add SQLite Online Backup.
 * FND-060 — Add Local Recovery Point View.
+* GATE-A-001 — Run the End-to-End Foundation Demonstration.
 
 Locally implemented, verified and committed; pending reviewed pushes:
 
@@ -253,12 +254,24 @@ Locally implemented, verified and committed; pending reviewed pushes:
 The next planned ticket is:
 
 ```text
-GATE-A-001 — Run the End-to-End Foundation Demonstration
+GATE-A-002 — Run Crash and Restart Recovery Suite
 ```
 
-FND-060 passed its ticket verifier and was reviewed, committed and pushed.
-Do not assume GATE-A-001 is complete until its repeatable clean-root demonstration,
-evidence, Release verification, review, commit and push are complete.
+GATE-A-001 passed its repeatable 32-step Development-channel demonstration and
+the complete Release verification at commit
+`b63d284f22dc1c5ec123c00779bcdbfd25a12110`, which is pushed to `origin/main`.
+That verification executed 730 tests with zero warnings and zero errors. The
+run-specific ignored launch receipt had payload SHA-256
+`f55fc9d4a80b5f3522b17a50b5dd5ad8af52e0a3011b761a62df26c080d92200`.
+
+This proves GATE-A-001 only. It does not record Founder Gate A acceptance.
+GATE-A-002 through GATE-A-009, the explicit GATE-A-010 founder review and
+GATE-A-011 controlled-mutation backlog remain required before Phase 7 begins.
+The next programme phase is Controlled Mutation: deterministic reviewable file
+patches first, followed by capability-bound curated commands. Local intelligence
+follows Founder Gate B. Remote providers, plugins and MCP remain Phase 9 work
+after local intelligence and Founder Gate C; do not pull them into the Gate B
+critical path.
 
 ## Build policy
 
