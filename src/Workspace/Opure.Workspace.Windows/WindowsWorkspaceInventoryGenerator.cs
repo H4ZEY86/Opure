@@ -187,6 +187,11 @@ public sealed class WindowsWorkspaceInventoryGenerator
             }
         }
 
+        if (AddLogicalPathCollisionIssues(entries, issues))
+        {
+            partial = true;
+        }
+
         entries.Sort(static (left, right) =>
             StringComparer.Ordinal.Compare(left.LogicalPath, right.LogicalPath));
         issues.Sort(static (left, right) =>
@@ -217,6 +222,66 @@ public sealed class WindowsWorkspaceInventoryGenerator
             durationLimit,
             Stopwatch.GetElapsedTime(started));
     }
+
+    private static bool AddLogicalPathCollisionIssues(
+        IReadOnlyList<WorkspaceInventoryEntry> entries,
+        List<WorkspaceInventoryIssue> issues)
+    {
+        Dictionary<string, List<WorkspaceInventoryEntry>> groups =
+            new(StringComparer.OrdinalIgnoreCase);
+        foreach (WorkspaceInventoryEntry entry in entries)
+        {
+            string key = GetPortableLogicalPathKey(entry.LogicalPath);
+            if (!groups.TryGetValue(key, out List<WorkspaceInventoryEntry>? group))
+            {
+                group = [];
+                groups.Add(key, group);
+            }
+
+            group.Add(entry);
+        }
+
+        bool collisionDetected = false;
+        foreach (List<WorkspaceInventoryEntry> group in groups.Values)
+        {
+            if (group.Count < 2)
+            {
+                continue;
+            }
+
+            collisionDetected = true;
+            foreach (WorkspaceInventoryEntry entry in group)
+            {
+                issues.Add(CreateIssue(
+                    string.Empty,
+                    HashText(entry.LogicalPath),
+                    "LOGICAL_PATH_COLLISION",
+                    "Two or more entries collide under case-insensitive Unicode-normalised comparison."));
+            }
+        }
+
+        return collisionDetected;
+    }
+
+    internal static bool HasPortableLogicalPathCollision(
+        IEnumerable<string> logicalPaths)
+    {
+        ArgumentNullException.ThrowIfNull(logicalPaths);
+        HashSet<string> keys = new(StringComparer.OrdinalIgnoreCase);
+        foreach (string logicalPath in logicalPaths)
+        {
+            ArgumentNullException.ThrowIfNull(logicalPath);
+            if (!keys.Add(GetPortableLogicalPathKey(logicalPath)))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static string GetPortableLogicalPathKey(string logicalPath) =>
+        logicalPath.Normalize(NormalizationForm.FormC);
 
     private void ProcessEntry(
         VerifiedWorkspaceRootReference root,

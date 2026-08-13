@@ -1,0 +1,42 @@
+{
+  "ticket": "GATE-A-004",
+  "status": "Ready",
+  "result": "Passed",
+  "scenarioCount": 20,
+  "scenarios": [
+    { "id": 1, "scenario": "parent traversal", "proofMember": "ParseRejectsUnsafeForms" },
+    { "id": 2, "scenario": "drive-relative path", "proofMember": "RegisterRootRejectsNonOrdinaryNamespaces" },
+    { "id": 3, "scenario": "absolute device path", "proofMember": "RegisterRootRejectsNonOrdinaryNamespaces" },
+    { "id": 4, "scenario": "UNC path", "proofMember": "RegisterRootRejectsNonOrdinaryNamespaces" },
+    { "id": 5, "scenario": "symbolic link", "proofMember": "ReparsePointIsDeniedBeforeTraversal" },
+    { "id": 6, "scenario": "junction", "proofMember": "JunctionIsDeniedBeforeTraversal" },
+    { "id": 7, "scenario": "mount point", "proofMember": "JunctionIsDeniedBeforeTraversal" },
+    { "id": 8, "scenario": "reparse substitution", "proofMember": "ReparseSubstitutionNeverHashesTargetContent" },
+    { "id": 9, "scenario": "alternate data stream", "proofMember": "NamedDataStreamIsDetectedButNeverAddressableAsLogicalPath" },
+    { "id": 10, "scenario": "reserved device name", "proofMember": "ParseRejectsUnsafeForms" },
+    { "id": 11, "scenario": "trailing dot", "proofMember": "ParseRejectsUnsafeForms" },
+    { "id": 12, "scenario": "trailing space", "proofMember": "ParseRejectsUnsafeForms" },
+    { "id": 13, "scenario": "case-only collision", "proofMember": "CaseAndUnicodeNormalizationCollisionsAreReportedWithoutNames" },
+    { "id": 14, "scenario": "Unicode-normalisation collision", "proofMember": "CaseAndUnicodeNormalizationCollisionsAreReportedWithoutNames" },
+    { "id": 15, "scenario": "file replacement after validation", "proofMember": "FileReplacementRaceChangesIdentityAndRejectsHash" },
+    { "id": 16, "scenario": "directory replacement during enumeration", "proofMember": "DirectoryReplacementRaceLeavesPriorGenerationCurrentAndMarksStale" },
+    { "id": 17, "scenario": "watcher overflow", "proofMember": "WatcherOverflowForcesAuthoritativeRescanAndRepairsMissedEvent" },
+    { "id": 18, "scenario": "locked file", "proofMember": "LockedFileIsExplicitlyUnreadable" },
+    { "id": 19, "scenario": "deleted root", "proofMember": "DirectoryMutationProducesSafePartialIssue" },
+    { "id": 20, "scenario": "same path on a different volume", "proofMember": "DifferentVolumeSerialsCannotRepresentTheSameObject" }
+  ],
+  "negativeAssertions": [
+    "No traversal outside the handle-verified Project root is permitted.",
+    "Reparse targets are recorded but never traversed or hashed.",
+    "Case and Unicode-normalisation collisions prevent a complete inventory claim.",
+    "Safe issues contain hashes and stable categories, not entry names or contents.",
+    "No project file is modified by verification."
+  ],
+  "evidence": [
+    "eng/evidence/milestones/M4/filesystem-threat-model.md",
+    "eng/evidence/milestones/M4/path-adversarial-report.json",
+    "eng/evidence/milestones/M4/workspace-inventory-adversarial-fixtures.json",
+    "eng/evidence/milestones/M4/workspace-hashing-race-condition-report.json",
+    "eng/evidence/milestones/M4/workspace-watcher-loss-report.json"
+  ]
+}

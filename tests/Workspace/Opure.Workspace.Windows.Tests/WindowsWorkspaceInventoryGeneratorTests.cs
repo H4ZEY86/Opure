@@ -212,6 +212,37 @@ public sealed class WindowsWorkspaceInventoryGeneratorTests : IDisposable
     }
 
     [Fact]
+    public void CaseAndUnicodeNormalizationCollisionsAreReportedWithoutNames()
+    {
+        Assert.True(
+            WindowsWorkspaceInventoryGenerator.HasPortableLogicalPathCollision(
+                ["Case.cs", "case.cs"]));
+        Assert.True(
+            WindowsWorkspaceInventoryGenerator.HasPortableLogicalPathCollision(
+                ["cafe\u0301.cs", "caf\u00e9.cs"]));
+
+        File.WriteAllText(Path.Combine(rootPath, "Case.cs"), "upper");
+        File.WriteAllText(Path.Combine(rootPath, "cafe\u0301.cs"), "decomposed");
+        File.WriteAllText(Path.Combine(rootPath, "caf\u00e9.cs"), "composed");
+        WorkspaceInventoryResult result = Generate(
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal(WorkspaceInventoryCompletion.Partial, result.Completion);
+        Assert.Equal(
+            2,
+            result.Issues.Count(issue =>
+                issue.StableCode == "LOGICAL_PATH_COLLISION"));
+        Assert.All(
+            result.Issues.Where(issue =>
+                issue.StableCode == "LOGICAL_PATH_COLLISION"),
+            issue =>
+            {
+                Assert.Matches("^[0-9a-f]{64}$", issue.EntryNameSha256);
+                Assert.DoesNotContain("caf", issue.SafeDetail, StringComparison.OrdinalIgnoreCase);
+            });
+    }
+
+    [Fact]
     public void CancellationStopsEnumerationWithoutReturningPartialState()
     {
         using CancellationTokenSource cancellation = new();
