@@ -1,0 +1,11 @@
+{
+  "ticket": "FND-060",
+  "result": "Passed",
+  "verificationLevel": "Structural",
+  "sha256InventoryVerified": true,
+  "ownerSchemaValidationPassed": true,
+  "manifestTamperRejected": true,
+  "missingCommitRejected": true,
+  "ownerRefusalPreservesPriorPoint": true,
+  "cancellationPreservesPriorPoint": true
+}

@@ -2,6 +2,8 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using Microsoft.Data.Sqlite;
 using Opure.Persistence.Sqlite;
+using Opure.Recovery.Contracts;
+using Opure.Recovery.ServiceAdapters;
 
 namespace Opure.Project.Sqlite;
 
@@ -94,6 +96,22 @@ public sealed class ProjectDatabase : IDisposable
             database,
             retryPolicy,
             timeProvider);
+    }
+
+    public IBackupAdapter CreateBackupAdapter()
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        return new ProjectBackupAdapter(
+            ProjectDatabaseSchema.CurrentVersion,
+            ApplicationId,
+            (destinationPath, cancellationToken) =>
+                SqliteBackupOrchestrator.BackupAsync(
+                    database,
+                    destinationPath,
+                    cancellationToken),
+            cancellationToken =>
+                InspectHealth(cancellationToken).State is
+                    ProjectDatabaseHealthState.Ready);
     }
 
     public ProjectDatabaseHealth InspectHealth(

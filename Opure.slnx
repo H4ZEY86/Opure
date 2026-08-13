@@ -43,6 +43,7 @@
     <Project Path="src/Recovery/Opure.Recovery.Contracts/Opure.Recovery.Contracts.csproj" />
     <Project Path="src/Recovery/Opure.Recovery.Protocol/Opure.Recovery.Protocol.csproj" />
     <Project Path="src/Recovery/Opure.Recovery.Service/Opure.Recovery.Service.csproj" />
+    <Project Path="src/Recovery/Opure.Recovery.ServiceAdapters/Opure.Recovery.ServiceAdapters.csproj" />
   </Folder>
   <Folder Name="/src/Repository/">
     <Project Path="src/Repository/Opure.Repository.Contracts/Opure.Repository.Contracts.csproj" />

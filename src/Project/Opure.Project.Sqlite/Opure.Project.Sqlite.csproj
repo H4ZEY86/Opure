@@ -6,6 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Recovery\Opure.Recovery.Contracts\Opure.Recovery.Contracts.csproj" />
+    <ProjectReference Include="..\..\Recovery\Opure.Recovery.ServiceAdapters\Opure.Recovery.ServiceAdapters.csproj" />
     <ProjectReference Include="..\..\Persistence\Opure.Persistence.Sqlite\Opure.Persistence.Sqlite.csproj" />
     <ProjectReference Include="..\..\Filesystem\Opure.Filesystem.Windows\Opure.Filesystem.Windows.csproj" />
     <ProjectReference Include="..\..\Repository\Opure.Repository.Contracts\Opure.Repository.Contracts.csproj" />

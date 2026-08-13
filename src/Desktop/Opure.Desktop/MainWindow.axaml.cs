@@ -59,6 +59,7 @@ public partial class MainWindow : Window
     private void OnTrustCentreClick(object? sender, RoutedEventArgs eventArgs)
     {
         viewModel.SelectSection(DesktopNavigationSection.TrustCentre);
+        _ = RefreshTrustCentreAsync();
     }
 
     private void OnWindowOpened(object? sender, EventArgs eventArgs)
@@ -208,12 +209,33 @@ public partial class MainWindow : Window
                 if (viewModel.IsTrustCentrePage)
                 {
                     await viewModel.Configuration.RefreshAsync(cancellationToken);
+                    if (viewModel.RecoveryPoints is not null)
+                    {
+                        await viewModel.RecoveryPoints.RefreshAsync(cancellationToken);
+                    }
                 }
                 await Task.Delay(RuntimeRefreshInterval, cancellationToken);
             }
         }
         catch (OperationCanceledException) when (
             cancellationToken.IsCancellationRequested)
+        {
+        }
+    }
+
+    private async Task RefreshTrustCentreAsync()
+    {
+        try
+        {
+            CancellationToken cancellationToken =
+                refreshCancellation?.Token ?? CancellationToken.None;
+            await viewModel.Configuration.RefreshAsync(cancellationToken);
+            if (viewModel.RecoveryPoints is not null)
+            {
+                await viewModel.RecoveryPoints.RefreshAsync(cancellationToken);
+            }
+        }
+        catch (OperationCanceledException)
         {
         }
     }

@@ -1,5 +1,6 @@
 using System.Runtime.Versioning;
 using Opure.Persistence.Sqlite;
+using Opure.Recovery.Contracts;
 using Opure.Project.Contracts;
 using Opure.Project.Protocol;
 using Opure.Project.Sqlite;
@@ -36,6 +37,15 @@ public sealed class ProjectServiceHost : IDisposable
     public IProjectOpenRequestHandler OpenHandler { get; }
 
     public IProjectListRequestHandler ListHandler { get; }
+
+    public IBackupAdapter BackupAdapter
+    {
+        get
+        {
+            ObjectDisposedException.ThrowIf(disposed, this);
+            return database.CreateBackupAdapter();
+        }
+    }
 
     public static async Task<ProjectServiceHost> StartAsync(
         string channelDataRoot,

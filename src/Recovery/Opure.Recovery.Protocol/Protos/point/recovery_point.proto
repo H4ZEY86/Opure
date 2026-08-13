@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package opure.recovery.point.v1;
+
+option csharp_namespace = "Opure.Recovery.Protocol.Point.V1";
+
+service RecoveryPointService {
+  rpc ListRecoveryPoints(ListRecoveryPointsRequestMessage) returns (ListRecoveryPointsResponseMessage);
+  rpc CreateRecoveryPoint(CreateRecoveryPointRequestMessage) returns (CreateRecoveryPointResponseMessage);
+  rpc VerifyRecoveryPoint(VerifyRecoveryPointRequestMessage) returns (VerifyRecoveryPointResponseMessage);
+}
+
+message ListRecoveryPointsRequestMessage {
+  uint32 contract_revision = 1;
+  string release_channel = 2;
+}
+
+message RecoveryPointSummaryMessage {
+  string recovery_point_id = 1;
+  int64 created_at_unix_time_milliseconds = 2;
+  string verification_state = 3;
+  string scope_class = 4;
+  string product_version = 5;
+  uint32 owner_count = 6;
+  repeated uint32 supported_schema_versions = 7;
+  repeated string checkpoint_hashes = 8;
+  repeated RecoveryPointReceiptMessage receipts = 9;
+}
+
+message RecoveryPointReceiptMessage {
+  string event_type = 1;
+  int64 timestamp_unix_time_milliseconds = 2;
+  string owner_name = 3;
+  string status_message = 4;
+}
+
+message ListRecoveryPointsResponseMessage {
+  uint32 contract_revision = 1;
+  repeated RecoveryPointSummaryMessage points = 2;
+}
+
+message CreateRecoveryPointRequestMessage {
+  uint32 contract_revision = 1;
+  string release_channel = 2;
+}
+
+message CreateRecoveryPointResponseMessage {
+  uint32 contract_revision = 1;
+  bool is_success = 2;
+  string recovery_point_id = 3;
+  string error_message = 4;
+}
+
+message VerifyRecoveryPointRequestMessage {
+  uint32 contract_revision = 1;
+  string release_channel = 2;
+  string recovery_point_id = 3;
+}
+
+message VerifyRecoveryPointResponseMessage {
+  uint32 contract_revision = 1;
+  bool is_success = 2;
+  string error_message = 3;
+}

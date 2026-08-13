@@ -22,7 +22,9 @@ public static class DesktopShellComposition
             projectFolderPicker: null,
             configuration: new DesktopConfigurationViewModel(
                 RuntimeHealthGatewayClient.CreateTrustConfigurationSource(
-                    DesktopLaunchContext.ReleaseChannel)));
+                    DesktopLaunchContext.ReleaseChannel)),
+            recoveryPoints: new RecoveryPointGatewayClient(
+                DesktopLaunchContext.ReleaseChannel));
     }
 
     public static MainWindow CreateMainWindow()

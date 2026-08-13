@@ -1,130 +1,359 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Security.Cryptography;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Text;
+using System.Text.Json;
 using Opure.Recovery.Contracts;
-using Opure.Runtime.Contracts;
 
 namespace Opure.Recovery.Service;
 
 public sealed class LocalRecoveryPointService
 {
-    private readonly IEnumerable<IBackupAdapter> _adapters;
-    public LocalRecoveryPointService(IEnumerable<IBackupAdapter> adapters)
+    private const string CommitMarkerFileName = ".commit";
+    private const string ManifestFileName = "manifest.json";
+    private static readonly JsonSerializerOptions ManifestJsonOptions = new()
     {
-        _adapters = adapters ?? throw new ArgumentNullException(nameof(adapters));
+        WriteIndented = true
+    };
+
+    private readonly IReadOnlyList<IBackupAdapter> adapters;
+    private readonly string productVersion;
+
+    public LocalRecoveryPointService(
+        IEnumerable<IBackupAdapter> adapters,
+        string? productVersion = null)
+    {
+        ArgumentNullException.ThrowIfNull(adapters);
+        this.adapters = adapters.ToArray();
+        this.productVersion = string.IsNullOrWhiteSpace(productVersion)
+            ? "unknown"
+            : productVersion;
     }
 
-    public async Task<RecoveryPointManifest> CreateRecoveryPointAsync(string channel, string recoveryRootPath, CancellationToken cancellationToken)
+    public async Task<RecoveryPointManifest> CreateRecoveryPointAsync(
+        string channel,
+        string recoveryRootPath,
+        CancellationToken cancellationToken)
     {
-        var epochId = Guid.NewGuid();
-        var epoch = new BackupEpoch(epochId, DateTimeOffset.UtcNow);
+        ArgumentException.ThrowIfNullOrWhiteSpace(channel);
+        ArgumentException.ThrowIfNullOrWhiteSpace(recoveryRootPath);
 
-        // Prepare
-        foreach (var adapter in _adapters)
+        Guid epochId = Guid.NewGuid();
+        DateTimeOffset creationTimestamp = DateTimeOffset.UtcNow;
+        string recoveryPointRoot = Path.Combine(
+            recoveryRootPath,
+            epochId.ToString("N"));
+        BackupEpoch epoch = new(epochId, creationTimestamp)
         {
-            var prepResult = await adapter.PrepareBackupAsync(epoch, cancellationToken);
-            if (!prepResult.IsSuccess)
+            StagingRootPath = recoveryPointRoot
+        };
+
+        Directory.CreateDirectory(recoveryRootPath);
+        Directory.CreateDirectory(recoveryPointRoot);
+
+        try
+        {
+            Dictionary<string, RecoveryOwnerSnapshot> owners =
+                new(StringComparer.Ordinal);
+            List<uint> supportedSchemas = [];
+
+            foreach (IBackupAdapter adapter in adapters)
             {
-                throw new InvalidOperationException($"Adapter {adapter.Identity.OwnerName} refused backup: {prepResult.RefusalReason}");
+                cancellationToken.ThrowIfCancellationRequested();
+                BackupPreparationResult preparation = await adapter
+                    .PrepareBackupAsync(epoch, cancellationToken)
+                    .ConfigureAwait(false);
+                if (!preparation.IsSuccess)
+                {
+                    throw new InvalidOperationException(
+                        $"Backup owner {adapter.Identity.OwnerName} refused the recovery point: {preparation.RefusalReason}");
+                }
+            }
+
+            foreach (IBackupAdapter adapter in adapters)
+            {
+                BackupCheckpointResult checkpoint = await adapter
+                    .CreateCheckpointAsync(epoch, cancellationToken)
+                    .ConfigureAwait(false);
+                if (!checkpoint.IsSuccess)
+                {
+                    throw new InvalidOperationException(
+                        $"Backup owner {adapter.Identity.OwnerName} could not create a checkpoint: {checkpoint.ErrorMessage}");
+                }
+
+                IReadOnlyCollection<FoundationStateInventoryItem> inventory =
+                    await adapter.GetStateInventoryAsync(cancellationToken)
+                        .ConfigureAwait(false);
+                List<RecoveryFileSnapshot> files = [];
+                foreach (FoundationStateInventoryItem item in inventory)
+                {
+                    string fullPath = Path.Combine(
+                        recoveryPointRoot,
+                        adapter.Identity.OwnerName,
+                        item.RelativePath);
+                    files.Add(new RecoveryFileSnapshot(
+                        item.RelativePath,
+                        item.Category,
+                        item.Description,
+                        ComputeSha256(fullPath)));
+                }
+
+                if (!owners.TryAdd(
+                        adapter.Identity.OwnerName,
+                        new RecoveryOwnerSnapshot(adapter.Identity, files)))
+                {
+                    throw new InvalidOperationException(
+                        $"Backup owner {adapter.Identity.OwnerName} was registered more than once.");
+                }
+
+                supportedSchemas.Add(adapter.Identity.SupportedSchemaVersion);
+            }
+
+            string bindingHash = ComputeBindingHash(
+                epochId,
+                channel,
+                productVersion,
+                owners);
+            RecoveryPointManifest provisionalManifest = new(
+                epochId,
+                epoch,
+                "same-device",
+                channel,
+                owners,
+                productVersion,
+                supportedSchemas.Distinct().Order().ToArray(),
+                [bindingHash],
+                VerificationLevel.None,
+                creationTimestamp,
+                CreatorId: null,
+                VerificationReceipts: []);
+
+            bool isValid = await RecoveryPointVerifier.VerifyRecoveryPointAsync(
+                provisionalManifest,
+                recoveryPointRoot,
+                channel,
+                adapters,
+                cancellationToken).ConfigureAwait(false);
+            if (!isValid)
+            {
+                throw new InvalidOperationException(
+                    "Recovery point structural verification failed in the disposable staging root.");
+            }
+
+            RecoveryPointManifest manifest = provisionalManifest with
+            {
+                VerificationLevel = VerificationLevel.Structural,
+                VerificationReceipts =
+                [
+                    new EvidenceReceipt(
+                        Guid.NewGuid(),
+                        "backup.recovery-point-created",
+                        creationTimestamp,
+                        "opure.backup",
+                        "Same-device recovery point created.",
+                        bindingHash),
+                    new EvidenceReceipt(
+                        Guid.NewGuid(),
+                        "backup.verification-completed",
+                        DateTimeOffset.UtcNow,
+                        "opure.backup",
+                        "Structural verification completed in a disposable staging root.",
+                        bindingHash)
+                ]
+            };
+
+            byte[] manifestBytes = JsonSerializer.SerializeToUtf8Bytes(
+                manifest,
+                ManifestJsonOptions);
+            await WriteNewFileAsync(
+                Path.Combine(recoveryPointRoot, ManifestFileName),
+                manifestBytes,
+                cancellationToken).ConfigureAwait(false);
+
+            byte[] commitBytes = Encoding.UTF8.GetBytes(
+                Convert.ToHexString(SHA256.HashData(manifestBytes)).ToLowerInvariant());
+            await WriteNewFileAsync(
+                Path.Combine(recoveryPointRoot, CommitMarkerFileName),
+                commitBytes,
+                cancellationToken).ConfigureAwait(false);
+            return manifest;
+        }
+        catch
+        {
+            TryDeleteIncompletePoint(recoveryPointRoot);
+            throw;
+        }
+    }
+
+    public static async Task<IReadOnlyList<RecoveryPointManifest>> ListRecoveryPointsAsync(
+        string recoveryRootPath,
+        CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(recoveryRootPath);
+        if (!Directory.Exists(recoveryRootPath))
+        {
+            return [];
+        }
+
+        List<RecoveryPointManifest> results = [];
+        foreach (string directory in Directory.GetDirectories(recoveryRootPath))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            RecoveryPointManifest? manifest = await TryReadCommittedManifestAsync(
+                directory,
+                cancellationToken).ConfigureAwait(false);
+            if (manifest is not null)
+            {
+                results.Add(manifest);
             }
         }
 
-        // Checkpoint
-        foreach (var adapter in _adapters)
+        return results
+            .OrderByDescending(point => point.CreationTimestamp)
+            .ToArray();
+    }
+
+    public async Task<bool> VerifyRecoveryPointAsync(
+        Guid recoveryPointId,
+        string channel,
+        string recoveryRootPath,
+        CancellationToken cancellationToken)
+    {
+        string recoveryPointRoot = Path.Combine(
+            recoveryRootPath,
+            recoveryPointId.ToString("N"));
+        RecoveryPointManifest? manifest = await TryReadCommittedManifestAsync(
+            recoveryPointRoot,
+            cancellationToken).ConfigureAwait(false);
+        if (manifest is null ||
+            manifest.RecoveryPointId != recoveryPointId ||
+            !string.Equals(manifest.Channel, channel, StringComparison.Ordinal))
         {
-            var cpResult = await adapter.CreateCheckpointAsync(epoch, cancellationToken);
-            if (!cpResult.IsSuccess)
-            {
-                throw new InvalidOperationException($"Adapter {adapter.Identity.OwnerName} failed checkpoint: {cpResult.ErrorMessage}");
-            }
+            return false;
         }
 
-        var owners = new Dictionary<string, RecoveryOwnerSnapshot>(StringComparer.Ordinal);
-        
-        string backupRoot = Path.Combine(recoveryRootPath, epochId.ToString());
+        return await RecoveryPointVerifier.VerifyRecoveryPointAsync(
+            manifest,
+            recoveryPointRoot,
+            channel,
+            adapters,
+            cancellationToken).ConfigureAwait(false);
+    }
 
-        // Inventory and hash
-        foreach (var adapter in _adapters)
+    private static async Task<RecoveryPointManifest?> TryReadCommittedManifestAsync(
+        string recoveryPointRoot,
+        CancellationToken cancellationToken)
+    {
+        string manifestPath = Path.Combine(recoveryPointRoot, ManifestFileName);
+        string commitPath = Path.Combine(recoveryPointRoot, CommitMarkerFileName);
+        if (!File.Exists(manifestPath) || !File.Exists(commitPath))
         {
-            var inventory = await adapter.GetStateInventoryAsync(cancellationToken);
-            var files = new List<RecoveryFileSnapshot>();
-
-            foreach (var item in inventory)
-            {
-                var fullPath = Path.Combine(backupRoot, adapter.Identity.OwnerName, item.RelativePath);
-                string hash = ComputeSha256(fullPath);
-
-                files.Add(new RecoveryFileSnapshot(
-                    item.RelativePath,
-                    item.Category,
-                    item.Description,
-                    hash
-                ));
-            }
-
-            owners.Add(adapter.Identity.OwnerName, new RecoveryOwnerSnapshot(adapter.Identity, files));
+            return null;
         }
 
-        var manifest = new RecoveryPointManifest(epochId, epoch, "local", channel, owners);
-
-        // Verification step (disposable root)
-        bool isValid = await RecoveryPointVerifier.VerifyRecoveryPointAsync(manifest, backupRoot, channel, _adapters, cancellationToken);
-        if (!isValid)
+        byte[] manifestBytes = await File.ReadAllBytesAsync(
+            manifestPath,
+            cancellationToken).ConfigureAwait(false);
+        string expectedHash = await File.ReadAllTextAsync(
+            commitPath,
+            cancellationToken).ConfigureAwait(false);
+        string actualHash = Convert.ToHexString(
+            SHA256.HashData(manifestBytes)).ToLowerInvariant();
+        if (!string.Equals(expectedHash.Trim(), actualHash, StringComparison.Ordinal))
         {
-            throw new InvalidOperationException("Recovery point validation against disposable root failed.");
+            return null;
         }
 
-        // Commit marker (complies with architecture rules using FileStream directly or FileInfo)
-        string commitMarkerPath = Path.Combine(backupRoot, ".commit");
-        using (var fs = new FileStream(commitMarkerPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
-        using (var sw = new StreamWriter(fs))
+        try
         {
-            await sw.WriteAsync(epochId.ToString().AsMemory(), cancellationToken);
+            RecoveryPointManifest? manifest = JsonSerializer.Deserialize<RecoveryPointManifest>(
+                manifestBytes,
+                ManifestJsonOptions);
+            string directoryName = Path.GetFileName(recoveryPointRoot);
+            return manifest is not null &&
+                Guid.TryParse(directoryName, out Guid directoryId) &&
+                directoryId == manifest.RecoveryPointId
+                    ? manifest
+                    : null;
         }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
 
-        return manifest;
+    private static async Task WriteNewFileAsync(
+        string path,
+        ReadOnlyMemory<byte> content,
+        CancellationToken cancellationToken)
+    {
+        await using FileStream stream = new(
+            path,
+            FileMode.CreateNew,
+            FileAccess.Write,
+            FileShare.None,
+            bufferSize: 4096,
+            FileOptions.Asynchronous | FileOptions.WriteThrough);
+        await stream.WriteAsync(content, cancellationToken).ConfigureAwait(false);
+        await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private static string ComputeSha256(string filePath)
     {
         if (!File.Exists(filePath))
+        {
             return string.Empty;
+        }
 
-        using var sha256 = SHA256.Create();
-        using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-        var hash = sha256.ComputeHash(stream);
-        return Convert.ToHexString(hash).ToLowerInvariant();
+        using FileStream stream = new(
+            filePath,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read);
+        return Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
     }
 
-#pragma warning disable CA1822 // Method does not access instance data and can be marked as static (Service methods should remain instance methods for DI and mocking).
-    public Task<IReadOnlyList<RecoveryPointManifest>> ListRecoveryPointsAsync(string recoveryRootPath, CancellationToken cancellationToken)
-#pragma warning restore CA1822
+    private static string ComputeBindingHash(
+        Guid recoveryPointId,
+        string channel,
+        string productVersion,
+        IReadOnlyDictionary<string, RecoveryOwnerSnapshot> owners)
     {
-        var results = new List<RecoveryPointManifest>();
-        if (!Directory.Exists(recoveryRootPath))
-            return Task.FromResult<IReadOnlyList<RecoveryPointManifest>>(results);
-
-        foreach (var dir in Directory.GetDirectories(recoveryRootPath))
+        StringBuilder binding = new();
+        binding.Append(recoveryPointId.ToString("N"));
+        binding.Append('|').Append(channel);
+        binding.Append('|').Append(productVersion);
+        foreach ((string ownerName, RecoveryOwnerSnapshot owner) in owners.OrderBy(pair => pair.Key, StringComparer.Ordinal))
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            string commitMarkerPath = Path.Combine(dir, ".commit");
-            if (File.Exists(commitMarkerPath))
+            binding.Append('|').Append(ownerName);
+            binding.Append(':').Append(owner.Identity.AdapterRevision);
+            binding.Append(':').Append(owner.Identity.SupportedSchemaVersion);
+            foreach (RecoveryFileSnapshot file in owner.Files.OrderBy(file => file.RelativePath, StringComparer.Ordinal))
             {
-                string epochIdStr = Path.GetFileName(dir);
-                if (Guid.TryParse(epochIdStr, out Guid epochId))
-                {
-                    // For now, we return a minimal manifest with just the ID and Creation Time based on directory creation
-                    var dirInfo = new DirectoryInfo(dir);
-                    var epoch = new BackupEpoch(epochId, dirInfo.CreationTimeUtc);
-                    var manifest = new RecoveryPointManifest(epochId, epoch, "local", "Unknown", new Dictionary<string, RecoveryOwnerSnapshot>());
-                    results.Add(manifest);
-                }
+                binding.Append('|').Append(file.RelativePath);
+                binding.Append(':').Append(file.Sha256Hash);
             }
         }
 
-        return Task.FromResult<IReadOnlyList<RecoveryPointManifest>>(results);
+        return Convert.ToHexString(
+            SHA256.HashData(Encoding.UTF8.GetBytes(binding.ToString())))
+            .ToLowerInvariant();
+    }
+
+    private static void TryDeleteIncompletePoint(string recoveryPointRoot)
+    {
+        if (!Directory.Exists(recoveryPointRoot))
+        {
+            return;
+        }
+
+        try
+        {
+            Directory.Delete(recoveryPointRoot, recursive: true);
+        }
+        catch (IOException)
+        {
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
     }
 }

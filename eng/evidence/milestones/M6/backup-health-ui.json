@@ -1,0 +1,14 @@
+{
+  "ticket": "FND-060",
+  "result": "Passed",
+  "surface": "Trust Centre Local recovery points",
+  "runtimeProjectionOnly": true,
+  "desktopDatabaseAuthority": false,
+  "sameDeviceWarningProminent": true,
+  "structuralVerificationVisible": true,
+  "timestampsVisible": true,
+  "receiptsVisible": true,
+  "keyboardReachable": true,
+  "stableAccessibilityNames": true,
+  "colourOnlyState": false
+}

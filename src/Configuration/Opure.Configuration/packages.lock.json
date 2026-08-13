@@ -72,6 +72,17 @@
           "SQLitePCLRaw.bundle_e_sqlite3": "[2.1.12, )"
         }
       },
+      "opure.recovery.contracts": {
+        "type": "Project"
+      },
+      "opure.recovery.serviceadapters": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Data.Sqlite": "[10.0.10, )",
+          "Opure.Recovery.Contracts": "[1.0.0, )",
+          "SQLitePCLRaw.bundle_e_sqlite3": "[2.1.12, )"
+        }
+      },
       "opure.trustevidence.contracts": {
         "type": "Project"
       },

@@ -8,6 +8,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Opure.Configuration.Contracts\Opure.Configuration.Contracts.csproj" />
     <ProjectReference Include="..\..\Persistence\Opure.Persistence.Sqlite\Opure.Persistence.Sqlite.csproj" />
+    <ProjectReference Include="..\..\Recovery\Opure.Recovery.Contracts\Opure.Recovery.Contracts.csproj" />
+    <ProjectReference Include="..\..\Recovery\Opure.Recovery.ServiceAdapters\Opure.Recovery.ServiceAdapters.csproj" />
     <ProjectReference Include="..\..\Workspace\Opure.Workspace.Contracts\Opure.Workspace.Contracts.csproj" />
     <ProjectReference Include="..\..\Trust\Opure.TrustEvidence.Contracts\Opure.TrustEvidence.Contracts.csproj" />
   </ItemGroup>

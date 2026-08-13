@@ -1,0 +1,9 @@
+{
+  "ticket": "FND-060",
+  "result": "Passed",
+  "validationTarget": "Bounded disposable staging root",
+  "activeRootUnchanged": true,
+  "disposableRootDeleted": true,
+  "activeRestoreExecuted": false,
+  "activeRestoreAuthority": "Deferred to a separately approved Recovery Host activation"
+}

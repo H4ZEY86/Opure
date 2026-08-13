@@ -1,5 +1,6 @@
 using Opure.TrustEvidence.Contracts;
 using Opure.TrustEvidence.Sqlite;
+using Opure.Recovery.Contracts;
 
 namespace Opure.TrustEvidence.Service;
 
@@ -33,6 +34,15 @@ public sealed class TrustEvidenceServiceHost : IDisposable
     }
 
     public TrustEvidenceQueryService QueryService { get; }
+
+    public IBackupAdapter BackupAdapter
+    {
+        get
+        {
+            ObjectDisposedException.ThrowIf(disposed, this);
+            return database.CreateBackupAdapter();
+        }
+    }
 
     public static TrustEvidenceServiceHost Start(
         string channelDataRoot,

@@ -1,0 +1,24 @@
+{
+  "ticket": "FND-060",
+  "result": "Passed",
+  "scopeClass": "same-device",
+  "actionAuthority": "Explicit developer CLI or Desktop command routed to Runtime",
+  "requiredRuntimeOwners": [
+    "opure.project",
+    "opure.trust-evidence"
+  ],
+  "requiredRuntimeOwnersComplete": true,
+  "availableFutureHostAdapters": [
+    "opure.configuration",
+    "opure.workspace"
+  ],
+  "productVersionBound": true,
+  "schemaVersionsBound": true,
+  "checkpointHashesBound": true,
+  "commitMarkerWrittenLast": true,
+  "receipts": [
+    "backup.recovery-point-created",
+    "backup.verification-completed"
+  ],
+  "networkDestinationUsed": false
+}

@@ -6,6 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:contracts="using:Opure.Desktop.Contracts"
+    xmlns:local="using:Opure.Desktop"
     mc:Ignorable="d"
     d:DesignWidth="1000"
     d:DesignHeight="650"
@@ -298,6 +299,13 @@
             </StackPanel>
           </Grid>
         </GroupBox>
+
+        <Border IsVisible="{Binding IsTrustCentrePage}">
+          <local:RecoveryPointView
+              DataContext="{Binding RecoveryPoints}"
+              AutomationProperties.Name="Local recovery points"
+              AutomationProperties.AutomationId="LocalRecoveryPointView" />
+        </Border>
 
         <Border
             x:Name="SafeModeBanner"

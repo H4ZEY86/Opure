@@ -2,6 +2,8 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using Microsoft.Data.Sqlite;
 using Opure.Persistence.Sqlite;
+using Opure.Recovery.Contracts;
+using Opure.Recovery.ServiceAdapters;
 using Opure.TrustEvidence.Contracts;
 
 namespace Opure.TrustEvidence.Sqlite;
@@ -272,6 +274,22 @@ public sealed class TrustEvidenceDatabase : IDisposable
         return new TrustProjectQueryService(
             database,
             timeProvider);
+    }
+
+    public IBackupAdapter CreateBackupAdapter()
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        return new TrustEvidenceBackupAdapter(
+            TrustEvidenceDatabaseSchema.CurrentVersion,
+            ApplicationId,
+            (destinationPath, cancellationToken) =>
+                SqliteBackupOrchestrator.BackupAsync(
+                    database,
+                    destinationPath,
+                    cancellationToken),
+            cancellationToken =>
+                InspectHealth(cancellationToken).State is
+                    TrustEvidenceDatabaseHealthState.Ready);
     }
 
     public void Dispose()

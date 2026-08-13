@@ -2,6 +2,8 @@ using System.Globalization;
 using Microsoft.Data.Sqlite;
 using Opure.Configuration.Contracts;
 using Opure.Persistence.Sqlite;
+using Opure.Recovery.Contracts;
+using Opure.Recovery.ServiceAdapters;
 using System.Text.Json;
 
 namespace Opure.Configuration;
@@ -36,6 +38,26 @@ public sealed class ConfigurationDatabase : IDisposable
         return new TrustConfigurationQueryService(
             database,
             timeProvider ?? TimeProvider.System);
+    }
+
+    public IBackupAdapter CreateBackupAdapter()
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        return new ConfigurationBackupAdapter(
+            ConfigurationDatabaseSchema.CurrentVersion,
+            ApplicationId,
+            (destinationPath, cancellationToken) =>
+                SqliteBackupOrchestrator.BackupAsync(
+                    database,
+                    destinationPath,
+                    cancellationToken),
+            cancellationToken =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                return database.Health.State == SqliteDatabaseHealthState.Open &&
+                    database.Health.MigrationState == SqliteMigrationHealthState.Current &&
+                    database.Health.SchemaVersion == ConfigurationDatabaseSchema.CurrentVersion;
+            });
     }
 
     public static ConfigurationDatabase Open(

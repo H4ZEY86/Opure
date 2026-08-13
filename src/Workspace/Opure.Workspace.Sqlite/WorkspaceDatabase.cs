@@ -1,5 +1,7 @@
 using Microsoft.Data.Sqlite;
 using Opure.Persistence.Sqlite;
+using Opure.Recovery.Contracts;
+using Opure.Recovery.ServiceAdapters;
 
 namespace Opure.Workspace.Sqlite;
 
@@ -70,6 +72,26 @@ public sealed class WorkspaceDatabase : IDisposable
     {
         ObjectDisposedException.ThrowIf(disposed, this);
         return new SqliteOutboxDispatcher(database, retryPolicy, timeProvider);
+    }
+
+    public IBackupAdapter CreateBackupAdapter()
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        return new WorkspaceBackupAdapter(
+            WorkspaceDatabaseSchema.CurrentVersion,
+            ApplicationId,
+            (destinationPath, cancellationToken) =>
+                SqliteBackupOrchestrator.BackupAsync(
+                    database,
+                    destinationPath,
+                    cancellationToken),
+            cancellationToken =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                return database.Health.State == SqliteDatabaseHealthState.Open &&
+                    database.Health.MigrationState == SqliteMigrationHealthState.Current &&
+                    database.Health.SchemaVersion == WorkspaceDatabaseSchema.CurrentVersion;
+            });
     }
 
     public void Dispose()

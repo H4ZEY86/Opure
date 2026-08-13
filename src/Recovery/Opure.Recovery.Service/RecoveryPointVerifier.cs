@@ -24,7 +24,7 @@ public sealed class RecoveryPointVerifier
             {
                 var fullPath = Path.Combine(backupRoot, owner.Identity.OwnerName, file.RelativePath);
                 string currentHash = ComputeSha256(fullPath);
-                
+
                 if (!string.Equals(currentHash, file.Sha256Hash, StringComparison.OrdinalIgnoreCase))
                 {
                     return false;
@@ -44,17 +44,22 @@ public sealed class RecoveryPointVerifier
             {
                 if (!manifest.Owners.ContainsKey(adapter.Identity.OwnerName))
                 {
-                    continue; 
+                    continue;
                 }
-                
+
                 // The Validation step requests the adapter to validate using the provided restore epoch.
                 // The adapter implementation is expected to look in the Staging/Recovery/{EpochId} path 
                 // if we construct a new epoch or we just pass the original epoch but we must signal it's a validation root.
                 // However, IBackupAdapter.ValidateRestoreAsync(BackupEpoch restoreEpoch, CancellationToken cancellationToken)
                 // only receives the Epoch. This implies the Epoch ID itself is what identifies the backup.
                 // Since we copied to a Guid.NewGuid() path, we would need to pass that as a new Epoch ID.
-                var stagingEpoch = new BackupEpoch(Guid.Parse(Path.GetFileName(disposableRoot)!), manifest.Epoch.InitiatedAt);
-                
+                var stagingEpoch = new BackupEpoch(
+                    Guid.Parse(Path.GetFileName(disposableRoot)!),
+                    manifest.Epoch.InitiatedAt)
+                {
+                    StagingRootPath = disposableRoot
+                };
+
                 var validResult = await adapter.ValidateRestoreAsync(stagingEpoch, cancellationToken);
                 if (!validResult.IsSuccess)
                 {

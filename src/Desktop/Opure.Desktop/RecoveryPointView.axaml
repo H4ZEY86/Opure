@@ -7,24 +7,82 @@
              x:Class="Opure.Desktop.RecoveryPointView"
              x:DataType="contracts:DesktopRecoveryPointViewModel"
              x:Name="RootControl">
-    <StackPanel Margin="20">
-        <TextBlock Text="Local Recovery Points" FontSize="24" FontWeight="Bold" Margin="0,0,0,10"/>
-        
-        <Border Background="#FFEEEE" BorderBrush="Red" BorderThickness="2" Padding="10" Margin="0,0,0,20">
-            <TextBlock Text="WARNING: Same-Device Recovery Only" Foreground="Red" FontWeight="Bold" HorizontalAlignment="Center"/>
+    <StackPanel Spacing="12">
+        <TextBlock
+            Text="Local recovery points"
+            FontSize="20"
+            FontWeight="SemiBold"
+            AutomationProperties.HeadingLevel="2" />
+
+        <Border BorderThickness="2" CornerRadius="4" Padding="12">
+            <StackPanel Spacing="4">
+                <TextBlock
+                    x:Name="RecoveryPointScopeWarning"
+                    Text="Same-device recovery only"
+                    FontWeight="Bold"
+                    AutomationProperties.Name="Warning. Same-device recovery only." />
+                <TextBlock
+                    Text="These points support local rollback. They do not protect against device loss, disk failure or destructive malware."
+                    TextWrapping="Wrap" />
+            </StackPanel>
         </Border>
 
-        <Button Content="Create New Recovery Point" Command="{Binding CreateRecoveryPointCommand}" Margin="0,0,0,20"/>
+        <StackPanel Spacing="4">
+            <TextBlock Text="{Binding StatusTitle}" FontWeight="SemiBold" AutomationProperties.AutomationId="RecoveryPointStatusTitle" />
+            <TextBlock Text="{Binding StatusDetail}" TextWrapping="Wrap" AutomationProperties.AutomationId="RecoveryPointStatusDetail" />
+            <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" AutomationProperties.Name="Recovery point operation in progress" />
+        </StackPanel>
 
-        <ItemsControl ItemsSource="{Binding RecoveryPoints}">
+        <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button
+                x:Name="CreateRecoveryPointButton"
+                Content="_Create recovery point"
+                Command="{Binding CreateRecoveryPointCommand}"
+                AutomationProperties.Name="Create local recovery point"
+                AutomationProperties.AutomationId="CreateRecoveryPoint"
+                AutomationProperties.AccessKey="Alt+C" />
+            <Button
+                x:Name="RefreshRecoveryPointsButton"
+                Content="Re_fresh list"
+                Command="{Binding RefreshRecoveryPointsCommand}"
+                AutomationProperties.Name="Refresh local recovery points"
+                AutomationProperties.AutomationId="RefreshRecoveryPoints"
+                AutomationProperties.AccessKey="Alt+F" />
+        </StackPanel>
+
+        <ItemsControl x:Name="RecoveryPointList" ItemsSource="{Binding RecoveryPoints}">
             <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="contracts:DesktopRecoveryPoint">
-                    <Border BorderBrush="Gray" BorderThickness="1" Padding="10" Margin="0,0,0,10">
+                    <Border
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="10"
+                        Margin="0,0,0,8"
+                        AutomationProperties.Name="{Binding AccessibilityLabel}">
                         <StackPanel>
                             <TextBlock Text="{Binding RecoveryPointId, StringFormat='ID: {0}'}" FontWeight="Bold"/>
-                            <TextBlock Text="{Binding CreatedAt, StringFormat='Created: {0}'}"/>
-                            <TextBlock Text="{Binding VerificationState, StringFormat='Status: {0}'}"/>
-                            <Button Content="Verify" Command="{Binding #RootControl.((contracts:DesktopRecoveryPointViewModel)DataContext).VerifyRecoveryPointCommand}" CommandParameter="{Binding}" Margin="0,5,0,0"/>
+                            <TextBlock Text="{Binding CreatedAt, StringFormat='Created: {0:g}'}"/>
+                            <TextBlock Text="{Binding VerificationState, StringFormat='Structural verification: {0}'}"/>
+                            <TextBlock Text="{Binding ProductVersion, StringFormat='Product version: {0}'}"/>
+                            <TextBlock Text="{Binding OwnerCount, StringFormat='Required owners: {0} complete'}"/>
+                            <TextBlock Text="{Binding SchemaSummary, StringFormat='Schema versions: {0}'}"/>
+                            <TextBlock Text="Creation and verification receipts" FontWeight="SemiBold" Margin="0,5,0,0"/>
+                            <ItemsControl ItemsSource="{Binding Receipts}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="contracts:DesktopRecoveryPointReceipt">
+                                        <TextBlock
+                                            Text="{Binding EventType, StringFormat='{}{0}'}"
+                                            AutomationProperties.Name="{Binding StatusMessage}" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Button
+                                Content="_Verify in disposable staging"
+                                Command="{Binding #RootControl.((contracts:DesktopRecoveryPointViewModel)DataContext).VerifyRecoveryPointCommand}"
+                                CommandParameter="{Binding}"
+                                Margin="0,5,0,0"
+                                HorizontalAlignment="Left"
+                                AutomationProperties.Name="Verify this recovery point without touching the active data root" />
                         </StackPanel>
                     </Border>
                 </DataTemplate>

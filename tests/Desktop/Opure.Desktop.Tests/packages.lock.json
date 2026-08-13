@@ -398,6 +398,7 @@
           "Opure.Ipc.NamedPipes.Windows": "[1.0.0, )",
           "Opure.Observability": "[1.0.0, )",
           "Opure.Project.Protocol": "[1.0.0, )",
+          "Opure.Recovery.Protocol": "[1.0.0, )",
           "Opure.Runtime.Contracts": "[1.0.0, )",
           "Opure.TrustEvidence.Protocol": "[1.0.0, )"
         }
