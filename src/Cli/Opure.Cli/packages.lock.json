@@ -39,6 +39,15 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.0"
         }
       },
+      "opure.filesystem.contracts": {
+        "type": "Project"
+      },
+      "opure.filesystem.windows": {
+        "type": "Project",
+        "dependencies": {
+          "Opure.Filesystem.Contracts": "[1.0.0, )"
+        }
+      },
       "opure.ipc.abstractions": {
         "type": "Project",
         "dependencies": {

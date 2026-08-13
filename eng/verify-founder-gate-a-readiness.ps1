@@ -45,6 +45,16 @@ for ($index = 0; $index -lt 32; $index++) {
     }
 }
 
+$readyStepIds = @($checklist.steps |
+    Where-Object { $_.status -eq 'Ready' } |
+    ForEach-Object { [int]$_.id })
+if (($readyStepIds -join ',') -ne '1,2,3,4,5,6,7,8' -or
+    $checklist.steps[8].automation -ne 'Partial' -or
+    $checklist.steps[8].status -ne 'Pending' -or
+    [string]::IsNullOrWhiteSpace($checklist.steps[8].blocker)) {
+    throw 'GATE-A-001 checklist readiness must remain bounded to proven steps 1 through 8.'
+}
+
 foreach ($requiredAssertion in @(
     'No network endpoint is owned by a Gate A child process.',
     'No AI runtime process is spawned by the Gate A process tree.',
@@ -55,6 +65,38 @@ foreach ($requiredAssertion in @(
     'The checked-in fixture is unchanged.')) {
     if ($requiredAssertion -notin $checklist.negativeAssertions) {
         throw "GATE-A-001 negative assertion is missing: $requiredAssertion"
+    }
+}
+
+$runnerContent = [IO.File]::ReadAllText(
+    (Join-Path $repositoryRoot 'eng\run-founder-gate-a.ps1'))
+foreach ($requiredProbe in @(
+    "'gate-a', 'probe'",
+    'serverProofVerified',
+    'invalidSessionDenied',
+    'rootIdentityVerified',
+    'repositoryClass')) {
+    if (-not $runnerContent.Contains($requiredProbe, [StringComparison]::Ordinal)) {
+        throw "GATE-A-001 live probe assertion is missing: $requiredProbe"
+    }
+}
+foreach ($prohibitedPersistence in @(
+    'bootstrap.stdout.jsonl',
+    'bootstrap.stderr.txt')) {
+    if ($runnerContent.Contains($prohibitedPersistence, [StringComparison]::Ordinal)) {
+        throw "GATE-A-001 runner must not persist session-bearing process output: $prohibitedPersistence"
+    }
+}
+
+$cliContent = [IO.File]::ReadAllText(
+    (Join-Path $repositoryRoot 'src\Cli\Opure.Cli\Program.cs'))
+foreach ($requiredBoundary in @(
+    'OPURE_GATE_A_TEST_MODE',
+    'The Gate A probe is restricted to the bounded engineering harness.',
+    'WindowsPathReferenceResolver.AcquireRoot',
+    'Invalid session: Denied')) {
+    if (-not $cliContent.Contains($requiredBoundary, [StringComparison]::Ordinal)) {
+        throw "GATE-A-001 CLI probe boundary is missing: $requiredBoundary"
     }
 }
 

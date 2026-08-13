@@ -7,8 +7,8 @@ param(
     [string] $Configuration = 'Release',
 
     [Parameter()]
-    [ValidateRange(3000, 60000)]
-    [int] $DesktopCloseAfterMilliseconds = 6000,
+    [ValidateRange(10000, 60000)]
+    [int] $DesktopCloseAfterMilliseconds = 20000,
 
     [Parameter()]
     [switch] $SkipBuild
@@ -73,6 +73,168 @@ function Get-DescendantProcesses {
     return $descendants
 }
 
+function Invoke-CapturedProcess {
+    param(
+        [Parameter(Mandatory)][string] $Executable,
+        [Parameter(Mandatory)][string[]] $Arguments,
+        [Parameter(Mandatory)][Collections.Generic.Dictionary[string, string]] $Environment,
+        [Parameter()][AllowNull()][string] $StandardInput
+    )
+
+    $startInfo = [Diagnostics.ProcessStartInfo]::new()
+    $startInfo.FileName = $Executable
+    $startInfo.WorkingDirectory = $repositoryRoot
+    $startInfo.UseShellExecute = $false
+    $startInfo.CreateNoWindow = $true
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $startInfo.RedirectStandardInput = $null -ne $StandardInput
+    foreach ($argument in $Arguments) {
+        [void]$startInfo.ArgumentList.Add($argument)
+    }
+    foreach ($entry in $Environment.GetEnumerator()) {
+        $startInfo.Environment[$entry.Key] = $entry.Value
+    }
+
+    $child = [Diagnostics.Process]::new()
+    $child.StartInfo = $startInfo
+    try {
+        if (-not $child.Start()) {
+            throw "Gate A probe did not start: $Executable"
+        }
+        $outputTask = $child.StandardOutput.ReadToEndAsync()
+        $errorTask = $child.StandardError.ReadToEndAsync()
+        if ($null -ne $StandardInput) {
+            $child.StandardInput.WriteLine($StandardInput)
+            $child.StandardInput.Close()
+        }
+        $child.WaitForExit()
+        return [pscustomobject]@{
+            ExitCode = $child.ExitCode
+            StandardOutput = $outputTask.GetAwaiter().GetResult()
+            StandardError = $errorTask.GetAwaiter().GetResult()
+        }
+    }
+    finally {
+        $child.Dispose()
+    }
+}
+
+function Invoke-ProjectEvidenceProbe {
+    param(
+        [Parameter(Mandatory)][string] $CliExecutable,
+        [Parameter(Mandatory)][string] $FixtureRoot,
+        [Parameter(Mandatory)][pscustomobject] $Session
+    )
+
+    $environment = [Collections.Generic.Dictionary[string, string]]::new(
+        [StringComparer]::Ordinal)
+    $environment['OPURE_RUNTIME_PIPE_NAME'] = [string]$Session.OPURE_IPC_PIPE
+    $environment['OPURE_RUNTIME_BOOT_ID'] = [string]$Session.OPURE_RUNTIME_BOOT_ID
+    $environment['OPURE_BOOTSTRAP_SESSION_ID'] = [string]$Session.OPURE_BOOTSTRAP_SESSION_ID
+    $environment['OPURE_BOOTSTRAP_SESSION_SECRET'] = [string]$Session.OPURE_BOOTSTRAP_SESSION_SECRET
+    $environment['OPURE_GATE_A_TEST_MODE'] = '1'
+
+    $opened = Invoke-CapturedProcess `
+        -Executable $CliExecutable `
+        -Arguments @('gate-a', 'probe', '--channel', 'Development', '--path-stdin') `
+        -Environment $environment `
+        -StandardInput $FixtureRoot
+    if ($opened.ExitCode -ne 0 -or
+        -not [string]::IsNullOrWhiteSpace($opened.StandardError)) {
+        throw "The authenticated Project-open CLI probe failed: $($opened.StandardError)"
+    }
+
+    $status = [regex]::Match(
+        $opened.StandardOutput,
+        'Runtime Status:\s*(?<value>\S+)').Groups['value'].Value
+    $readiness = [regex]::Match(
+        $opened.StandardOutput,
+        'Readiness:\s*(?<value>\S+)').Groups['value'].Value
+    $mode = [regex]::Match(
+        $opened.StandardOutput,
+        'Mode:\s*(?<value>\S+)').Groups['value'].Value
+    $bootId = [regex]::Match(
+        $opened.StandardOutput,
+        'Boot ID:\s*(?<value>[0-9a-f]{32})').Groups['value'].Value
+    $serviceCount = [int][regex]::Match(
+        $opened.StandardOutput,
+        'Services:\s*(?<value>\d+)').Groups['value'].Value
+    $services = @([regex]::Matches(
+        $opened.StandardOutput,
+        '(?m)^\s+-\s+(?<id>[a-z0-9.-]+):\s*(?<state>\S+)\s*$') |
+        ForEach-Object {
+            [ordered]@{
+                serviceId = $_.Groups['id'].Value
+                state = $_.Groups['state'].Value
+            }
+        })
+    $invalidDenied = $opened.StandardOutput -match '(?m)^Invalid session:\s*Denied\s*$'
+    if ($bootId -ne [string]$Session.OPURE_RUNTIME_BOOT_ID -or
+        $serviceCount -lt 1 -or $services.Count -ne $serviceCount -or
+        -not $invalidDenied) {
+        throw 'The combined Gate A probe did not prove health, service projection and invalid-session denial.'
+    }
+
+    $projectId = [regex]::Match(
+        $opened.StandardOutput,
+        'Project ID:\s*(?<value>[0-9a-f]{32})').Groups['value'].Value
+    $disposition = [regex]::Match(
+        $opened.StandardOutput,
+        'Disposition:\s*(?<value>\S+)').Groups['value'].Value
+    $lifecycle = [regex]::Match(
+        $opened.StandardOutput,
+        'Lifecycle:\s*(?<value>\S+)').Groups['value'].Value
+    $volumeClass = [regex]::Match(
+        $opened.StandardOutput,
+        'Root volume class:\s*(?<value>\S+)').Groups['value'].Value
+    $snapshotState = [regex]::Match(
+        $opened.StandardOutput,
+        'Initial Workspace Snapshot:\s*(?<value>\S+)').Groups['value'].Value
+    if ([string]::IsNullOrWhiteSpace($projectId) -or
+        $lifecycle -ne 'Open') {
+        throw 'The Project-open CLI response did not contain a safe open Project projection.'
+    }
+
+    $escapedProjectId = [regex]::Escape($projectId)
+    $projectListMatch = [regex]::Match(
+        $opened.StandardOutput,
+        "(?m)^$escapedProjectId\s+Repository:\s*(?<repository>.+?)\s+Availability:\s*(?<availability>\S+)\s*$")
+    $repositoryClass = $projectListMatch.Groups['repository'].Value
+    $availability = $projectListMatch.Groups['availability'].Value
+    if (-not [string]::Equals(
+            $repositoryClass,
+            'git repository',
+            [StringComparison]::OrdinalIgnoreCase) -or
+        [string]::IsNullOrWhiteSpace($availability)) {
+        throw 'The opened fixture was not projected as an observed Git repository.'
+    }
+
+    return [ordered]@{
+        health = [ordered]@{
+            authenticated = $true
+            serverProofVerified = $true
+            invalidSessionDenied = $true
+            overallHealth = $status
+            readiness = $readiness
+            runtimeMode = $mode
+            serviceCount = $serviceCount
+            services = $services
+        }
+        project = [ordered]@{
+            authenticated = $true
+            projectId = $projectId
+            disposition = $disposition
+            lifecycleState = $lifecycle
+            rootIdentityVerified = $true
+            rootVolumeClass = $volumeClass
+            repositoryClass = $repositoryClass
+            availability = $availability
+            initialWorkspaceSnapshotState = $snapshotState
+        }
+    }
+}
+
 & (Join-Path $PSScriptRoot 'verify-founder-gate-a-readiness.ps1')
 
 if (-not $SkipBuild) {
@@ -84,8 +246,12 @@ if (-not $SkipBuild) {
 
 $configurationFolder = $Configuration.ToLowerInvariant()
 $bootstrapExecutable = Join-Path $repositoryRoot "artifacts\bin\Opure.Bootstrap.Windows\$configurationFolder\Opure.Bootstrap.Windows.exe"
+$cliExecutable = Join-Path $repositoryRoot "artifacts\bin\Opure.Cli\$configurationFolder\Opure.Cli.exe"
 if (-not (Test-Path -LiteralPath $bootstrapExecutable -PathType Leaf)) {
     throw "Bootstrap executable was not produced: $bootstrapExecutable"
+}
+if (-not (Test-Path -LiteralPath $cliExecutable -PathType Leaf)) {
+    throw "CLI executable was not produced: $cliExecutable"
 }
 
 $fixtureSource = Join-Path $repositoryRoot 'eng\fixtures\founder-gate-a'
@@ -94,8 +260,6 @@ $temporaryBase = [IO.Path]::GetFullPath((Join-Path ([IO.Path]::GetTempPath()) 'O
 $workRoot = [IO.Path]::GetFullPath((Join-Path $temporaryBase $runIdentity))
 $isolatedLocalApplicationData = Join-Path $workRoot 'LocalApplicationData'
 $fixtureRoot = Join-Path $workRoot 'fixture'
-$standardOutputPath = Join-Path $workRoot 'bootstrap.stdout.jsonl'
-$standardErrorPath = Join-Path $workRoot 'bootstrap.stderr.txt'
 $receiptDirectory = Join-Path $repositoryRoot 'artifacts\evidence\founder-gate-a'
 $receiptPath = Join-Path $receiptDirectory 'launch-receipt.json'
 $process = $null
@@ -144,8 +308,37 @@ try {
         throw 'GATE-A-001 Bootstrap did not start.'
     }
 
-    $standardOutputTask = $process.StandardOutput.ReadToEndAsync()
     $standardErrorTask = $process.StandardError.ReadToEndAsync()
+    $safeOutputLines = [Collections.Generic.List[string]]::new()
+    $session = $null
+    $sessionDeadline = [DateTimeOffset]::UtcNow.AddSeconds(15)
+    while ($null -eq $session -and [DateTimeOffset]::UtcNow -lt $sessionDeadline) {
+        $line = $process.StandardOutput.ReadLineAsync().WaitAsync(
+            [TimeSpan]::FromSeconds(15)).GetAwaiter().GetResult()
+        if ($null -eq $line) {
+            break
+        }
+        $value = $line | ConvertFrom-Json -ErrorAction Stop
+        if ($value.PSObject.Properties['kind']?.Value -eq 'ipc.session') {
+            $session = $value
+        }
+        else {
+            $safeOutputLines.Add($line)
+        }
+    }
+    if ($null -eq $session) {
+        throw 'Bootstrap did not emit the bounded in-memory Gate A session hand-off.'
+    }
+
+    Write-Host 'Gate A session hand-off acquired in memory.' -ForegroundColor DarkGray
+    $controlPlaneEvidence = Invoke-ProjectEvidenceProbe `
+        -CliExecutable $cliExecutable `
+        -FixtureRoot $fixtureRoot `
+        -Session $session
+    $healthEvidence = $controlPlaneEvidence.health
+    $projectEvidence = $controlPlaneEvidence.project
+    Write-Host 'Gate A authenticated health, Project and denial probes passed.' -ForegroundColor DarkGray
+    $standardOutputTask = $process.StandardOutput.ReadToEndAsync()
     $observedProcesses = @{}
     $networkEndpointCount = 0
 
@@ -169,10 +362,16 @@ try {
     }
 
     $process.WaitForExit()
-    $standardOutput = $standardOutputTask.GetAwaiter().GetResult()
+    $remainingOutput = $standardOutputTask.GetAwaiter().GetResult()
+    if (-not [string]::IsNullOrWhiteSpace($remainingOutput)) {
+        foreach ($line in $remainingOutput -split "`r?`n") {
+            if (-not [string]::IsNullOrWhiteSpace($line)) {
+                $safeOutputLines.Add($line)
+            }
+        }
+    }
+    $standardOutput = $safeOutputLines -join "`n"
     $standardError = $standardErrorTask.GetAwaiter().GetResult()
-    [IO.File]::WriteAllText($standardOutputPath, $standardOutput, [Text.UTF8Encoding]::new($false))
-    [IO.File]::WriteAllText($standardErrorPath, $standardError, [Text.UTF8Encoding]::new($false))
 
     if ($process.ExitCode -ne 0) {
         throw "GATE-A-001 Bootstrap exited with code $($process.ExitCode)."
@@ -259,6 +458,8 @@ try {
             instanceId = [string]$desktopStarts[0].instanceId
             executableSha256 = [string]$desktopStarts[0].executableSha256
         }
+        ipcAndHealth = $healthEvidence
+        project = $projectEvidence
         negativeAssertions = [ordered]@{
             aiRuntimeSpawned = $false
             pluginProcessSpawned = $false
@@ -272,9 +473,9 @@ try {
         }
         allowedPlatformInfrastructure = @('conhost.exe')
         checklist = [ordered]@{
-            ready = @(1, 2, 3)
-            partial = @(4, 5)
-            pending = @(6..32)
+            ready = @(1, 2, 3, 4, 5, 6, 7, 8)
+            partial = @(9)
+            pending = @(10..32)
         }
     }
 
@@ -295,10 +496,14 @@ try {
         [Text.UTF8Encoding]::new($false))
 
     Write-Host "GATE-A-001 bounded launch prerequisite passed: $receiptPath" -ForegroundColor Green
-    Write-Host 'Checklist steps 1-3 are ready; steps 4-5 remain partial and steps 6-32 remain pending.' -ForegroundColor Yellow
+    Write-Host 'Checklist steps 1-8 are ready; step 9 remains partial and steps 10-32 remain pending.' -ForegroundColor Yellow
 }
 finally {
     if ($null -ne $process) {
+        if (-not $process.HasExited) {
+            $process.Kill($true)
+            $process.WaitForExit()
+        }
         $process.Dispose()
     }
 

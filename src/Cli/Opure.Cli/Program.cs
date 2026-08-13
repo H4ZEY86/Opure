@@ -1,10 +1,20 @@
 using System.Diagnostics.CodeAnalysis;
+using Opure.Filesystem.Contracts;
+using Opure.Filesystem.Windows;
 using Opure.Ipc.Abstractions;
 using Opure.Ipc.NamedPipes.Windows;
+using Opure.Project.Protocol;
+using Opure.Project.Protocol.List.V1;
+using Opure.Project.Protocol.Open.V1;
 using Opure.Recovery.Protocol;
 using Opure.Recovery.Protocol.Point.V1;
 using Opure.Runtime.Contracts;
 using Opure.Runtime.Contracts.Health.V1;
+using DomainVolumeClass = Opure.Filesystem.Contracts.FilesystemVolumeClass;
+using ProjectListChannel = Opure.Project.Protocol.List.V1.ProjectListReleaseChannel;
+using ProjectOpenChannel = Opure.Project.Protocol.Open.V1.ProjectReleaseChannel;
+using WireFileIdentityCapability = Opure.Project.Protocol.Open.V1.FileIdentityCapability;
+using WireVolumeClass = Opure.Project.Protocol.Open.V1.FilesystemVolumeClass;
 
 namespace Opure.Cli;
 
@@ -23,10 +33,104 @@ internal static class Program
         return command switch
         {
             "health" => await HandleHealthAsync(),
+            "gate-a" => await HandleGateAAsync(args[1..]),
+            "project" => await HandleProjectAsync(args[1..]),
             "recovery" => await HandleRecoveryAsync(args[1..]),
             "version" => HandleVersion(),
             _ => HandleUnknownCommand(command)
         };
+    }
+
+    private static async Task<int> HandleGateAAsync(string[] args)
+    {
+        if (!string.Equals(
+                Environment.GetEnvironmentVariable("OPURE_GATE_A_TEST_MODE"),
+                "1",
+                StringComparison.Ordinal) ||
+            args.Length != 4 ||
+            !string.Equals(args[0], "probe", StringComparison.Ordinal) ||
+            !string.Equals(args[1], "--channel", StringComparison.Ordinal) ||
+            !string.Equals(args[3], "--path-stdin", StringComparison.Ordinal))
+        {
+            Console.Error.WriteLine(
+                "The Gate A probe is restricted to the bounded engineering harness.");
+            return 1;
+        }
+
+        string channel = args[2];
+        if (channel is not ("Development" or "Preview" or "Stable"))
+        {
+            Console.Error.WriteLine("Channel must be Development, Preview or Stable.");
+            return 1;
+        }
+
+        int health = await HandleHealthAsync().ConfigureAwait(false);
+        if (health != 0)
+        {
+            return health;
+        }
+
+        int opened = await HandleProjectAsync(
+            ["open", "--channel", channel, "--path-stdin"])
+            .ConfigureAwait(false);
+        if (opened != 0)
+        {
+            return opened;
+        }
+
+        int listed = await HandleProjectAsync(
+            ["list", "--channel", channel])
+            .ConfigureAwait(false);
+        if (listed != 0)
+        {
+            return listed;
+        }
+
+        return await VerifyInvalidSessionDenialAsync().ConfigureAwait(false);
+    }
+
+    private static async Task<int> VerifyInvalidSessionDenialAsync()
+    {
+        if (!TryGetRuntimeEndpoint(
+                out RuntimeHealthEndpoint? endpoint,
+                out RuntimeHealthSessionMaterial? sessionMaterial))
+        {
+            Console.Error.WriteLine("The Gate A session is unavailable.");
+            return 1;
+        }
+
+        RuntimeHealthSessionMaterial invalidMaterial = new(
+            sessionMaterial.SessionId,
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+        await using NamedPipeRuntimeHealthClient client = new(
+            endpoint,
+            invalidMaterial);
+        GetRuntimeHealthRequest request = new()
+        {
+            MinimumContractRevision = RuntimeHealthContractPolicy.CurrentRevision,
+            MaximumContractRevision = RuntimeHealthContractPolicy.CurrentRevision,
+            QueryId = Guid.NewGuid().ToString("N")
+        };
+
+        try
+        {
+            _ = await client.GetRuntimeHealthAsync(
+                request,
+                RuntimeHealthContractPolicy.DefaultDeadline,
+                CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (RuntimeHealthTransportException exception) when (
+            string.Equals(
+                exception.ErrorCode,
+                RuntimeHealthTransportErrorCodes.SessionDenied,
+                StringComparison.Ordinal))
+        {
+            Console.WriteLine("Invalid session: Denied");
+            return 0;
+        }
+
+        Console.Error.WriteLine("The Runtime accepted invalid Gate A session material.");
+        return 1;
     }
 
     private static int HandleVersion()
@@ -44,10 +148,259 @@ internal static class Program
     private static void WriteUsage()
     {
         Console.WriteLine("Opure CLI");
-        Console.WriteLine("Commands: health, version, recovery create|list|show");
+        Console.WriteLine("Commands: health, version, project open|list, recovery create|list|show");
+        Console.WriteLine("  opure project open --channel Development|Preview|Stable --path-stdin");
+        Console.WriteLine("  opure project list [--channel Development|Preview|Stable]");
         Console.WriteLine("  opure recovery create [--channel Development|Preview|Stable]");
         Console.WriteLine("  opure recovery list [--channel Development|Preview|Stable]");
         Console.WriteLine("  opure recovery show --id <guid> [--channel Development|Preview|Stable]");
+    }
+
+    private static async Task<int> HandleProjectAsync(string[] args)
+    {
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("A project subcommand is required: open or list.");
+            return 1;
+        }
+
+        if (!TryParseProjectArguments(
+                args[1..],
+                out string channel,
+                out bool readPathFromStandardInput,
+                out string? argumentError))
+        {
+            Console.Error.WriteLine(argumentError);
+            return 1;
+        }
+
+        if (!TryGetRuntimeEndpoint(
+                out RuntimeHealthEndpoint? endpoint,
+                out RuntimeHealthSessionMaterial? sessionMaterial))
+        {
+            Console.Error.WriteLine(
+                "Project request failed: no bounded Opure Runtime session is available.");
+            return 1;
+        }
+
+        try
+        {
+            return args[0].ToLowerInvariant() switch
+            {
+                "open" => await OpenProjectAsync(
+                    endpoint,
+                    sessionMaterial,
+                    channel,
+                    readPathFromStandardInput),
+                "list" when !readPathFromStandardInput =>
+                    await ListProjectsAsync(endpoint, sessionMaterial, channel),
+                "list" => InvalidProjectListArguments(),
+                _ => HandleUnknownProjectCommand(args[0])
+            };
+        }
+        catch (OperationCanceledException)
+        {
+            Console.Error.WriteLine("The Project request was cancelled.");
+            return 1;
+        }
+        catch (Exception exception) when (
+            exception is WindowsPathReferenceException or
+                ProjectOpenTransportException or
+                ProjectListTransportException or
+                IOException or
+                UnauthorizedAccessException)
+        {
+            Console.Error.WriteLine($"Project request failed: {exception.Message}");
+            return 1;
+        }
+    }
+
+    private static async Task<int> OpenProjectAsync(
+        RuntimeHealthEndpoint endpoint,
+        RuntimeHealthSessionMaterial sessionMaterial,
+        string channel,
+        bool readPathFromStandardInput)
+    {
+        if (!readPathFromStandardInput)
+        {
+            Console.Error.WriteLine(
+                "Project open requires --path-stdin so the absolute path is not exposed in the command line.");
+            return 1;
+        }
+
+        if (!OperatingSystem.IsWindows())
+        {
+            Console.Error.WriteLine("Project open currently requires Windows.");
+            return 1;
+        }
+
+        string? path = await Console.In.ReadLineAsync().ConfigureAwait(false);
+        if (string.IsNullOrWhiteSpace(path) || !Path.IsPathFullyQualified(path))
+        {
+            Console.Error.WriteLine("Project open requires one absolute path on standard input.");
+            return 1;
+        }
+
+        VerifiedWorkspaceRootReference root =
+            WindowsPathReferenceResolver.AcquireRoot(new UntrustedPathText(path));
+        OpenProjectRequest request = new()
+        {
+            MinimumContractRevision = ProjectOpenContractPolicy.CurrentRevision,
+            MaximumContractRevision = ProjectOpenContractPolicy.CurrentRevision,
+            OperationId = Guid.NewGuid().ToString("N"),
+            CorrelationId = Guid.NewGuid().ToString("N"),
+            ReleaseChannel = ParseProjectOpenChannel(channel),
+            DisplayName = "Selected project",
+            Root = new ProjectRootIdentityClaim
+            {
+                DisplayPath = root.DisplayPath,
+                VolumeClass = ToWireVolumeClass(root.VolumeClass),
+                VolumeSerialNumber = root.RootIdentity.VolumeSerialNumber,
+                FileId = root.RootIdentity.FileId,
+                IdentityCapability = WireFileIdentityCapability.WindowsFileId128
+            }
+        };
+
+        await using NamedPipeProjectOpenClient client = new(
+            endpoint,
+            sessionMaterial);
+        OpenProjectResponse response = await client.OpenProjectAsync(
+            request,
+            ProjectOpenContractPolicy.DefaultDeadline,
+            CancellationToken.None).ConfigureAwait(false);
+        if (response.OutcomeCase == OpenProjectResponse.OutcomeOneofCase.Error)
+        {
+            Console.Error.WriteLine(
+                $"Project open failed: {response.Error.Code} - {response.Error.SafeMessage}");
+            return 1;
+        }
+
+        Console.WriteLine($"Project ID: {response.Project.ProjectId}");
+        Console.WriteLine($"Disposition: {response.Project.Disposition}");
+        Console.WriteLine($"Lifecycle: {response.Project.LifecycleState}");
+        Console.WriteLine($"Root volume class: {response.Project.RootVolumeClass}");
+        Console.WriteLine(
+            $"Initial Workspace Snapshot: {response.Project.InitialSnapshotState}");
+        return 0;
+    }
+
+    private static async Task<int> ListProjectsAsync(
+        RuntimeHealthEndpoint endpoint,
+        RuntimeHealthSessionMaterial sessionMaterial,
+        string channel)
+    {
+        ListProjectsRequest request = new()
+        {
+            MinimumContractRevision = ProjectListContractPolicy.CurrentRevision,
+            MaximumContractRevision = ProjectListContractPolicy.CurrentRevision,
+            CorrelationId = Guid.NewGuid().ToString("N"),
+            ReleaseChannel = ParseProjectListChannel(channel)
+        };
+        await using NamedPipeProjectListClient client = new(
+            endpoint,
+            sessionMaterial);
+        ListProjectsResponse response = await client.ListAsync(
+            request,
+            CancellationToken.None).ConfigureAwait(false);
+        if (response.Error is not null)
+        {
+            Console.Error.WriteLine(
+                $"Project list failed: {response.Error.Code} - {response.Error.SafeMessage}");
+            return 1;
+        }
+
+        foreach (ProjectListItem project in response.Projects)
+        {
+            Console.WriteLine(
+                $"{project.ProjectId} Repository: {project.RepositoryClass} Availability: {project.Availability}");
+        }
+
+        return 0;
+    }
+
+    private static bool TryParseProjectArguments(
+        string[] args,
+        out string channel,
+        out bool readPathFromStandardInput,
+        [NotNullWhen(false)] out string? error)
+    {
+        channel = "Development";
+        readPathFromStandardInput = false;
+        error = null;
+
+        for (int index = 0; index < args.Length; index++)
+        {
+            if (string.Equals(args[index], "--path-stdin", StringComparison.Ordinal))
+            {
+                readPathFromStandardInput = true;
+                continue;
+            }
+
+            if (!string.Equals(args[index], "--channel", StringComparison.Ordinal) ||
+                index + 1 >= args.Length)
+            {
+                error = $"Unknown or incomplete project option: {args[index]}";
+                return false;
+            }
+
+            channel = args[++index];
+            if (channel is not ("Development" or "Preview" or "Stable"))
+            {
+                error = "Channel must be Development, Preview or Stable.";
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static ProjectOpenChannel ParseProjectOpenChannel(string channel) =>
+        channel switch
+        {
+            "Development" => ProjectOpenChannel.Development,
+            "Preview" => ProjectOpenChannel.Preview,
+            "Stable" => ProjectOpenChannel.Stable,
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(channel),
+                channel,
+                "The release channel is unsupported.")
+        };
+
+    private static ProjectListChannel ParseProjectListChannel(string channel) =>
+        channel switch
+        {
+            "Development" => ProjectListChannel.Development,
+            "Preview" => ProjectListChannel.Preview,
+            "Stable" => ProjectListChannel.Stable,
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(channel),
+                channel,
+                "The release channel is unsupported.")
+        };
+
+    private static WireVolumeClass ToWireVolumeClass(
+        DomainVolumeClass volumeClass) => volumeClass switch
+        {
+            DomainVolumeClass.FixedLocal => WireVolumeClass.FixedLocal,
+            DomainVolumeClass.Removable => WireVolumeClass.Removable,
+            DomainVolumeClass.Network => WireVolumeClass.Network,
+            DomainVolumeClass.Unsupported => WireVolumeClass.Unsupported,
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(volumeClass),
+                volumeClass,
+                "The volume class is unsupported.")
+        };
+
+    private static int HandleUnknownProjectCommand(string command)
+    {
+        Console.Error.WriteLine($"Unknown project command: {command}");
+        return 1;
+    }
+
+    private static int InvalidProjectListArguments()
+    {
+        Console.Error.WriteLine("Project list does not accept --path-stdin.");
+        return 1;
     }
 
     private static async Task<int> HandleRecoveryAsync(string[] args)
