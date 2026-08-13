@@ -15,12 +15,19 @@ public sealed record DesktopConfigurationEntry(
     public string PolicyConstraintLabel => ConstrainedByPolicy 
         ? $"Constrained by {PolicyId ?? "Policy"}" 
         : "Unconstrained";
+
+    public string AccessibilityLabel =>
+        $"Setting {SettingId}; requested {RequestedValue}; effective {EffectiveValue}; " +
+        $"source {WinningSource}; {PolicyConstraintLabel}.";
 }
 
 public sealed record DesktopConfigurationSnapshot(
     string SnapshotId,
     string Scope,
-    IReadOnlyList<DesktopConfigurationEntry> Entries);
+    IReadOnlyList<DesktopConfigurationEntry> Entries,
+    string CreatedAt = "Unknown",
+    string LatestValidSnapshotId = "Not reported",
+    string InvalidSourceWarning = "");
 
 public interface IDesktopConfigurationSource
 {
@@ -59,6 +66,16 @@ public sealed class DesktopConfigurationViewModel : INotifyPropertyChanged
     public string SnapshotId => snapshot?.SnapshotId ?? "Unknown";
 
     public string Scope => snapshot?.Scope ?? "Unknown";
+
+    public string CreatedAt => snapshot?.CreatedAt ?? "Unknown";
+
+    public string LatestValidSnapshotId =>
+        snapshot?.LatestValidSnapshotId ?? "Not reported";
+
+    public string InvalidSourceWarning => snapshot?.InvalidSourceWarning ?? string.Empty;
+
+    public bool HasInvalidSourceWarning =>
+        !string.IsNullOrWhiteSpace(InvalidSourceWarning);
 
     public bool IsRefreshing
     {
@@ -107,6 +124,10 @@ public sealed class DesktopConfigurationViewModel : INotifyPropertyChanged
 
         OnPropertyChanged(nameof(SnapshotId));
         OnPropertyChanged(nameof(Scope));
+        OnPropertyChanged(nameof(CreatedAt));
+        OnPropertyChanged(nameof(LatestValidSnapshotId));
+        OnPropertyChanged(nameof(InvalidSourceWarning));
+        OnPropertyChanged(nameof(HasInvalidSourceWarning));
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)

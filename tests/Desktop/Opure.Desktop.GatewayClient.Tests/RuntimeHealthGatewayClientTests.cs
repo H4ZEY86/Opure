@@ -34,6 +34,22 @@ public sealed class RuntimeHealthGatewayClientTests
     }
 
     [Fact]
+    public void CreateTrustCentreSource_returns_authenticated_gateway_projection_source()
+    {
+        IDesktopTrustCentreSource source =
+            RuntimeHealthGatewayClient.CreateTrustCentreSource("Development");
+
+        Assert.Equal("TrustCentreGatewaySource", source.GetType().Name);
+    }
+
+    [Fact]
+    public void CreateTrustCentreSource_rejects_blank_channel()
+    {
+        Assert.Throws<ArgumentException>(
+            () => RuntimeHealthGatewayClient.CreateTrustCentreSource("   "));
+    }
+
+    [Fact]
     public async Task CreateStateSourceAsync_returns_disconnected_source_without_material()
     {
         IDesktopShellStateSource source =

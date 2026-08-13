@@ -25,13 +25,17 @@ public sealed class RecoveryPointViewHeadlessTests
             Button? create = view.FindControl<Button>("CreateRecoveryPointButton");
             Button? refresh = view.FindControl<Button>("RefreshRecoveryPointsButton");
             TextBlock? warning = view.FindControl<TextBlock>("RecoveryPointScopeWarning");
-            ItemsControl? list = view.FindControl<ItemsControl>("RecoveryPointList");
+            ListBox? list = view.FindControl<ListBox>("RecoveryPointList");
             Assert.NotNull(create);
             Assert.NotNull(refresh);
             Assert.NotNull(warning);
             Assert.NotNull(list);
             Assert.True(create.IsTabStop);
             Assert.True(refresh.IsTabStop);
+            Assert.True(list.IsTabStop);
+            Assert.Equal(9, create.TabIndex);
+            Assert.Equal(10, refresh.TabIndex);
+            Assert.Equal(11, list.TabIndex);
             Assert.Contains(
                 "Create local recovery point",
                 AutomationProperties.GetName(create),

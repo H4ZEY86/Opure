@@ -242,6 +242,115 @@
         </GroupBox>
 
         <GroupBox
+            Header="Trust Centre Overview"
+            IsVisible="{Binding IsTrustCentrePage}"
+            AutomationProperties.Name="Trust Centre Overview projection"
+            AutomationProperties.AutomationId="TrustCentreOverviewGroup">
+          <StackPanel Margin="8" Spacing="8">
+            <TextBlock
+                x:Name="TrustCentreStatusTitle"
+                Text="{Binding TrustCentre.StatusTitle}"
+                FontWeight="SemiBold"
+                AutomationProperties.Name="{Binding TrustCentre.ProgressAnnouncement}"
+                AutomationProperties.AutomationId="TrustCentreStatus" />
+            <TextBlock
+                Text="{Binding TrustCentre.StatusDetail}"
+                TextWrapping="Wrap"
+                AutomationProperties.Name="{Binding TrustCentre.StatusDetail}"
+                AutomationProperties.AutomationId="TrustCentreStatusDetail" />
+            <ProgressBar
+                IsIndeterminate="True"
+                IsVisible="{Binding TrustCentre.IsRefreshing}"
+                AutomationProperties.Name="Trust Centre refresh in progress. Closing the window cancels the operation."
+                AutomationProperties.AutomationId="TrustCentreProgress" />
+            <Border
+                IsVisible="{Binding TrustCentre.HasOverview}"
+                BorderThickness="1"
+                CornerRadius="4"
+                Padding="10"
+                AutomationProperties.Name="{Binding TrustCentre.Overview.AccessibilityLabel}"
+                AutomationProperties.AutomationId="TrustCentreOverviewSummary">
+              <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+                <TextBlock Text="Completeness" FontWeight="SemiBold" />
+                <TextBlock Grid.Column="1" Margin="12,0,0,0" Text="{Binding TrustCentre.Overview.Completeness}" />
+                <TextBlock Grid.Row="1" Text="Owner availability" FontWeight="SemiBold" />
+                <TextBlock Grid.Row="1" Grid.Column="1" Margin="12,0,0,0" Text="{Binding TrustCentre.Overview.Availability}" />
+                <TextBlock Grid.Row="2" Text="Freshness" FontWeight="SemiBold" />
+                <TextBlock Grid.Row="2" Grid.Column="1" Margin="12,0,0,0" Text="{Binding TrustCentre.Overview.Freshness}" />
+                <TextBlock Grid.Row="3" Text="Evidence records" FontWeight="SemiBold" />
+                <TextBlock Grid.Row="3" Grid.Column="1" Margin="12,0,0,0" Text="{Binding TrustCentre.Overview.TotalRecordCount}" />
+                <TextBlock Grid.Row="4" Text="Projects and services" FontWeight="SemiBold" />
+                <TextBlock Grid.Row="4" Grid.Column="1" Margin="12,0,0,0" Text="{Binding TrustCentre.Overview.UniqueProjectCount, StringFormat='Projects: {0}'}" />
+                <TextBlock Grid.Row="5" Text="Known gaps" FontWeight="SemiBold" />
+                <TextBlock Grid.Row="5" Grid.Column="1" Margin="12,0,0,0" Text="{Binding TrustCentre.Overview.KnownGapCount}" />
+                <TextBlock Grid.Row="6" Text="Unverified records" FontWeight="SemiBold" />
+                <TextBlock Grid.Row="6" Grid.Column="1" Margin="12,0,0,0" Text="{Binding TrustCentre.Overview.UnverifiedRecordCount}" />
+              </Grid>
+            </Border>
+            <Button
+                x:Name="RetryTrustCentreButton"
+                Content="_Retry Trust Centre query"
+                Click="OnRetryTrustCentreClick"
+                IsEnabled="{Binding TrustCentre.CanRetry}"
+                HorizontalAlignment="Left"
+                IsTabStop="True"
+                TabIndex="5"
+                AutomationProperties.Name="Retry Trust Centre query after an unavailable or failed projection"
+                AutomationProperties.AutomationId="RetryTrustCentre"
+                AutomationProperties.AccessKey="Alt+R" />
+          </StackPanel>
+        </GroupBox>
+
+        <GroupBox
+            Header="Selected project evidence"
+            IsVisible="{Binding IsTrustCentrePage}"
+            AutomationProperties.Name="Selected project evidence and causal timeline table"
+            AutomationProperties.AutomationId="TrustProjectEvidenceGroup">
+          <StackPanel Margin="8" Spacing="8">
+            <TextBlock
+                Text="The table contains only the selected registered project's normalised evidence. Select a project on the Projects page before opening Trust Centre."
+                TextWrapping="Wrap" />
+            <Grid IsVisible="{Binding TrustCentre.HasProject}" ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto">
+              <TextBlock Text="Project identity" FontWeight="SemiBold" />
+              <TextBlock Grid.Column="1" Margin="12,0,0,0" Text="{Binding TrustCentre.Project.ProjectId}" />
+              <TextBlock Grid.Row="1" Text="Safe root class" FontWeight="SemiBold" />
+              <TextBlock Grid.Row="1" Grid.Column="1" Margin="12,0,0,0" Text="{Binding TrustCentre.Project.SafeRootClass}" />
+              <TextBlock Grid.Row="2" Text="Workspace generation" FontWeight="SemiBold" />
+              <TextBlock Grid.Row="2" Grid.Column="1" Margin="12,0,0,0" Text="{Binding TrustCentre.Project.WorkspaceGeneration}" />
+              <TextBlock Grid.Row="3" Text="Completeness" FontWeight="SemiBold" />
+              <TextBlock Grid.Row="3" Grid.Column="1" Margin="12,0,0,0" Text="{Binding TrustCentre.Project.Completeness}" />
+            </Grid>
+            <ListBox
+                x:Name="TrustProjectTimelineTable"
+                ItemsSource="{Binding TrustCentre.Timeline}"
+                IsVisible="{Binding TrustCentre.HasTimeline}"
+                SelectionMode="Single"
+                MinHeight="96"
+                MaxHeight="280"
+                IsTabStop="True"
+                TabIndex="6"
+                AutomationProperties.Name="Project causal timeline table. Use arrow keys to inspect evidence rows."
+                AutomationProperties.AutomationId="TrustProjectTimelineTable">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="contracts:DesktopTrustTimelineEvent">
+                  <Grid
+                      Margin="8,6"
+                      ColumnDefinitions="Auto,*,Auto"
+                      RowDefinitions="Auto,Auto"
+                      AutomationProperties.Name="{Binding AccessibilityLabel}">
+                    <TextBlock Text="{Binding OccurredAt}" />
+                    <TextBlock Grid.Column="1" Margin="12,0" Text="{Binding Action}" FontWeight="SemiBold" />
+                    <TextBlock Grid.Column="2" Text="{Binding Outcome}" FontWeight="SemiBold" />
+                    <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding OwnerService, StringFormat='Owner: {0}'}" />
+                    <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding Relationship}" />
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </StackPanel>
+        </GroupBox>
+
+        <GroupBox
             Header="Configuration Snapshot"
             IsVisible="{Binding IsTrustCentrePage}"
             AutomationProperties.Name="Trust Centre Configuration View"
@@ -253,6 +362,23 @@
                   FontWeight="SemiBold" />
               <TextBlock
                   Text="{Binding Configuration.Scope, StringFormat='Scope: {0}'}" />
+              <TextBlock
+                  Text="{Binding Configuration.CreatedAt, StringFormat='Activated: {0}'}" />
+              <TextBlock
+                  Text="{Binding Configuration.LatestValidSnapshotId, StringFormat='Last-known-good snapshot: {0}'}" />
+              <Border
+                  x:Name="InvalidConfigurationSourceWarning"
+                  IsVisible="{Binding Configuration.HasInvalidSourceWarning}"
+                  BorderThickness="2"
+                  CornerRadius="4"
+                  Padding="8"
+                  AutomationProperties.Name="{Binding Configuration.InvalidSourceWarning}"
+                  AutomationProperties.AutomationId="InvalidConfigurationSourceWarning">
+                <TextBlock
+                    Text="{Binding Configuration.InvalidSourceWarning}"
+                    TextWrapping="Wrap"
+                    FontWeight="SemiBold" />
+              </Border>
             </StackPanel>
             <ProgressBar
                 Grid.Row="1"
@@ -268,7 +394,8 @@
                 MaxHeight="280"
                 ItemsSource="{Binding Configuration.Entries}"
                 SelectionMode="Single"
-                TabIndex="9"
+                IsTabStop="True"
+                TabIndex="7"
                 AutomationProperties.Name="Configuration entries. Use arrow keys to select an entry."
                 AutomationProperties.AutomationId="ConfigurationEntriesList">
               <ListBox.ItemTemplate>
@@ -276,7 +403,8 @@
                   <Grid
                       Margin="8,6"
                       ColumnDefinitions="2*,Auto"
-                      RowDefinitions="Auto,Auto,Auto">
+                      RowDefinitions="Auto,Auto,Auto"
+                      AutomationProperties.Name="{Binding AccessibilityLabel}">
                     <TextBlock Text="{Binding SettingId}" FontWeight="SemiBold" />
                     <TextBlock Grid.Column="1" Margin="16,0,0,0" Text="{Binding WinningSource}" FontWeight="SemiBold" />
                     <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding RequestedValue, StringFormat='Requested: {0}'}" />
@@ -292,7 +420,8 @@
                   Content="Re_fresh snapshot"
                   Click="OnRefreshConfigurationClick"
                   IsEnabled="{Binding Configuration.CanRefresh}"
-                  TabIndex="10"
+                  IsTabStop="True"
+                  TabIndex="8"
                   AutomationProperties.Name="Refresh configuration snapshot"
                   AutomationProperties.AutomationId="RefreshConfiguration"
                   AutomationProperties.AccessKey="Alt+F" />
@@ -366,7 +495,7 @@
                   Click="OnRefreshRuntimeClick"
                   IsEnabled="{Binding RuntimeHealth.CanRefresh}"
                   IsTabStop="True"
-                  TabIndex="10"
+                  TabIndex="20"
                   AutomationProperties.Name="Refresh Runtime Health"
                   AutomationProperties.AutomationId="RefreshRuntimeHealth"
                   AutomationProperties.AccessKey="Alt+R" />
@@ -415,7 +544,7 @@
                   Click="OnCopyRuntimeBootIdentityClick"
                   IsEnabled="{Binding RuntimeHealth.CanCopyBootIdentity}"
                   IsTabStop="True"
-                  TabIndex="11"
+                  TabIndex="21"
                   AutomationProperties.Name="Copy Runtime boot identity"
                   AutomationProperties.AutomationId="CopyRuntimeBootIdentity"
                   AutomationProperties.AccessKey="Alt+C" />
@@ -437,7 +566,7 @@
                     MaxHeight="260"
                     ItemsSource="{Binding RuntimeHealth.Services}"
                     SelectionMode="Single"
-                    TabIndex="12"
+                  TabIndex="22"
                     AutomationProperties.Name="Runtime services. Use arrow keys to inspect each row."
                     AutomationProperties.AutomationId="RuntimeServiceHealthList">
                   <ListBox.ItemTemplate>
@@ -478,7 +607,7 @@
                 x:Name="RuntimeDetailsExpander"
                 Header="Runtime details"
                 IsExpanded="False"
-                TabIndex="13"
+                  TabIndex="23"
                 AutomationProperties.Name="Runtime diagnostic details"
                 AutomationProperties.AutomationId="RuntimeDetailsDisclosure">
               <Grid

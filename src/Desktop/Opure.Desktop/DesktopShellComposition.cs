@@ -24,7 +24,10 @@ public static class DesktopShellComposition
                 RuntimeHealthGatewayClient.CreateTrustConfigurationSource(
                     DesktopLaunchContext.ReleaseChannel)),
             recoveryPoints: new RecoveryPointGatewayClient(
-                DesktopLaunchContext.ReleaseChannel));
+                DesktopLaunchContext.ReleaseChannel),
+            trustCentre: new DesktopTrustCentreViewModel(
+                RuntimeHealthGatewayClient.CreateTrustCentreSource(
+                    DesktopLaunchContext.ReleaseChannel)));
     }
 
     public static MainWindow CreateMainWindow()

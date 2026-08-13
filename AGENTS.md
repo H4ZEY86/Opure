@@ -252,6 +252,7 @@ Completed and committed:
 * GATE-A-005 — Run Configuration Adversarial Suite.
 * GATE-A-006 — Run Trust Evidence Forgery and Reconciliation Suite.
 * GATE-A-007 — Establish Performance Baseline.
+* GATE-A-008 — Establish Accessibility Baseline.
 
 Locally implemented, verified and committed; pending reviewed pushes:
 
@@ -260,7 +261,7 @@ Locally implemented, verified and committed; pending reviewed pushes:
 The next planned ticket is:
 
 ```text
-GATE-A-008 — Establish Accessibility Baseline
+GATE-A-009 — Update ADR Evidence Matrix
 ```
 
 GATE-A-001 passed its repeatable 32-step Development-channel demonstration and
@@ -314,8 +315,23 @@ readiness at 3.673 seconds are retained as documented misses against provisional
 ROADMAP targets rather than hidden. All regression thresholds pass, and a Windows
 11, four-core, 8 GB low-resource follow-up is identified.
 
-This proves GATE-A-001 through GATE-A-007 only. It does not record Founder Gate
-A acceptance. GATE-A-008 and GATE-A-009, the explicit GATE-A-010 founder review and
+GATE-A-008 passed its 12-flow Windows accessibility baseline and the complete
+Release verification with 765 tests, zero warnings and zero errors. Launch,
+Runtime health, project open/list, configuration review, Trust Centre Overview,
+selected-project evidence, invalid-source warning, Recovery Point creation and
+verification, and error recovery have executable keyboard and UI Automation
+proof. The Desktop now projects Trust Overview and selected-project causal
+timeline data through authenticated named-pipe IPC without reading owner
+databases or adding mutation authority. Warning, health, progress and
+cancellation meaning is textual; evidence rows use semantic keyboard lists; no
+fixed colours override high contrast; and the causal graph has an accessible
+table alternative. Avalonia is retained for Gate A with packaged Narrator
+listening quality recorded as a release-candidate confirmation limitation. The
+committed evidence is bound to SHA-256
+`a922199b8d8030da8b9138d8e009de982a70b3f1974c8c8f162a0a1fe04232b9`.
+
+This proves GATE-A-001 through GATE-A-008 only. It does not record Founder Gate
+A acceptance. GATE-A-009, the explicit GATE-A-010 founder review and
 GATE-A-011 controlled-mutation backlog remain required before Phase 7 begins.
 The next programme phase is Controlled Mutation: deterministic reviewable file
 patches first, followed by capability-bound curated commands. Local intelligence

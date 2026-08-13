@@ -51,7 +51,14 @@ internal sealed class TrustConfigurationGatewaySource(string releaseChannel) : I
             return new DesktopConfigurationSnapshot(
                 response.Snapshot.SnapshotId,
                 response.Snapshot.Scope,
-                response.Snapshot.Entries.Select(MapEntry).ToArray());
+                response.Snapshot.Entries.Select(MapEntry).ToArray(),
+                FormatTimestamp(response.Snapshot.CreatedAtUnixTimeMilliseconds),
+                string.IsNullOrWhiteSpace(response.Snapshot.LatestValidSnapshotId)
+                    ? "Not reported"
+                    : response.Snapshot.LatestValidSnapshotId,
+                string.IsNullOrWhiteSpace(response.Snapshot.LastError)
+                    ? string.Empty
+                    : "Invalid configuration source observed. The active snapshot remains last-known-good; inspect associated Trust receipts for safe details.");
         }
         catch (TrustEvidenceTransportException)
         {
@@ -72,6 +79,13 @@ internal sealed class TrustConfigurationGatewaySource(string releaseChannel) : I
             message.ConstrainedByPolicy,
             message.PolicyId);
     }
+
+    private static string FormatTimestamp(long milliseconds) =>
+        milliseconds <= 0
+            ? "Unknown"
+            : DateTimeOffset.FromUnixTimeMilliseconds(milliseconds)
+                .ToLocalTime()
+                .ToString("g", System.Globalization.CultureInfo.CurrentCulture);
 
     private static TrustEvidenceReleaseChannel Parse(string releaseChannel)
     {

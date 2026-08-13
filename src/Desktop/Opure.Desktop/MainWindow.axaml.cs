@@ -183,6 +183,13 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void OnRetryTrustCentreClick(object? sender, RoutedEventArgs eventArgs)
+    {
+        _ = sender;
+        _ = eventArgs;
+        await RefreshTrustCentreAsync();
+    }
+
     private async Task RefreshProjectsAsync()
     {
         try
@@ -208,6 +215,9 @@ public partial class MainWindow : Window
                 }
                 if (viewModel.IsTrustCentrePage)
                 {
+                    await viewModel.TrustCentre.RefreshAsync(
+                        viewModel.ProjectList.SelectedProject?.ProjectId,
+                        cancellationToken);
                     await viewModel.Configuration.RefreshAsync(cancellationToken);
                     if (viewModel.RecoveryPoints is not null)
                     {
@@ -229,6 +239,9 @@ public partial class MainWindow : Window
         {
             CancellationToken cancellationToken =
                 refreshCancellation?.Token ?? CancellationToken.None;
+            await viewModel.TrustCentre.RefreshAsync(
+                viewModel.ProjectList.SelectedProject?.ProjectId,
+                cancellationToken);
             await viewModel.Configuration.RefreshAsync(cancellationToken);
             if (viewModel.RecoveryPoints is not null)
             {

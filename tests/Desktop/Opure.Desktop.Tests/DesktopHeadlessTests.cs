@@ -168,10 +168,10 @@ public sealed class DesktopHeadlessTests
             Assert.NotNull(details);
             Assert.True(refresh.IsTabStop);
             Assert.True(copy.IsTabStop);
-            Assert.Equal(10, refresh.TabIndex);
-            Assert.Equal(11, copy.TabIndex);
-            Assert.Equal(12, services.TabIndex);
-            Assert.Equal(13, details.TabIndex);
+            Assert.Equal(20, refresh.TabIndex);
+            Assert.Equal(21, copy.TabIndex);
+            Assert.Equal(22, services.TabIndex);
+            Assert.Equal(23, details.TabIndex);
 
             refresh.Focus();
             Assert.True(refresh.IsFocused);
@@ -347,16 +347,86 @@ public sealed class DesktopHeadlessTests
     public void Runtime_health_surface_has_no_fixed_colours_that_override_high_contrast()
     {
         string sourceRoot = FindSourceRoot();
-        string xaml = File.ReadAllText(Path.Combine(
-            sourceRoot,
-            "src",
-            "Desktop",
-            "Opure.Desktop",
-            "MainWindow.axaml"));
+        ReadOnlySpan<string> fileNames = ["MainWindow.axaml", "RecoveryPointView.axaml"];
+        foreach (string fileName in fileNames)
+        {
+            string xaml = File.ReadAllText(Path.Combine(
+                sourceRoot,
+                "src",
+                "Desktop",
+                "Opure.Desktop",
+                fileName));
 
-        Assert.DoesNotContain("Foreground=", xaml, StringComparison.Ordinal);
-        Assert.DoesNotContain("Background=", xaml, StringComparison.Ordinal);
-        Assert.DoesNotContain("BorderBrush=", xaml, StringComparison.Ordinal);
+            Assert.DoesNotContain("Foreground=", xaml, StringComparison.Ordinal);
+            Assert.DoesNotContain("Background=", xaml, StringComparison.Ordinal);
+            Assert.DoesNotContain("BorderBrush=", xaml, StringComparison.Ordinal);
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Trust_centre_overview_and_timeline_are_keyboard_accessible()
+    {
+        DesktopShellSnapshot shell =
+            new DisconnectedDesktopShellStateSource("0.1.0-test").GetCurrent();
+        DesktopRuntimeHealthSnapshot health =
+            CreateHealth(DesktopRuntimeDisplayState.Ready);
+        DesktopTrustCentreViewModel trustCentre = new(new FixedTrustCentreSource());
+        DesktopConfigurationViewModel configuration = new(new InvalidConfigurationSource());
+        DesktopShellViewModel viewModel = new(
+            shell,
+            new DesktopRuntimeStatusViewModel(
+                health,
+                new FixedDesktopRuntimeHealthSource(health)),
+            configuration: configuration,
+            trustCentre: trustCentre);
+        viewModel.SelectSection(DesktopNavigationSection.TrustCentre);
+        await trustCentre.RefreshAsync(
+            "project-accessibility",
+            TestContext.Current.CancellationToken);
+        await configuration.RefreshAsync(TestContext.Current.CancellationToken);
+        MainWindow window = new(viewModel);
+
+        try
+        {
+            window.Show();
+            Button? retry = window.FindControl<Button>("RetryTrustCentreButton");
+            ListBox? timeline = window.FindControl<ListBox>("TrustProjectTimelineTable");
+            TextBlock? status = window.FindControl<TextBlock>("TrustCentreStatusTitle");
+            Border? invalidSource =
+                window.FindControl<Border>("InvalidConfigurationSourceWarning");
+
+            Assert.NotNull(retry);
+            Assert.NotNull(timeline);
+            Assert.NotNull(status);
+            Assert.NotNull(invalidSource);
+            Assert.True(retry.IsTabStop);
+            Assert.True(timeline.IsTabStop);
+            Assert.Equal(5, retry.TabIndex);
+            Assert.Equal(6, timeline.TabIndex);
+            Assert.Equal("Trust evidence loaded", status.Text);
+            Assert.Equal("TrustCentreStatus", AutomationProperties.GetAutomationId(status));
+            Assert.True(invalidSource.IsVisible);
+            Assert.Contains(
+                "last-known-good",
+                AutomationProperties.GetName(invalidSource),
+                StringComparison.Ordinal);
+            Assert.Contains("arrow keys", AutomationProperties.GetName(timeline), StringComparison.Ordinal);
+
+            retry.Focus();
+            Assert.True(retry.IsFocused);
+            timeline.BringIntoView();
+            window.UpdateLayout();
+            Assert.Single(timeline.Items);
+            timeline.SelectedIndex = 0;
+            ListBoxItem? row = timeline.ContainerFromIndex(0) as ListBoxItem;
+            Assert.NotNull(row);
+            row.Focus();
+            Assert.True(row.IsFocused);
+        }
+        finally
+        {
+            window.Close();
+        }
     }
 
     private static MainWindow CreateWindow()
@@ -473,6 +543,68 @@ public sealed class DesktopHeadlessTests
             cancellationToken.ThrowIfCancellationRequested();
             Interlocked.Increment(ref callCount);
             return Task.FromResult(snapshot);
+        }
+    }
+
+    private sealed class FixedTrustCentreSource : IDesktopTrustCentreSource
+    {
+        public Task<DesktopTrustCentreSnapshot> RefreshAsync(
+            string? projectId,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            DesktopTrustTimelineEvent item = new(
+                "workspace.snapshot",
+                "workspace.service",
+                "LocalService",
+                "Generated workspace",
+                "Succeeded",
+                "13/08/2026 10:00",
+                "Root operation");
+            return Task.FromResult(new DesktopTrustCentreSnapshot(
+                new DesktopTrustOverview(
+                    "Available",
+                    "Complete",
+                    "calculated now",
+                    1,
+                    1,
+                    1,
+                    0,
+                    0),
+                new DesktopTrustProject(
+                    projectId ?? "project-accessibility",
+                    "LocalFixed",
+                    "generation-1",
+                    "Available",
+                    "Complete",
+                    [item]),
+                "Trust evidence loaded",
+                "Authenticated projection loaded.",
+                CanRetry: true));
+        }
+    }
+
+    private sealed class InvalidConfigurationSource : IDesktopConfigurationSource
+    {
+        public Task<DesktopConfigurationSnapshot> RefreshAsync(
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(new DesktopConfigurationSnapshot(
+                "snapshot-valid",
+                "Product",
+                [
+                    new DesktopConfigurationEntry(
+                        "runtime.mode",
+                        "\"Requested\"",
+                        "\"Safe\"",
+                        "ProductDefault",
+                        ConstrainedByPolicy: true,
+                        PolicyId: "policy-local-only")
+                ],
+                "13/08/2026 10:00",
+                "snapshot-valid",
+                "Invalid configuration source observed. The active snapshot remains last-known-good."));
         }
     }
 }

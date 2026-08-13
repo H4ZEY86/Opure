@@ -28,9 +28,9 @@
         </Border>
 
         <StackPanel Spacing="4">
-            <TextBlock Text="{Binding StatusTitle}" FontWeight="SemiBold" AutomationProperties.AutomationId="RecoveryPointStatusTitle" />
-            <TextBlock Text="{Binding StatusDetail}" TextWrapping="Wrap" AutomationProperties.AutomationId="RecoveryPointStatusDetail" />
-            <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" AutomationProperties.Name="Recovery point operation in progress" />
+            <TextBlock Text="{Binding StatusTitle}" FontWeight="SemiBold" AutomationProperties.Name="{Binding StatusTitle}" AutomationProperties.AutomationId="RecoveryPointStatusTitle" />
+            <TextBlock Text="{Binding StatusDetail}" TextWrapping="Wrap" AutomationProperties.Name="{Binding StatusDetail}" AutomationProperties.AutomationId="RecoveryPointStatusDetail" />
+            <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" AutomationProperties.Name="Recovery point operation in progress. Closing the window cancels the operation." AutomationProperties.AutomationId="RecoveryPointProgress" />
         </StackPanel>
 
         <StackPanel Orientation="Horizontal" Spacing="8">
@@ -38,6 +38,8 @@
                 x:Name="CreateRecoveryPointButton"
                 Content="_Create recovery point"
                 Command="{Binding CreateRecoveryPointCommand}"
+                IsTabStop="True"
+                TabIndex="9"
                 AutomationProperties.Name="Create local recovery point"
                 AutomationProperties.AutomationId="CreateRecoveryPoint"
                 AutomationProperties.AccessKey="Alt+C" />
@@ -45,13 +47,22 @@
                 x:Name="RefreshRecoveryPointsButton"
                 Content="Re_fresh list"
                 Command="{Binding RefreshRecoveryPointsCommand}"
+                IsTabStop="True"
+                TabIndex="10"
                 AutomationProperties.Name="Refresh local recovery points"
                 AutomationProperties.AutomationId="RefreshRecoveryPoints"
                 AutomationProperties.AccessKey="Alt+F" />
         </StackPanel>
 
-        <ItemsControl x:Name="RecoveryPointList" ItemsSource="{Binding RecoveryPoints}">
-            <ItemsControl.ItemTemplate>
+        <ListBox
+            x:Name="RecoveryPointList"
+            ItemsSource="{Binding RecoveryPoints}"
+            SelectionMode="Single"
+            IsTabStop="True"
+            TabIndex="11"
+            AutomationProperties.Name="Local recovery points. Use arrow keys to inspect a recovery point."
+            AutomationProperties.AutomationId="RecoveryPointList">
+            <ListBox.ItemTemplate>
                 <DataTemplate x:DataType="contracts:DesktopRecoveryPoint">
                     <Border
                         BorderThickness="1"
@@ -82,11 +93,14 @@
                                 CommandParameter="{Binding}"
                                 Margin="0,5,0,0"
                                 HorizontalAlignment="Left"
-                                AutomationProperties.Name="Verify this recovery point without touching the active data root" />
+                                IsTabStop="True"
+                                TabIndex="12"
+                                AutomationProperties.Name="Verify this recovery point without touching the active data root"
+                                AutomationProperties.AutomationId="VerifyRecoveryPoint" />
                         </StackPanel>
                     </Border>
                 </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
+            </ListBox.ItemTemplate>
+        </ListBox>
     </StackPanel>
 </UserControl>

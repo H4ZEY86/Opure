@@ -1,0 +1,159 @@
+{
+  "schema": "opure.gate-a.accessibility-baseline/1",
+  "ticket": "GATE-A-008",
+  "result": "Passed",
+  "generatedAtUtc": "2026-08-13T21:53:42.8688917+00:00",
+  "sourceRevision": "d35ca2bafdcdd0a05dc1be1d16b83ab7aa6db28a",
+  "platform": {
+    "operatingSystem": "Microsoft Windows 10.0.26300",
+    "framework": "Avalonia on .NET 10",
+    "input": "Keyboard and Windows UI Automation provider contract"
+  },
+  "flows": [
+    {
+      "flow": "launch",
+      "result": "Passed",
+      "automatedProof": "DesktopHeadlessTests.Navigation_is_keyboard_focusable_and_ordered"
+    },
+    {
+      "flow": "Runtime health",
+      "result": "Passed",
+      "automatedProof": "DesktopHeadlessTests.Runtime_health_controls_are_keyboard_focusable_and_named"
+    },
+    {
+      "flow": "open project",
+      "result": "Passed",
+      "automatedProof": "DesktopHeadlessTests.Project_folder_picker_is_keyboard_focusable_and_labelled"
+    },
+    {
+      "flow": "project list",
+      "result": "Passed",
+      "automatedProof": "ProjectListHeadlessTests plus registered-project keyboard automation"
+    },
+    {
+      "flow": "configuration review",
+      "result": "Passed",
+      "automatedProof": "DesktopHeadlessTests.Trust_centre_overview_and_timeline_are_keyboard_accessible"
+    },
+    {
+      "flow": "Trust Centre Overview",
+      "result": "Passed",
+      "automatedProof": "DesktopHeadlessTests.Trust_centre_overview_and_timeline_are_keyboard_accessible"
+    },
+    {
+      "flow": "Project evidence",
+      "result": "Passed",
+      "automatedProof": "TrustProjectTimelineTable ListBox row-focus automation"
+    },
+    {
+      "flow": "Configuration evidence",
+      "result": "Passed",
+      "automatedProof": "ConfigurationEntriesList semantic ListBox and accessibility labels"
+    },
+    {
+      "flow": "invalid-source warning",
+      "result": "Passed",
+      "automatedProof": "InvalidConfigurationSourceWarning text and automation-name assertion"
+    },
+    {
+      "flow": "Recovery Point creation",
+      "result": "Passed",
+      "automatedProof": "RecoveryPointViewHeadlessTests.RecoveryPointControlsAreKeyboardReachableAndDescribeSameDeviceScope"
+    },
+    {
+      "flow": "Recovery Point verification",
+      "result": "Passed",
+      "automatedProof": "RecoveryPointList semantic ListBox and VerifyRecoveryPoint button metadata"
+    },
+    {
+      "flow": "error handling",
+      "result": "Passed",
+      "automatedProof": "RetryTrustCentre focus and safe unavailable-state projection"
+    }
+  ],
+  "acceptanceCriteria": [
+    {
+      "criterion": "Every flow is keyboard operable",
+      "result": "Passed"
+    },
+    {
+      "criterion": "Focus order is logical",
+      "result": "Passed"
+    },
+    {
+      "criterion": "Focus is visible",
+      "result": "Passed"
+    },
+    {
+      "criterion": "Narrator receives control name, role, value and state",
+      "result": "Passed"
+    },
+    {
+      "criterion": "Warning and health states have text, not colour only",
+      "result": "Passed"
+    },
+    {
+      "criterion": "High contrast preserves meaning",
+      "result": "Passed"
+    },
+    {
+      "criterion": "Progress and cancellation are announced",
+      "result": "Passed"
+    },
+    {
+      "criterion": "Evidence tables are accessible",
+      "result": "Passed"
+    },
+    {
+      "criterion": "Causal timeline has a table alternative",
+      "result": "Passed"
+    },
+    {
+      "criterion": "Error recovery action is reachable",
+      "result": "Passed"
+    },
+    {
+      "criterion": "No timed interaction blocks completion",
+      "result": "Passed"
+    },
+    {
+      "criterion": "Avalonia limitations are recorded for the framework decision",
+      "result": "Passed"
+    }
+  ],
+  "keyboardAutomation": {
+    "result": "Passed",
+    "evidence": "43 Desktop headless tests and 34 Desktop Gateway tests passed; focus, tab order, list-row navigation, authenticated projection composition and recovery actions are executable assertions."
+  },
+  "narratorReview": {
+    "result": "Passed",
+    "evidence": "Native Button, ListBox, ListBoxItem, Expander and ProgressBar roles expose stable names, values and state through Avalonia UI Automation metadata.",
+    "safeBoundary": "No source content, absolute project root, session token or secret is placed in an automation name."
+  },
+  "highContrast": {
+    "result": "Passed",
+    "evidence": "Desktop accessibility automation rejects fixed foreground, background and border colours; warning meaning is carried by text and native theme resources."
+  },
+  "progressAndCancellation": {
+    "result": "Passed",
+    "evidence": "Visible progress controls have textual automation names; the announcement states that closing the window cancels the bounded operation."
+  },
+  "frameworkDecision": {
+    "decision": "Retain Avalonia for Gate A",
+    "limitations": [
+      "Headless automation validates the Windows UI Automation contract but does not record an audible Narrator waveform.",
+      "Avalonia does not provide a cross-platform equivalent of every Windows live-region behaviour; status-name changes remain the baseline mechanism.",
+      "Packaged Windows Narrator listening quality remains a release-candidate confirmation step, not an authority or functional dependency."
+    ],
+    "replacementTrigger": "Reconsider WinUI 3 if packaged Windows UI Automation loses control roles, names, focus order, high-contrast meaning or reliable status announcements."
+  },
+  "security": {
+    "desktopReadsTrustDatabase": false,
+    "mutationActionsAdded": false,
+    "networkCapabilityAdded": false,
+    "aiLoaded": false,
+    "pluginsLoaded": false,
+    "mcpLoaded": false,
+    "connectorsLoaded": false
+  }
+}
