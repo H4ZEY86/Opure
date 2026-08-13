@@ -253,6 +253,7 @@ Completed and committed:
 * GATE-A-006 — Run Trust Evidence Forgery and Reconciliation Suite.
 * GATE-A-007 — Establish Performance Baseline.
 * GATE-A-008 — Establish Accessibility Baseline.
+* GATE-A-009 — Update ADR Evidence Matrix.
 
 Locally implemented, verified and committed; pending reviewed pushes:
 
@@ -261,7 +262,7 @@ Locally implemented, verified and committed; pending reviewed pushes:
 The next planned ticket is:
 
 ```text
-GATE-A-009 — Update ADR Evidence Matrix
+GATE-A-010 — Founder Gate A Review
 ```
 
 GATE-A-001 passed its repeatable 32-step Development-channel demonstration and
@@ -330,8 +331,18 @@ listening quality recorded as a release-candidate confirmation limitation. The
 committed evidence is bound to SHA-256
 `a922199b8d8030da8b9138d8e009de982a70b3f1974c8c8f162a0a1fe04232b9`.
 
-This proves GATE-A-001 through GATE-A-008 only. It does not record Founder Gate
-A acceptance. GATE-A-009, the explicit GATE-A-010 founder review and
+GATE-A-009 reviewed the 14 required ADRs against named implementation commits,
+executable tests, applicable performance evidence, remaining limitations and
+explicit proposed status changes. The machine verifier resolves every commit and
+test path and rejects missing review fields. Avalonia, authenticated named-pipe
+gRPC, SQLite Online Backup and the current trusted-service grouping are retained
+for the Foundation subset. ADR-0011 is marked Amend because hosted workflow
+assumptions no longer match the repository's deliberate absence of GitHub Actions.
+No ADR is promoted from Proposed solely because implementation exists. The
+complete Release verification passed 765 tests with zero warnings and zero errors.
+
+This proves GATE-A-001 through GATE-A-009 only. It does not record Founder Gate
+A acceptance. The explicit GATE-A-010 founder review and
 GATE-A-011 controlled-mutation backlog remain required before Phase 7 begins.
 The next programme phase is Controlled Mutation: deterministic reviewable file
 patches first, followed by capability-bound curated commands. Local intelligence
