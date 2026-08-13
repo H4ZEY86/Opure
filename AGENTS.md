@@ -254,6 +254,7 @@ Completed and committed:
 * GATE-A-007 — Establish Performance Baseline.
 * GATE-A-008 — Establish Accessibility Baseline.
 * GATE-A-009 — Update ADR Evidence Matrix.
+* GATE-A-010 — Founder Gate A Review.
 
 Locally implemented, verified and committed; pending reviewed pushes:
 
@@ -262,7 +263,7 @@ Locally implemented, verified and committed; pending reviewed pushes:
 The next planned ticket is:
 
 ```text
-GATE-A-010 — Founder Gate A Review
+GATE-A-011 — Prepare Controlled Mutation Backlog
 ```
 
 GATE-A-001 passed its repeatable 32-step Development-channel demonstration and
@@ -341,9 +342,17 @@ assumptions no longer match the repository's deliberate absence of GitHub Action
 No ADR is promoted from Proposed solely because implementation exists. The
 complete Release verification passed 765 tests with zero warnings and zero errors.
 
-This proves GATE-A-001 through GATE-A-009 only. It does not record Founder Gate
-A acceptance. The explicit GATE-A-010 founder review and
-GATE-A-011 controlled-mutation backlog remain required before Phase 7 begins.
+GATE-A-010 records the founder directive that Gate A is cleared as an explicit
+Accept with Amendments decision. Phase 7 Controlled Mutation entry is approved
+without authorising AI, agents, plugins, MCP, connectors or network listeners.
+All ten review questions, measured failures, accepted limitations, ADR decisions
+and five owned/date-bound amendments are recorded against build
+`0a25b3425abe325c78ee8e9deaaf37984448a07e`. The complete Release verification
+passed 765 tests with zero warnings and zero errors.
+
+This proves GATE-A-001 through GATE-A-010 and records Founder Gate A acceptance
+with amendments. GATE-A-011 controlled-mutation backlog preparation remains
+required before Phase 7 implementation begins.
 The next programme phase is Controlled Mutation: deterministic reviewable file
 patches first, followed by capability-bound curated commands. Local intelligence
 follows Founder Gate B. Remote providers, plugins and MCP remain Phase 9 work
