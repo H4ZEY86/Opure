@@ -8,6 +8,12 @@
         "resolved": "3.10.70",
         "contentHash": "ekrfhtcVnPp4rn3+41MCh2eTBC4DKxCtqZFeA1AF5fAIrMNHQGNaCzG8+HdrCLDmDuHpGfKvL1ukTtAK1iN+UA=="
       },
+      "System.IO.FileSystem.AccessControl": {
+        "type": "Direct",
+        "requested": "[5.0.0, )",
+        "resolved": "5.0.0",
+        "contentHash": "SxHB3nuNrpptVk+vZ/F+7OHEpoHUIKKMl02bUmYHQr1r+glbZQxs7pRtsf4ENO29TVm2TH3AEeep2fJcy92oYw=="
+      },
       "opure.patch.contracts": {
         "type": "Project"
       },

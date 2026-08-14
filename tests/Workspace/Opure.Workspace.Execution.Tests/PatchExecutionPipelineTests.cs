@@ -4,9 +4,11 @@ using System.Text;
 using System.Threading.Tasks;
 using Opure.Patch.Contracts;
 using Xunit;
+using System.Runtime.Versioning;
 
 namespace Opure.Workspace.Execution.Tests;
 
+[SupportedOSPlatform("windows")]
 public class PatchExecutionPipelineTests
 {
     private readonly string _workerPath;
@@ -83,8 +85,11 @@ public class PatchExecutionPipelineTests
         {
             var pipeline = new PatchExecutionPipeline(_workerPath);
 
+            string workspaceRoot = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(workspaceRoot);
+
             // Act
-            await pipeline.ExecutePatchAsync(approval, preview, proposal, "dev-1", tempFile);
+            await pipeline.ExecutePatchAsync(approval, preview, proposal, "dev-1", tempFile, workspaceRoot);
 
             // Assert
             Assert.True(File.Exists(tempFile));
@@ -94,6 +99,7 @@ public class PatchExecutionPipelineTests
         finally
         {
             File.Delete(tempFile);
+            // Ignore workspaceRoot cleanup for this test to keep it simple, it's in temp anyway.
         }
     }
 
@@ -118,9 +124,12 @@ public class PatchExecutionPipelineTests
         {
             var pipeline = new PatchExecutionPipeline(_workerPath);
 
+            string workspaceRoot = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(workspaceRoot);
+
             // Act & Assert
             var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                pipeline.ExecutePatchAsync(tamperedApproval, preview, proposal, "dev-1", tempFile));
+                pipeline.ExecutePatchAsync(tamperedApproval, preview, proposal, "dev-1", tempFile, workspaceRoot));
                 
             Assert.Contains("Cryptographic mismatch", ex.Message);
             

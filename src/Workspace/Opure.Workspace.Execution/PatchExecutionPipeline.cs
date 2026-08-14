@@ -5,9 +5,11 @@ using System.Threading.Tasks;
 using Opure.Patch.Contracts;
 using Opure.Patch.Service;
 using Opure.Workspace.Containment;
+using System.Runtime.Versioning;
 
 namespace Opure.Workspace.Execution;
 
+[SupportedOSPlatform("windows")]
 public class PatchExecutionPipeline
 {
     private readonly string _workerExecutablePath;
@@ -22,10 +24,17 @@ public class PatchExecutionPipeline
         ExactUtf8PatchPreview preview,
         ExactUtf8PatchProposal proposal,
         string approverIdentity,
-        string absoluteTargetPath)
+        string absoluteTargetPath,
+        string workspaceRootPath)
     {
         // 1. Safety Net: Verify Approval mathematically
         PatchApprovalBinder.VerifyApproval(approval, preview, proposal, approverIdentity);
+
+        // 2. Provision Staging Directory securely
+        string stagingDirectory = StagingDirectoryManager.ProvisionStagingDirectory(workspaceRootPath);
+        
+        string payloadPath = Path.Combine(stagingDirectory, $"payload_{approval.PatchId}.tmp");
+        string backupPath = Path.Combine(stagingDirectory, $"backup_{approval.PatchId}.tmp");
 
         // 2. Spawning the microscopic worker safely bound to a Windows Job Object
         // 100MB memory limit, 1 process limit
@@ -34,7 +43,7 @@ public class PatchExecutionPipeline
         ProcessStartInfo psi = new()
         {
             FileName = _workerExecutablePath,
-            Arguments = $"\"{absoluteTargetPath}\"",
+            Arguments = $"\"{absoluteTargetPath}\" \"{payloadPath}\" \"{backupPath}\"",
             RedirectStandardInput = true,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -59,12 +68,27 @@ public class PatchExecutionPipeline
             await stdin.FlushAsync();
         }
 
-        await process.WaitForExitAsync();
-
-        if (process.ExitCode != 0)
+        try
         {
-            string error = await process.StandardError.ReadToEndAsync();
-            throw new InvalidOperationException($"Worker failed with exit code {process.ExitCode}. Error: {error}");
+            await process.WaitForExitAsync();
+
+            if (process.ExitCode != 0)
+            {
+                string error = await process.StandardError.ReadToEndAsync();
+                throw new InvalidOperationException($"Worker failed with exit code {process.ExitCode}. Error: {error}");
+            }
+        }
+        finally
+        {
+            // Deterministic cleanup
+            if (File.Exists(payloadPath))
+            {
+                try { File.Delete(payloadPath); } catch { /* best effort */ }
+            }
+            if (File.Exists(backupPath))
+            {
+                try { File.Delete(backupPath); } catch { /* best effort */ }
+            }
         }
     }
 }

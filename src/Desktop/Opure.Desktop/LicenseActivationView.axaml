@@ -15,7 +15,7 @@
 
         <StackPanel Grid.Row="1" Spacing="16" VerticalAlignment="Center" MaxWidth="600">
             <TextBox Text="{Binding LicenseKey}" 
-                     Watermark="Paste your license key here..."
+                     PlaceholderText="Paste your license key here..."
                      AcceptsReturn="True"
                      Height="120"
                      IsEnabled="{Binding !IsApplying}"/>

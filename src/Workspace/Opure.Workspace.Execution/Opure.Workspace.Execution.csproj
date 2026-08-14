@@ -10,4 +10,7 @@
     <ProjectReference Include="..\..\Patch\Opure.Patch.Service\Opure.Patch.Service.csproj" />
     <ProjectReference Include="..\Opure.Workspace.Containment\Opure.Workspace.Containment.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.IO.FileSystem.AccessControl" />
+  </ItemGroup>
 </Project>
