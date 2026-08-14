@@ -7,7 +7,7 @@ using Opure.Persistence.Sqlite;
 
 namespace Opure.Patch.Sqlite;
 
-public sealed class PatchStateStore
+public sealed class PatchStateStore : IPatchStateStore
 {
     private readonly SqliteServiceDatabase database;
     private readonly TimeProvider timeProvider;

@@ -9,6 +9,8 @@
     <ProjectReference Include="..\..\Patch\Opure.Patch.Contracts\Opure.Patch.Contracts.csproj" />
     <ProjectReference Include="..\..\Patch\Opure.Patch.Service\Opure.Patch.Service.csproj" />
     <ProjectReference Include="..\Opure.Workspace.Containment\Opure.Workspace.Containment.csproj" />
+    <ProjectReference Include="..\..\Filesystem\Opure.Filesystem.Windows\Opure.Filesystem.Windows.csproj" />
+    <ProjectReference Include="..\..\Filesystem\Opure.Filesystem.Contracts\Opure.Filesystem.Contracts.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="System.IO.FileSystem.AccessControl" />

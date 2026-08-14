@@ -14,7 +14,8 @@ public enum PatchLifecycleState
     Failed = 9,
     RolledBack = 10,
     Compensated = 11,
-    Cancelled = 12
+    Cancelled = 12,
+    RecoveryRequired = 13
 }
 
 public static class PatchLifecycleTransitionPolicy
@@ -44,7 +45,7 @@ public static class PatchLifecycleTransitionPolicy
                 PatchLifecycleState.Cancelled,
             PatchLifecycleState.Applying => target is
                 PatchLifecycleState.Applied or PatchLifecycleState.Failed or
-                PatchLifecycleState.Cancelled,
+                PatchLifecycleState.Cancelled or PatchLifecycleState.RecoveryRequired,
             PatchLifecycleState.Applied => target is
                 PatchLifecycleState.Verifying or PatchLifecycleState.RolledBack or
                 PatchLifecycleState.Compensated or PatchLifecycleState.Failed,
@@ -54,6 +55,8 @@ public static class PatchLifecycleTransitionPolicy
             PatchLifecycleState.Failed => target is
                 PatchLifecycleState.Validating or PatchLifecycleState.RolledBack or
                 PatchLifecycleState.Compensated or PatchLifecycleState.Cancelled,
+            PatchLifecycleState.RecoveryRequired => target is
+                PatchLifecycleState.RolledBack or PatchLifecycleState.Compensated,
             PatchLifecycleState.RolledBack or
             PatchLifecycleState.Compensated or
             PatchLifecycleState.Cancelled => false,

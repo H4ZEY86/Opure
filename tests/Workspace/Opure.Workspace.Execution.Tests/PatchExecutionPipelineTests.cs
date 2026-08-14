@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Opure.Patch.Contracts;
+using Opure.Workspace.Contracts;
 using Xunit;
 using System.Runtime.Versioning;
 
@@ -25,6 +26,22 @@ public class PatchExecutionPipelineTests
         if (!File.Exists(_workerPath))
         {
             throw new FileNotFoundException($"Worker executable not found at {_workerPath}. Ensure the worker project is built.");
+        }
+    }
+
+    private class TestWorkspaceSourceProvider : IWorkspaceSourceProvider
+    {
+        public WorkspaceSourceResult GetSourceBytes(string projectId, long generation, string logicalPath)
+        {
+            return new WorkspaceSourceResult(projectId, generation, logicalPath, "", null, false);
+        }
+    }
+
+    private class TestFileIdentityVerifier : IFileIdentityVerifier
+    {
+        public Task VerifyPreconditionsAsync(string workspaceRootPath, string logicalPath, bool expectedExists, long expectedLength, string expectedSha256)
+        {
+            return Task.CompletedTask;
         }
     }
 
@@ -83,7 +100,7 @@ public class PatchExecutionPipelineTests
         string tempFile = Path.GetTempFileName();
         try
         {
-            var pipeline = new PatchExecutionPipeline(_workerPath);
+            var pipeline = new PatchExecutionPipeline(_workerPath, new TestWorkspaceSourceProvider(), new TestFileIdentityVerifier());
 
             string workspaceRoot = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(workspaceRoot);
@@ -122,7 +139,7 @@ public class PatchExecutionPipelineTests
         string tempFile = Path.GetTempFileName();
         try
         {
-            var pipeline = new PatchExecutionPipeline(_workerPath);
+            var pipeline = new PatchExecutionPipeline(_workerPath, new TestWorkspaceSourceProvider(), new TestFileIdentityVerifier());
 
             string workspaceRoot = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(workspaceRoot);
@@ -135,6 +152,50 @@ public class PatchExecutionPipelineTests
             
             // The file should not be modified
             Assert.Empty(await File.ReadAllBytesAsync(tempFile, TestContext.Current.CancellationToken));
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public async Task ExecutePatchAsync_WithPostconditionHashMismatch_ThrowsPostconditionFailed()
+    {
+        // Arrange
+        byte[] content = Encoding.UTF8.GetBytes("Test content");
+        var (proposal, preview) = CreateValidPair(content);
+
+        // Tamper with ResultingContentSha256 to force a mismatch after successful worker execution
+        typeof(ExactUtf8PatchProposal)
+            .GetField("<ResultingContentSha256>k__BackingField", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+            .SetValue(proposal, new string('a', 64));
+
+        var approval = new ExactUtf8PatchApproval(
+            "app-1",
+            1,
+            "patch-1",
+            proposal.ProposalSha256,
+            preview.PreviewDigestSha256,
+            "dev-1",
+            DateTimeOffset.UtcNow);
+
+        string tempFile = Path.GetTempFileName();
+        try
+        {
+            var pipeline = new PatchExecutionPipeline(_workerPath, new TestWorkspaceSourceProvider(), new TestFileIdentityVerifier());
+            string workspaceRoot = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(workspaceRoot);
+
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<PostconditionFailedException>(() =>
+                pipeline.ExecutePatchAsync(approval, preview, proposal, "dev-1", tempFile, workspaceRoot));
+                
+            Assert.Contains("Post-commit hash mismatch", ex.Message);
+            
+            // The file should be fully written (compromised) and manual recovery is required
+            byte[] writtenBytes = await File.ReadAllBytesAsync(tempFile, TestContext.Current.CancellationToken);
+            Assert.Equal(content, writtenBytes);
         }
         finally
         {

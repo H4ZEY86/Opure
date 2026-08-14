@@ -141,6 +141,15 @@
           "xunit.v3.runner.common": "[3.2.2]"
         }
       },
+      "opure.filesystem.contracts": {
+        "type": "Project"
+      },
+      "opure.filesystem.windows": {
+        "type": "Project",
+        "dependencies": {
+          "Opure.Filesystem.Contracts": "[1.0.0, )"
+        }
+      },
       "opure.patch.contracts": {
         "type": "Project"
       },
@@ -160,6 +169,8 @@
       "opure.workspace.execution": {
         "type": "Project",
         "dependencies": {
+          "Opure.Filesystem.Contracts": "[1.0.0, )",
+          "Opure.Filesystem.Windows": "[1.0.0, )",
           "Opure.Patch.Contracts": "[1.0.0, )",
           "Opure.Patch.Service": "[1.0.0, )",
           "Opure.Workspace.Containment": "[1.0.0, )",
