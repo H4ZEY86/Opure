@@ -1,0 +1,35 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Opure.Desktop.Contracts;assembly=Opure.Desktop.Contracts"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Opure.Desktop.LicenseActivationView"
+             x:DataType="vm:DesktopLicenseViewModel">
+    
+    <Grid RowDefinitions="Auto,*,Auto" Margin="32">
+        <StackPanel Grid.Row="0" Spacing="8">
+            <TextBlock Text="Opure Pro Activation" Theme="{StaticResource TitleTextBlockStyle}" />
+            <TextBlock Text="Enter your Ed25519 offline license key to unlock advanced features." TextWrapping="Wrap" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Spacing="16" VerticalAlignment="Center" MaxWidth="600">
+            <TextBox Text="{Binding LicenseKey}" 
+                     Watermark="Paste your license key here..."
+                     AcceptsReturn="True"
+                     Height="120"
+                     IsEnabled="{Binding !IsApplying}"/>
+            
+            <Button Content="Apply License" 
+                    Click="OnApplyLicenseClick"
+                    IsEnabled="{Binding !IsApplying}"
+                    HorizontalAlignment="Right"
+                    Classes="accent" />
+            
+            <TextBlock Text="{Binding FeedbackMessage}" 
+                       Foreground="{DynamicResource SystemAccentColor}"
+                       IsVisible="{Binding FeedbackMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" 
+                       TextWrapping="Wrap" />
+        </StackPanel>
+    </Grid>
+</UserControl>

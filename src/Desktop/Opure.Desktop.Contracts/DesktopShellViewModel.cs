@@ -29,7 +29,8 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
         DesktopProjectFolderPickerViewModel? projectFolderPicker = null,
         DesktopConfigurationViewModel? configuration = null,
         DesktopRecoveryPointViewModel? recoveryPoints = null,
-        DesktopTrustCentreViewModel? trustCentre = null)
+        DesktopTrustCentreViewModel? trustCentre = null,
+        DesktopLicenseViewModel? license = null)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
         ArgumentNullException.ThrowIfNull(runtimeHealth);
@@ -44,6 +45,7 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
         RecoveryPoints = recoveryPoints;
         TrustCentre = trustCentre ??
             new DesktopTrustCentreViewModel(new UnavailableDesktopTrustCentreSource());
+        License = license ?? new DesktopLicenseViewModel();
         selectedSection = DesktopNavigationSection.Home;
         pageTitle = "Home";
         pageDetail =
@@ -65,6 +67,8 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
     public DesktopRecoveryPointViewModel? RecoveryPoints { get; }
 
     public DesktopTrustCentreViewModel TrustCentre { get; }
+
+    public DesktopLicenseViewModel License { get; }
 
     public string WindowTitle => Snapshot.WindowTitle;
 
@@ -95,6 +99,9 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
     public bool IsTrustCentrePage =>
         selectedSection == DesktopNavigationSection.TrustCentre;
 
+    public bool IsLicensePage =>
+        selectedSection == DesktopNavigationSection.License;
+
     public void SelectSection(DesktopNavigationSection section)
     {
         (string title, string detail) = section switch
@@ -111,6 +118,9 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
             DesktopNavigationSection.TrustCentre => (
                 "Trust Centre",
                 "Trust evidence remains unavailable while the Runtime is disconnected."),
+            DesktopNavigationSection.License => (
+                "Opure Pro",
+                "Activate your offline license for advanced features."),
             _ => throw new ArgumentOutOfRangeException(nameof(section), section, null)
         };
 
@@ -130,6 +140,7 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(PageDetail));
         OnPropertyChanged(nameof(IsProjectsPage));
         OnPropertyChanged(nameof(IsTrustCentrePage));
+        OnPropertyChanged(nameof(IsLicensePage));
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)

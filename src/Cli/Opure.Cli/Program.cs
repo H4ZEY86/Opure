@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics;
 using System.Text;
 using Opure.Filesystem.Contracts;
 using Opure.Filesystem.Windows;
@@ -34,6 +35,11 @@ internal static class Program
             return 1;
         }
 
+        if (args.Length > 0 && string.Equals(args[0], "--daemon", StringComparison.OrdinalIgnoreCase))
+        {
+            return await HandleDaemonAsync(args[1..]);
+        }
+
         string command = args[0].ToLowerInvariant();
         return command switch
         {
@@ -41,9 +47,120 @@ internal static class Program
             "gate-a" => await HandleGateAAsync(args[1..]),
             "project" => await HandleProjectAsync(args[1..]),
             "recovery" => await HandleRecoveryAsync(args[1..]),
+            "license" => await HandleLicenseAsync(args[1..]),
             "version" => HandleVersion(),
             _ => HandleUnknownCommand(command)
         };
+    }
+
+    private static async Task<int> HandleDaemonAsync(string[] args)
+    {
+        Console.WriteLine("Starting Opure daemon...");
+        
+        // Resolve Runtime executable next to the CLI executable
+        string baseDir = AppContext.BaseDirectory;
+        string runtimePath = Path.Combine(baseDir, "Opure.Runtime.exe");
+        if (!File.Exists(runtimePath))
+        {
+            Console.Error.WriteLine($"Cannot find daemon executable at: {runtimePath}");
+            return 1;
+        }
+
+        using Process process = new();
+        process.StartInfo.FileName = runtimePath;
+        process.StartInfo.UseShellExecute = false;
+        process.StartInfo.RedirectStandardOutput = true;
+        process.StartInfo.RedirectStandardError = true;
+        
+        // Pass arguments through to runtime
+        foreach (string arg in args)
+        {
+            process.StartInfo.ArgumentList.Add(arg);
+        }
+
+        using CancellationTokenSource cts = new();
+        Console.CancelKeyPress += (sender, e) =>
+        {
+            e.Cancel = true;
+            cts.Cancel();
+            Console.WriteLine("Stopping daemon...");
+        };
+
+        try
+        {
+            process.Start();
+
+            // Mirror output
+            _ = Task.Run(() => process.StandardOutput.BaseStream.CopyToAsync(Console.OpenStandardOutput(), cts.Token));
+            _ = Task.Run(() => process.StandardError.BaseStream.CopyToAsync(Console.OpenStandardError(), cts.Token));
+
+            await process.WaitForExitAsync(cts.Token);
+            return process.ExitCode;
+        }
+        catch (OperationCanceledException)
+        {
+            if (!process.HasExited)
+            {
+                process.Kill();
+            }
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Daemon failed: {ex.Message}");
+            return 1;
+        }
+    }
+
+    private static async Task<int> HandleLicenseAsync(string[] args)
+    {
+        if (args.Length != 2 || !string.Equals(args[0], "apply", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.Error.WriteLine("Usage: opure license apply <key>");
+            return 1;
+        }
+
+        string token = args[1];
+        try
+        {
+            var parts = token.Split('.');
+            if (parts.Length != 2)
+            {
+                Console.Error.WriteLine("License rejected: invalid format.");
+                return 1;
+            }
+
+            string payloadBase64Url = parts[0];
+            var output = payloadBase64Url.Replace('-', '+').Replace('_', '/');
+            switch (output.Length % 4)
+            {
+                case 2: output += "=="; break;
+                case 3: output += "="; break;
+            }
+            byte[] payloadBytes = Convert.FromBase64String(output);
+            string payloadJson = System.Text.Encoding.UTF8.GetString(payloadBytes);
+
+            using var doc = System.Text.Json.JsonDocument.Parse(payloadJson);
+            var root = doc.RootElement;
+            string licenseId = root.GetProperty("LicenseId").GetString() ?? "Unknown";
+            string licensedTo = root.GetProperty("LicensedTo").GetString() ?? "Unknown";
+
+            Console.WriteLine($"License '{licenseId}' applied successfully to '{licensedTo}'.");
+            
+            // Persist the token to %LOCALAPPDATA%\Opure\license.dat
+            string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string licensePath = Path.Combine(appData, "Opure", "license.dat");
+            Directory.CreateDirectory(Path.GetDirectoryName(licensePath)!);
+            await File.WriteAllTextAsync(licensePath, token);
+            Console.WriteLine($"License saved to {licensePath}");
+            
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"License verification failed: {ex.Message}");
+            return 1;
+        }
     }
 
     private static async Task<int> HandleGateAAsync(string[] args)
@@ -551,12 +668,13 @@ internal static class Program
     private static void WriteUsage()
     {
         Console.WriteLine("Opure CLI");
-        Console.WriteLine("Commands: health, version, project open|list, recovery create|list|show");
+        Console.WriteLine("Commands: health, version, project open|list, recovery create|list|show, license apply");
         Console.WriteLine("  opure project open --channel Development|Preview|Stable --path-stdin");
         Console.WriteLine("  opure project list [--channel Development|Preview|Stable]");
         Console.WriteLine("  opure recovery create [--channel Development|Preview|Stable]");
         Console.WriteLine("  opure recovery list [--channel Development|Preview|Stable]");
         Console.WriteLine("  opure recovery show --id <guid> [--channel Development|Preview|Stable]");
+        Console.WriteLine("  opure license apply <key>");
     }
 
     private static async Task<int> HandleProjectAsync(string[] args)

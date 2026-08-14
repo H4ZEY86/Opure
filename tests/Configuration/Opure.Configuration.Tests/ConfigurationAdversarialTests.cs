@@ -224,9 +224,10 @@ public sealed class ConfigurationAdversarialTests : IDisposable
         public ProductPolicyEvaluationReceipt Evaluate(
             PolicyDefinitionCatalogue policyCatalogue,
             SettingDefinitionCatalogue settingCatalogue,
-            SettingMergeResult mergeResult)
+            SettingMergeResult mergeResult,
+            Opure.Configuration.Licensing.LicenseSnapshot? license = null)
         {
-            return ProductPolicyEvaluator.Evaluate(policyCatalogue, settingCatalogue, mergeResult);
+            return ProductPolicyEvaluator.Evaluate(policyCatalogue, settingCatalogue, mergeResult, license);
         }
     }
 
@@ -235,7 +236,8 @@ public sealed class ConfigurationAdversarialTests : IDisposable
         public ProductPolicyEvaluationReceipt Evaluate(
             PolicyDefinitionCatalogue policyCatalogue,
             SettingDefinitionCatalogue settingCatalogue,
-            SettingMergeResult mergeResult)
+            SettingMergeResult mergeResult,
+            Opure.Configuration.Licensing.LicenseSnapshot? license = null)
         {
             throw new InvalidOperationException("simulated evaluator failure");
         }

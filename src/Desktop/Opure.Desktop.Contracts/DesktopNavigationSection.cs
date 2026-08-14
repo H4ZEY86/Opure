@@ -8,5 +8,6 @@ public enum DesktopNavigationSection
     Home = 0,
     Projects = 1,
     Workflows = 2,
-    TrustCentre = 3
+    TrustCentre = 3,
+    License = 4
 }

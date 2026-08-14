@@ -62,6 +62,11 @@ public partial class MainWindow : Window
         _ = RefreshTrustCentreAsync();
     }
 
+    private void OnLicenseClick(object? sender, RoutedEventArgs eventArgs)
+    {
+        viewModel.SelectSection(DesktopNavigationSection.License);
+    }
+
     private void OnWindowOpened(object? sender, EventArgs eventArgs)
     {
         _ = sender;

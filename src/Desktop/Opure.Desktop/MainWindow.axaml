@@ -92,6 +92,16 @@
             AutomationProperties.Name="Trust Centre"
             AutomationProperties.AutomationId="NavigationTrustCentre"
             AutomationProperties.AccessKey="Alt+T" />
+
+        <Button
+            x:Name="LicenseButton"
+            Content="_Opure Pro"
+            Click="OnLicenseClick"
+            IsTabStop="True"
+            TabIndex="5"
+            AutomationProperties.Name="Opure Pro Activation"
+            AutomationProperties.AutomationId="NavigationLicense"
+            AutomationProperties.AccessKey="Alt+O" />
       </StackPanel>
     </Border>
 
@@ -434,6 +444,13 @@
               DataContext="{Binding RecoveryPoints}"
               AutomationProperties.Name="Local recovery points"
               AutomationProperties.AutomationId="LocalRecoveryPointView" />
+        </Border>
+
+        <Border IsVisible="{Binding IsLicensePage}">
+          <local:LicenseActivationView
+              DataContext="{Binding License}"
+              AutomationProperties.Name="Opure Pro Activation"
+              AutomationProperties.AutomationId="LicenseActivationView" />
         </Border>
 
         <Border

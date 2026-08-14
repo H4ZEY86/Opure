@@ -123,7 +123,8 @@ public interface IProductPolicyEvaluationPort
     ProductPolicyEvaluationReceipt Evaluate(
         PolicyDefinitionCatalogue policyCatalogue,
         SettingDefinitionCatalogue settingCatalogue,
-        SettingMergeResult mergeResult);
+        SettingMergeResult mergeResult,
+        Opure.Configuration.Licensing.LicenseSnapshot? activeLicense = null);
 }
 
 internal sealed class DeterministicProductPolicyEvaluationPort : IProductPolicyEvaluationPort
@@ -137,9 +138,10 @@ internal sealed class DeterministicProductPolicyEvaluationPort : IProductPolicyE
     public ProductPolicyEvaluationReceipt Evaluate(
         PolicyDefinitionCatalogue policyCatalogue,
         SettingDefinitionCatalogue settingCatalogue,
-        SettingMergeResult mergeResult)
+        SettingMergeResult mergeResult,
+        Opure.Configuration.Licensing.LicenseSnapshot? activeLicense = null)
     {
-        return ProductPolicyEvaluator.Evaluate(policyCatalogue, settingCatalogue, mergeResult);
+        return ProductPolicyEvaluator.Evaluate(policyCatalogue, settingCatalogue, mergeResult, activeLicense);
     }
 }
 
@@ -155,7 +157,8 @@ public static class ProductPolicyEvaluator
     public static ProductPolicyEvaluationReceipt Evaluate(
         PolicyDefinitionCatalogue policyCatalogue,
         SettingDefinitionCatalogue settingCatalogue,
-        SettingMergeResult mergeResult)
+        SettingMergeResult mergeResult,
+        Opure.Configuration.Licensing.LicenseSnapshot? activeLicense = null)
     {
         ArgumentNullException.ThrowIfNull(policyCatalogue);
         ArgumentNullException.ThrowIfNull(settingCatalogue);
@@ -262,18 +265,25 @@ public static class ProductPolicyEvaluator
             }
             else if (policy.Target == PolicyTarget.Capability && policy.ProtectedCapabilityId is not null)
             {
-                // Capability denials (remote providers, plugins, MCP)
-                var entry = new PolicyDecisionEntry(
-                    policy.PolicyId,
-                    policy.Revision,
-                    PolicyTarget.Capability,
-                    policy.ProtectedCapabilityId,
-                    PolicyResultKind.Deny,
-                    requestedValueJson: string.Empty,
-                    effectiveValueJson: string.Empty,
-                    policy.ExplanationTemplate);
+                // Check if the offline license grants this capability
+                bool isGrantedByLicense = activeLicense is { IsValidSignature: true } &&
+                                          activeLicense.Payload.Capabilities.Contains(policy.ProtectedCapabilityId);
 
-                allDecisions.Add(entry);
+                if (!isGrantedByLicense)
+                {
+                    // Capability denials (remote providers, plugins, MCP)
+                    var entry = new PolicyDecisionEntry(
+                        policy.PolicyId,
+                        policy.Revision,
+                        PolicyTarget.Capability,
+                        policy.ProtectedCapabilityId,
+                        PolicyResultKind.Deny,
+                        requestedValueJson: string.Empty,
+                        effectiveValueJson: string.Empty,
+                        policy.ExplanationTemplate);
+
+                    allDecisions.Add(entry);
+                }
             }
             else if (policy.Target == PolicyTarget.GeneralConstraint)
             {
