@@ -120,6 +120,7 @@
     <Project Path="tests/Trust/Opure.TrustEvidence.Sqlite.Tests/Opure.TrustEvidence.Sqlite.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Workspace/">
+    <Project Path="tests/Workspace/Opure.Workspace.Boundaries.Tests/Opure.Workspace.Boundaries.Tests.csproj" />
     <Project Path="tests/Workspace/Opure.Workspace.Protocol.Tests/Opure.Workspace.Protocol.Tests.csproj" />
     <Project Path="tests/Workspace/Opure.Workspace.Service.Tests/Opure.Workspace.Service.Tests.csproj" />
     <Project Path="tests/Workspace/Opure.Workspace.Sqlite.Tests/Opure.Workspace.Sqlite.Tests.csproj" />
