@@ -46,6 +46,7 @@ public sealed class RuntimeApplication
         TrustEvidenceServiceHost? trustEvidenceService = null;
         WorkspaceServiceHost? workspaceService = null;
         ConfigurationServiceHost? configurationService = null;
+        Opure.Patch.Service.PatchServiceHost? patchService = null;
         int sequence = 0;
 
         try
@@ -154,6 +155,17 @@ public sealed class RuntimeApplication
                 Path.Combine(dataRoot.FullPath, "Backup", "recovery-points"),
                 releaseChannel);
 
+            var patchRecoveryOrchestrator = new Opure.Patch.Service.RecoveryOrchestrator(trustEvidenceService.Database);
+            var patchRecoveryWorker = new Opure.Workspace.Execution.RecoverySnapshotWorker(
+                Path.Combine(AppContext.BaseDirectory, "Opure.Workspace.Execution.Worker.exe"));
+            var recoveryAuditHandler = new RecoveryAuditRequestHandler(patchRecoveryOrchestrator, patchRecoveryWorker);
+            
+            patchService = Opure.Patch.Service.PatchServiceHost.Start(
+                dataRoot.FullPath,
+                trustEvidenceService.BindOwner("opure.patch"),
+                shutdownSignal.Token);
+            var patchReviewHandler = new PatchReviewRequestHandler(patchService.StateStore);
+
             healthTransport = await NamedPipeGatewayServer.StartAsync(
                 endpoint,
                 new RuntimeHealthRequestHandler(
@@ -180,7 +192,9 @@ public sealed class RuntimeApplication
                 trustOverviewRequestHandler:
                     trustEvidenceService.TrustCentreHandler,
                 trustProjectRequestHandler:
-                    trustEvidenceService.TrustCentreHandler)
+                    trustEvidenceService.TrustCentreHandler,
+                recoveryAuditRequestHandler: recoveryAuditHandler,
+                patchReviewRequestHandler: patchReviewHandler)
                 .ConfigureAwait(false);
 
             lifecycle.TransitionTo(RuntimeLifecycleState.Ready);
@@ -305,6 +319,7 @@ public sealed class RuntimeApplication
             workspaceService?.Dispose();
             configurationService?.Dispose();
             trustEvidenceService?.Dispose();
+            patchService?.Dispose();
             traceSession?.Dispose();
 
             if (operationalLogger is not null)

@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package opure.patch.protocol;
+
+option csharp_namespace = "Opure.Patch.Protocol";
+
+import "google/protobuf/timestamp.proto";
+
+service PatchReview {
+  rpc GetActivePatches (GetActivePatchesRequest) returns (GetActivePatchesResponse);
+  rpc GetPatchPreview (GetPatchPreviewRequest) returns (GetPatchPreviewResponse);
+  rpc ApprovePatch (ApprovePatchRequest) returns (ApprovePatchResponse);
+  rpc CancelPatch (CancelPatchRequest) returns (CancelPatchResponse);
+}
+
+message GetActivePatchesRequest {
+  string project_id = 1;
+}
+
+message GetActivePatchesResponse {
+  repeated PatchStateRecord patches = 1;
+}
+
+message PatchStateRecord {
+  string patch_id = 1;
+  string proposal_sha256 = 2;
+  string project_id = 3;
+  int32 state = 4;
+  int64 state_version = 5;
+  google.protobuf.Timestamp updated_at_utc = 6;
+}
+
+message GetPatchPreviewRequest {
+  string patch_id = 1;
+}
+
+message GetPatchPreviewResponse {
+  string patch_id = 1;
+  string target_path_reference_id = 2;
+  int32 operation_kind = 3;
+  string base_workspace_generation = 4;
+  string base_workspace_generation_sha256 = 5;
+  string resulting_content_sha256 = 6;
+  string diff_text = 7;
+  string preview_digest_sha256 = 8;
+}
+
+message ApprovePatchRequest {
+  string patch_id = 1;
+  string proposal_sha256 = 2;
+  string preview_digest_sha256 = 3;
+}
+
+message ApprovePatchResponse {
+}
+
+message CancelPatchRequest {
+  string patch_id = 1;
+  string proposal_sha256 = 2;
+}
+
+message CancelPatchResponse {
+}

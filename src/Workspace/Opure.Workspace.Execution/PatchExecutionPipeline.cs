@@ -117,8 +117,15 @@ public class PatchExecutionPipeline : IPatchExecutionPipeline
             string computedHash = Convert.ToHexStringLower(SHA256.HashData(resultingBytes));
             if (computedHash != proposal.ResultingContentSha256)
             {
-                throw new PostconditionFailedException($"Post-commit hash mismatch. Expected {proposal.ResultingContentSha256}, got {computedHash}");
+                throw new PostconditionFailedException(
+                    $"Post-commit hash mismatch. Expected {proposal.ResultingContentSha256}, got {computedHash}",
+                    computedHash);
             }
+        }
+        catch (PostconditionFailedException)
+        {
+            RecoveryVaultManager.SecureSnapshot(workspaceRootPath, backupPath, approval.PatchId);
+            throw;
         }
         finally
         {

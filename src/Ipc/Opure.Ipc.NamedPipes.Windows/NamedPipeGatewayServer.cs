@@ -22,6 +22,7 @@ using Opure.Runtime.Contracts;
 using Opure.Runtime.Contracts.Health.V1;
 using Opure.Runtime.Contracts.Registry.V1;
 using Opure.Recovery.Protocol;
+using Opure.Patch.Protocol;
 
 namespace Opure.Ipc.NamedPipes.Windows;
 
@@ -53,7 +54,9 @@ public sealed class NamedPipeGatewayServer : IRuntimeHealthTransportHost
         ITrustOverviewRequestHandler? trustOverviewRequestHandler = null,
         ITrustProjectRequestHandler? trustProjectRequestHandler = null,
         ITrustConfigurationRequestHandler? trustConfigurationRequestHandler = null,
-        IRecoveryPointRequestHandler? recoveryPointRequestHandler = null)
+        IRecoveryPointRequestHandler? recoveryPointRequestHandler = null,
+        IRecoveryAuditRequestHandler? recoveryAuditRequestHandler = null,
+        IPatchReviewRequestHandler? patchReviewRequestHandler = null)
     {
         ArgumentNullException.ThrowIfNull(endpoint);
         ArgumentNullException.ThrowIfNull(requestHandler);
@@ -98,7 +101,9 @@ public sealed class NamedPipeGatewayServer : IRuntimeHealthTransportHost
                             TrustProjectContractPolicy.MaximumRequestBytes,
                             Math.Max(
                                 TrustConfigurationContractPolicy.MaximumRequestBytes,
-                                RecoveryPointContractPolicy.MaximumRequestBytes)))));
+                                Math.Max(
+                                    RecoveryPointContractPolicy.MaximumRequestBytes,
+                                    PatchReviewContractPolicy.MaximumRequestBytes))))));
             options.MaxWriteBufferSize = Math.Max(
                 Math.Max(
                     RuntimeHealthContractPolicy.MaximumResponseBytes,
@@ -113,7 +118,9 @@ public sealed class NamedPipeGatewayServer : IRuntimeHealthTransportHost
                             TrustProjectContractPolicy.MaximumResponseBytes,
                             Math.Max(
                                 TrustConfigurationContractPolicy.MaximumResponseBytes,
-                                RecoveryPointContractPolicy.MaximumResponseBytes)))));
+                                Math.Max(
+                                    RecoveryPointContractPolicy.MaximumResponseBytes,
+                                    PatchReviewContractPolicy.MaximumResponseBytes))))));
         });
         builder.WebHost.UseKestrel(options =>
         {
@@ -154,6 +161,14 @@ public sealed class NamedPipeGatewayServer : IRuntimeHealthTransportHost
         {
             builder.Services.AddSingleton(recoveryPointRequestHandler);
         }
+        if (recoveryAuditRequestHandler is not null)
+        {
+            builder.Services.AddSingleton(recoveryAuditRequestHandler);
+        }
+        if (patchReviewRequestHandler is not null)
+        {
+            builder.Services.AddSingleton(patchReviewRequestHandler);
+        }
         builder.Services.AddSingleton(new RuntimeHealthSessionAuthenticator(
             endpoint,
             sessionPolicy,
@@ -177,7 +192,9 @@ public sealed class NamedPipeGatewayServer : IRuntimeHealthTransportHost
                             TrustProjectContractPolicy.MaximumRequestBytes,
                             Math.Max(
                                 TrustConfigurationContractPolicy.MaximumRequestBytes,
-                                RecoveryPointContractPolicy.MaximumRequestBytes)))));
+                                Math.Max(
+                                    RecoveryPointContractPolicy.MaximumRequestBytes,
+                                    PatchReviewContractPolicy.MaximumRequestBytes))))));
             options.MaxSendMessageSize = Math.Max(
                 Math.Max(
                     RuntimeHealthContractPolicy.MaximumResponseBytes,
@@ -192,7 +209,9 @@ public sealed class NamedPipeGatewayServer : IRuntimeHealthTransportHost
                             TrustProjectContractPolicy.MaximumResponseBytes,
                             Math.Max(
                                 TrustConfigurationContractPolicy.MaximumResponseBytes,
-                                RecoveryPointContractPolicy.MaximumResponseBytes)))));
+                                Math.Max(
+                                    RecoveryPointContractPolicy.MaximumResponseBytes,
+                                    PatchReviewContractPolicy.MaximumResponseBytes))))));
             options.Interceptors.Add<RuntimeHealthAuthenticationInterceptor>();
         });
 
@@ -227,6 +246,14 @@ public sealed class NamedPipeGatewayServer : IRuntimeHealthTransportHost
         if (recoveryPointRequestHandler is not null)
         {
             application.MapGrpcService<RecoveryPointGrpcService>();
+        }
+        if (recoveryAuditRequestHandler is not null)
+        {
+            application.MapGrpcService<RecoveryAuditGrpcService>();
+        }
+        if (patchReviewRequestHandler is not null)
+        {
+            application.MapGrpcService<PatchReviewGrpcService>();
         }
 
         try

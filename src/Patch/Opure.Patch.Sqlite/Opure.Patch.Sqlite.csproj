@@ -6,5 +6,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Persistence\Opure.Persistence.Sqlite\Opure.Persistence.Sqlite.csproj" />
     <ProjectReference Include="..\Opure.Patch.Contracts\Opure.Patch.Contracts.csproj" />
+    <ProjectReference Include="..\..\Trust\Opure.TrustEvidence.Contracts\Opure.TrustEvidence.Contracts.csproj" />
   </ItemGroup>
 </Project>

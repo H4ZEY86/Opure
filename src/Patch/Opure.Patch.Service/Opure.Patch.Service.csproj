@@ -7,5 +7,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Workspace\Opure.Workspace.Contracts\Opure.Workspace.Contracts.csproj" />
     <ProjectReference Include="..\Opure.Patch.Contracts\Opure.Patch.Contracts.csproj" />
+    <ProjectReference Include="..\Opure.Patch.Sqlite\Opure.Patch.Sqlite.csproj" />
+    <ProjectReference Include="..\..\Trust\Opure.TrustEvidence.Sqlite\Opure.TrustEvidence.Sqlite.csproj" />
+    <ProjectReference Include="..\..\Trust\Opure.TrustEvidence.Contracts\Opure.TrustEvidence.Contracts.csproj" />
   </ItemGroup>
 </Project>

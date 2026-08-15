@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Opure.Patch.Contracts;
 using System.Runtime.Versioning;
@@ -10,13 +11,16 @@ public class PatchOrchestrator
 {
     private readonly IPatchExecutionPipeline _pipeline;
     private readonly IPatchStateStore _stateStore;
+    private readonly IRecoveryOrchestrator _recoveryOrchestrator;
 
     public PatchOrchestrator(
         IPatchExecutionPipeline pipeline,
-        IPatchStateStore stateStore)
+        IPatchStateStore stateStore,
+        IRecoveryOrchestrator recoveryOrchestrator)
     {
         _pipeline = pipeline ?? throw new ArgumentNullException(nameof(pipeline));
         _stateStore = stateStore ?? throw new ArgumentNullException(nameof(stateStore));
+        _recoveryOrchestrator = recoveryOrchestrator ?? throw new ArgumentNullException(nameof(recoveryOrchestrator));
     }
 
     public async Task OrchestratePatchExecutionAsync(
@@ -26,7 +30,8 @@ public class PatchOrchestrator
         string approverIdentity,
         string absoluteTargetPath,
         string workspaceRootPath,
-        string commandId)
+        string commandId,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(approval);
         ArgumentNullException.ThrowIfNull(preview);
@@ -46,32 +51,50 @@ public class PatchOrchestrator
                 absoluteTargetPath,
                 workspaceRootPath);
 
-            // Successfully applied
+            // Successfully applied — transition state.
             _stateStore.Transition(
                 proposal.PatchId,
                 proposal.ProposalSha256,
                 commandId,
-                PatchLifecycleState.Applied);
+                PatchLifecycleState.Applied,
+                cancellationToken);
         }
         catch (PreconditionFailedException)
         {
-            // Safely transition to failed and clean up. 
-            // Pipeline handles cleanup internally for staging files.
+            // Pre-condition failure: workspace is untouched; staging cleaned up by pipeline.
             _stateStore.Transition(
                 proposal.PatchId,
                 proposal.ProposalSha256,
                 commandId,
-                PatchLifecycleState.Failed);
+                PatchLifecycleState.Failed,
+                cancellationToken);
             throw;
         }
-        catch (PostconditionFailedException)
+        catch (PostconditionFailedException exception)
         {
-            // Immediate transition to RecoveryRequired.
+            // Post-condition failure: workspace may be in an unknown state.
+            // Transition to RecoveryRequired and persist an audit record so
+            // the developer can inspect the forensic state.
             _stateStore.Transition(
                 proposal.PatchId,
                 proposal.ProposalSha256,
                 commandId,
-                PatchLifecycleState.RecoveryRequired);
+                PatchLifecycleState.RecoveryRequired,
+                cancellationToken);
+
+            if (Guid.TryParse(proposal.PatchId, out Guid patchGuid))
+            {
+                RecoveryAuditRecord audit = new(
+                    patchGuid,
+                    DateTimeOffset.UtcNow,
+                    approverIdentity,
+                    proposal.ResultingContentSha256,
+                    exception.ActualHash ?? string.Empty,
+                    RecoveryResolutionStatus.Pending);
+
+                await _recoveryOrchestrator.RecordRecoveryAsync(audit, cancellationToken);
+            }
+
             throw;
         }
     }

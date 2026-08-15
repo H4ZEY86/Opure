@@ -462,6 +462,168 @@ public sealed class TrustEvidenceDatabase : IDisposable
                     TrustEvidenceDatabaseHealthState.Ready);
     }
 
+    /// <summary>
+    /// Persists a new <c>recovery_audit</c> row with status <c>Pending</c>.
+    /// Throws <see cref="InvalidOperationException"/> if a row for
+    /// <paramref name="patchId"/> already exists.
+    /// </summary>
+    /// <param name="patchId">Hyphenated RFC-4122 UUID string (36 chars).</param>
+    /// <param name="timestamp">The exact UTC instant of the failure.</param>
+    /// <param name="approverIdentity">Plain-text developer identity string.</param>
+    /// <param name="expectedHash">64-char lowercase SHA-256 hex string.</param>
+    /// <param name="actualHash">64-char lowercase SHA-256 hex string.</param>
+    /// <param name="cancellationToken">Propagates notification that the operation should be cancelled.</param>
+    public void InsertRecoveryAudit(
+        string patchId,
+        DateTimeOffset timestamp,
+        string approverIdentity,
+        string expectedHash,
+        string actualHash,
+        CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        ArgumentException.ThrowIfNullOrWhiteSpace(patchId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(approverIdentity);
+        ArgumentException.ThrowIfNullOrWhiteSpace(expectedHash);
+        ArgumentException.ThrowIfNullOrWhiteSpace(actualHash);
+
+        database.ExecuteTransaction(
+            (connection, transaction) =>
+            {
+                using SqliteCommand command = connection.CreateCommand();
+                command.Transaction = transaction;
+                command.CommandText = $"""
+                    INSERT INTO {TrustEvidenceDatabaseSchema.RecoveryAuditTable} (
+                        patch_id,
+                        timestamp,
+                        approver_identity,
+                        expected_hash,
+                        actual_hash,
+                        resolution_status)
+                    VALUES (
+                        $patchId,
+                        $timestamp,
+                        $approverIdentity,
+                        $expectedHash,
+                        $actualHash,
+                        'Pending');
+                    """;
+                _ = command.Parameters.AddWithValue(
+                    "$patchId", patchId);
+                _ = command.Parameters.AddWithValue(
+                    "$timestamp",
+                    timestamp.ToString("O", CultureInfo.InvariantCulture));
+                _ = command.Parameters.AddWithValue(
+                    "$approverIdentity", approverIdentity);
+                _ = command.Parameters.AddWithValue(
+                    "$expectedHash", expectedHash);
+                _ = command.Parameters.AddWithValue(
+                    "$actualHash", actualHash);
+
+                int affected = command.ExecuteNonQuery();
+                if (affected != 1)
+                {
+                    throw new InvalidOperationException(
+                        $"InsertRecoveryAudit expected 1 affected row but got {affected}.");
+                }
+
+                return affected;
+            },
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Returns all <c>recovery_audit</c> rows where
+    /// <c>resolution_status = 'Pending'</c>, ordered oldest-first.
+    /// Each element is a tuple: (patchId, timestamp, approverIdentity,
+    /// expectedHash, actualHash).
+    /// </summary>
+    public IReadOnlyList<(string PatchId, DateTimeOffset Timestamp, string ApproverIdentity, string ExpectedHash, string ActualHash)>
+        GetPendingRecoveryAudits(CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+
+        return database.ExecuteTransaction(
+            (connection, transaction) =>
+            {
+                using SqliteCommand command = connection.CreateCommand();
+                command.Transaction = transaction;
+                command.CommandText = $"""
+                    SELECT patch_id,
+                           timestamp,
+                           approver_identity,
+                           expected_hash,
+                           actual_hash
+                      FROM {TrustEvidenceDatabaseSchema.RecoveryAuditTable}
+                     WHERE resolution_status = 'Pending'
+                     ORDER BY timestamp ASC;
+                    """;
+
+                List<(string, DateTimeOffset, string, string, string)> rows = [];
+                using SqliteDataReader reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    string rawTimestamp = reader.GetString(1);
+                    DateTimeOffset ts = DateTimeOffset.Parse(
+                        rawTimestamp,
+                        CultureInfo.InvariantCulture,
+                        System.Globalization.DateTimeStyles.RoundtripKind);
+
+                    rows.Add((
+                        reader.GetString(0),
+                        ts,
+                        reader.GetString(2),
+                        reader.GetString(3),
+                        reader.GetString(4)));
+                }
+
+                return (IReadOnlyList<(string, DateTimeOffset, string, string, string)>)rows;
+            },
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Updates the <c>resolution_status</c> of the given <paramref name="patchId"/>
+    /// row. <paramref name="newStatus"/> must be either <c>"Restored"</c> or
+    /// <c>"Discarded"</c>; any other value throws <see cref="ArgumentException"/>.
+    /// Returns <see langword="true"/> if a row was updated, <see langword="false"/>
+    /// if no matching <c>patch_id</c> was found.
+    /// </summary>
+    public bool UpdateRecoveryAuditStatus(
+        string patchId,
+        string newStatus,
+        CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        ArgumentException.ThrowIfNullOrWhiteSpace(patchId);
+
+        if (!string.Equals(newStatus, "Restored", StringComparison.Ordinal) &&
+            !string.Equals(newStatus, "Discarded", StringComparison.Ordinal))
+        {
+            throw new ArgumentException(
+                "newStatus must be 'Restored' or 'Discarded'.",
+                nameof(newStatus));
+        }
+
+        return database.ExecuteTransaction(
+            (connection, transaction) =>
+            {
+                using SqliteCommand command = connection.CreateCommand();
+                command.Transaction = transaction;
+                command.CommandText = $"""
+                    UPDATE {TrustEvidenceDatabaseSchema.RecoveryAuditTable}
+                       SET resolution_status = $newStatus
+                     WHERE patch_id = $patchId;
+                    """;
+                _ = command.Parameters.AddWithValue("$patchId", patchId);
+                _ = command.Parameters.AddWithValue("$newStatus", newStatus);
+
+                return command.ExecuteNonQuery() == 1;
+            },
+            cancellationToken);
+    }
+
     public void Dispose()
     {
         if (disposed)

@@ -16,7 +16,7 @@ public sealed class PatchStateStoreTests
         using TestRoot root = new();
         using PatchDatabase database = Open(root);
         PatchStateStore store = database.CreateStateStore();
-        ExactUtf8PatchProposal proposal = CreateProposal("patch-001", "content one");
+        ExactUtf8PatchProposal proposal = CreateProposal("patch-0000000001", "content one");
 
         PatchStateCommandResult first = Register(store, proposal, "command-register-001");
         PatchStateCommandResult repeated = Register(store, proposal, "command-register-001");
@@ -27,7 +27,7 @@ public sealed class PatchStateStoreTests
         Assert.Equal(1, repeated.Snapshot.StateVersion);
         Assert.Equal(proposal.ProposalSha256, repeated.Snapshot.ProposalSha256);
 
-        ExactUtf8PatchProposal changed = CreateProposal("patch-001", "content two");
+        ExactUtf8PatchProposal changed = CreateProposal("patch-0000000001", "content two");
         Assert.Throws<InvalidOperationException>(
             () => Register(store, changed, "command-register-002"));
         Assert.Throws<InvalidOperationException>(
@@ -40,7 +40,7 @@ public sealed class PatchStateStoreTests
         using TestRoot root = new();
         using PatchDatabase database = Open(root);
         PatchStateStore store = database.CreateStateStore();
-        ExactUtf8PatchProposal proposal = CreateProposal("patch-002", "content");
+        ExactUtf8PatchProposal proposal = CreateProposal("patch-0000000002", "content");
         _ = Register(store, proposal, "command-register-002");
 
         Assert.Throws<InvalidOperationException>(() => Transition(store,
@@ -84,7 +84,7 @@ public sealed class PatchStateStoreTests
         using TestRoot root = new();
         using PatchDatabase database = Open(root);
         PatchStateStore store = database.CreateStateStore();
-        ExactUtf8PatchProposal proposal = CreateProposal("patch-003", "content");
+        ExactUtf8PatchProposal proposal = CreateProposal("patch-0000000003", "content");
         _ = Register(store, proposal, "command-register-003");
 
         PatchStateCommandResult first = Transition(store,
@@ -127,7 +127,7 @@ public sealed class PatchStateStoreTests
     public void State_and_command_history_survive_database_restart()
     {
         using TestRoot root = new();
-        ExactUtf8PatchProposal proposal = CreateProposal("patch-004", "restart content");
+        ExactUtf8PatchProposal proposal = CreateProposal("patch-0000000004", "restart content");
         using (PatchDatabase first = Open(root))
         {
             PatchStateStore store = first.CreateStateStore();
@@ -160,7 +160,7 @@ public sealed class PatchStateStoreTests
         using TestRoot root = new();
         using PatchDatabase database = Open(root);
         ExactUtf8PatchProposal proposal = CreateProposal(
-            "patch-005",
+            "patch-0000000005",
             "CM002-CONTENT-CANARY-MUST-NOT-BE-IN-DATABASE");
         _ = Register(database.CreateStateStore(), proposal, "command-register-005");
 
@@ -190,8 +190,8 @@ public sealed class PatchStateStoreTests
         new(
             patchId,
             ExactUtf8PatchProposal.CurrentContractRevision,
-            "project-001",
-            "root-001",
+            "project-000000001",
+            "root-000000000001",
             1,
             BaseHash,
             "path-001",

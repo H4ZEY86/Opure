@@ -397,6 +397,7 @@
           "Opure.Ipc.Abstractions": "[1.0.0, )",
           "Opure.Ipc.NamedPipes.Windows": "[1.0.0, )",
           "Opure.Observability": "[1.0.0, )",
+          "Opure.Patch.Protocol": "[1.0.0, )",
           "Opure.Project.Protocol": "[1.0.0, )",
           "Opure.Recovery.Protocol": "[1.0.0, )",
           "Opure.Runtime.Contracts": "[1.0.0, )",
@@ -425,6 +426,7 @@
           "Grpc.Net.Client": "[2.80.0, )",
           "Opure.Ipc.Abstractions": "[1.0.0, )",
           "Opure.Observability.Contracts": "[1.0.0, )",
+          "Opure.Patch.Protocol": "[1.0.0, )",
           "Opure.Project.Protocol": "[1.0.0, )",
           "Opure.Recovery.Protocol": "[1.0.0, )",
           "Opure.Runtime.Contracts": "[1.0.0, )",
@@ -439,6 +441,17 @@
       },
       "opure.observability.contracts": {
         "type": "Project"
+      },
+      "opure.patch.contracts": {
+        "type": "Project"
+      },
+      "opure.patch.protocol": {
+        "type": "Project",
+        "dependencies": {
+          "Google.Protobuf": "[3.35.1, )",
+          "Grpc.Core.Api": "[2.80.0, )",
+          "Opure.Patch.Contracts": "[1.0.0, )"
+        }
       },
       "opure.project.protocol": {
         "type": "Project",

@@ -244,8 +244,17 @@ public sealed class BoundedOperationalLoggerTests
         Assert.Same(completion, await Task.WhenAny(completion, deadline));
         await completion;
         await sink.WaitForWriteExitAsync(TestContext.Current.CancellationToken);
-        await logger.CompleteAsync(TestContext.Current.CancellationToken);
+        
+        // Wait for the worker task to finish processing the cancellation
+        // and record the in-flight event drop.
         OperationalLogHealthSnapshot health = logger.GetHealthSnapshot();
+        while (health.TotalDroppedCount < 4)
+        {
+            await Task.Delay(1, TestContext.Current.CancellationToken);
+            health = logger.GetHealthSnapshot();
+        }
+        
+        await logger.CompleteAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(OperationalLogHealthState.Degraded, health.State);
         Assert.Equal(1, health.TotalQueueFailureCount);

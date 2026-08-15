@@ -1,0 +1,131 @@
+<UserControl
+    x:Class="Opure.Desktop.PatchReviewView"
+    x:DataType="contracts:DesktopPatchReviewViewModel"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:contracts="clr-namespace:Opure.Desktop.Contracts;assembly=Opure.Desktop.Contracts"
+    mc:Ignorable="d"
+    d:DesignWidth="800"
+    d:DesignHeight="600"
+    AutomationProperties.Name="Patch Review Forensic Overlay"
+    AutomationProperties.AutomationId="PatchReviewOverlay">
+  <Border
+      BorderThickness="2"
+      CornerRadius="8"
+      Padding="24"
+      Margin="32">
+    <Border.Styles>
+      <Style Selector="Border">
+        <Setter Property="Background" Value="{DynamicResource SystemRegionBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" />
+      </Style>
+    </Border.Styles>
+    <Grid RowDefinitions="Auto,Auto,*,Auto,Auto">
+      <StackPanel Grid.Row="0" Spacing="8">
+        <TextBlock
+            Text="Patch Review"
+            FontSize="24"
+            FontWeight="SemiBold"
+            AutomationProperties.HeadingLevel="1" />
+        <TextBlock
+            Text="A forensic patch state is available for review. The Runtime requires authorisation to proceed."
+            TextWrapping="Wrap" />
+      </StackPanel>
+
+      <Border
+          Grid.Row="1"
+          Margin="0,16,0,0"
+          BorderThickness="1"
+          CornerRadius="4"
+          Padding="12">
+        <Border.Styles>
+          <Style Selector="Border">
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
+          </Style>
+        </Border.Styles>
+        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+          <TextBlock Text="Patch identity" FontWeight="SemiBold" />
+          <TextBlock Grid.Column="1" Margin="12,0,0,0" Text="{Binding SelectedPreview.PatchId}" />
+          
+          <TextBlock Grid.Row="1" Text="Target path" FontWeight="SemiBold" />
+          <TextBlock Grid.Row="1" Grid.Column="1" Margin="12,0,0,0" Text="{Binding SelectedPreview.TargetPathReferenceId}" />
+
+          <TextBlock Grid.Row="2" Text="Expected hash" FontWeight="SemiBold" />
+          <TextBlock Grid.Row="2" Grid.Column="1" Margin="12,0,0,0" Text="{Binding SelectedPreview.BaseWorkspaceGenerationSha256}" />
+          
+          <TextBlock Grid.Row="3" Text="Actual hash" FontWeight="SemiBold" />
+          <TextBlock Grid.Row="3" Grid.Column="1" Margin="12,0,0,0" Text="{Binding SelectedPreview.ResultingContentSha256}" />
+
+          <TextBlock Grid.Row="4" Text="Timestamp" FontWeight="SemiBold" />
+          <TextBlock Grid.Row="4" Grid.Column="1" Margin="12,0,0,0" Text="{Binding SelectedPatch.UpdatedAt}" />
+
+          <TextBlock Grid.Row="5" Text="Approver Identity" FontWeight="SemiBold" />
+          <TextBlock Grid.Row="5" Grid.Column="1" Margin="12,0,0,0" Text="Local Developer" />
+        </Grid>
+      </Border>
+
+      <GroupBox
+          Grid.Row="2"
+          Margin="0,16,0,0"
+          Header="Forensic patch state"
+          AutomationProperties.Name="Forensic patch diff view"
+          AutomationProperties.AutomationId="PatchReviewDiffGroup">
+        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+          <SelectableTextBlock
+              Text="{Binding SelectedPreview.DiffText}"
+              FontFamily="Consolas, Courier New, monospace"
+              FontSize="14"
+              TextWrapping="NoWrap"
+              AutomationProperties.Name="Selectable patch text"
+              AutomationProperties.AutomationId="PatchReviewDiffText" />
+        </ScrollViewer>
+      </GroupBox>
+
+      <TextBlock
+          Grid.Row="3"
+          Margin="0,16,0,0"
+          Text="{Binding StatusMessage}"
+          FontWeight="SemiBold"
+          TextWrapping="Wrap"
+          AutomationProperties.Name="{Binding StatusMessage}"
+          AutomationProperties.AutomationId="PatchReviewStatus">
+        <TextBlock.Styles>
+          <Style Selector="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+          </Style>
+        </TextBlock.Styles>
+      </TextBlock>
+
+      <StackPanel
+          Grid.Row="4"
+          Margin="0,16,0,0"
+          Orientation="Horizontal"
+          Spacing="12"
+          HorizontalAlignment="Right">
+        <Button
+            x:Name="DiscardButton"
+            Content="Cancel / _Discard"
+            Command="{Binding CancelPatchCommand}"
+            CommandParameter="{Binding SelectedPatch}"
+            IsTabStop="True"
+            TabIndex="1"
+            AutomationProperties.Name="Discard patch proposal"
+            AutomationProperties.AutomationId="DiscardPatch"
+            AutomationProperties.AccessKey="Alt+D" />
+        <Button
+            x:Name="RestoreButton"
+            Content="Approve / _Restore"
+            Command="{Binding ApproveCommand}"
+            CommandParameter="{Binding SelectedPatch}"
+            IsTabStop="True"
+            TabIndex="2"
+            Classes="accent"
+            AutomationProperties.Name="Restore patch to workspace"
+            AutomationProperties.AutomationId="RestorePatch"
+            AutomationProperties.AccessKey="Alt+R" />
+      </StackPanel>
+    </Grid>
+  </Border>
+</UserControl>

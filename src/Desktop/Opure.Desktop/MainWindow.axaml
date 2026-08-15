@@ -684,5 +684,47 @@
             AutomationProperties.AutomationId="DesktopProductVersion" />
       </Grid>
     </Border>
+
+    <Grid
+        Grid.Row="0" Grid.RowSpan="3"
+        Grid.Column="0" Grid.ColumnSpan="2"
+        IsVisible="{Binding PatchReview.HasPreview, FallbackValue=False, TargetNullValue=False}"
+        ZIndex="1000">
+      <Border
+          HorizontalAlignment="Stretch"
+          VerticalAlignment="Stretch">
+        <Border.Styles>
+          <Style Selector="Border">
+            <Setter Property="Background" Value="#A0000000" />
+          </Style>
+        </Border.Styles>
+      </Border>
+      
+      <local:PatchReviewView
+          DataContext="{Binding PatchReview}"
+          HorizontalAlignment="Center"
+          VerticalAlignment="Center" />
+    </Grid>
+
+    <Grid
+        Grid.Row="0" Grid.RowSpan="3"
+        Grid.Column="0" Grid.ColumnSpan="2"
+        IsVisible="{Binding RecoveryAudits.HasAudits, FallbackValue=False, TargetNullValue=False}"
+        ZIndex="1001">
+      <Border
+          HorizontalAlignment="Stretch"
+          VerticalAlignment="Stretch">
+        <Border.Styles>
+          <Style Selector="Border">
+            <Setter Property="Background" Value="#A0000000" />
+          </Style>
+        </Border.Styles>
+      </Border>
+
+      <local:RecoveryView
+          DataContext="{Binding RecoveryAudits}"
+          HorizontalAlignment="Center"
+          VerticalAlignment="Center" />
+    </Grid>
   </Grid>
 </Window>

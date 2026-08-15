@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Runtime.Versioning;
@@ -41,7 +42,7 @@ public class PatchOrchestratorTests
     {
         private readonly Exception? _exceptionToThrow;
 
-        public FakePatchExecutionPipeline(Exception? exceptionToThrow = null) 
+        public FakePatchExecutionPipeline(Exception? exceptionToThrow = null)
         {
             _exceptionToThrow = exceptionToThrow;
         }
@@ -62,11 +63,32 @@ public class PatchOrchestratorTests
         }
     }
 
+    private class FakeRecoveryOrchestrator : IRecoveryOrchestrator
+    {
+        public int RecordCallCount { get; private set; }
+        public RecoveryAuditRecord? LastRecord { get; private set; }
+
+        public Task RecordRecoveryAsync(RecoveryAuditRecord audit, CancellationToken cancellationToken = default)
+        {
+            RecordCallCount++;
+            LastRecord = audit;
+            return Task.CompletedTask;
+        }
+
+        public Task<IReadOnlyCollection<RecoveryAuditRecord>> GetUnresolvedAuditsAsync(CancellationToken cancellationToken = default)
+            => Task.FromResult<IReadOnlyCollection<RecoveryAuditRecord>>(Array.Empty<RecoveryAuditRecord>());
+
+        public Task ResolveAuditAsync(Guid patchId, RecoveryResolutionStatus status, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+    }
+
+    private static readonly string TestPatchId = "3f5a9d8c-1b2e-4f7a-8c0d-9e6b5a4c3f2d";
+
     private static (ExactUtf8PatchProposal, ExactUtf8PatchPreview, ExactUtf8PatchApproval) CreateTestObjects()
     {
         var zeroHash = new string('0', 64);
         var proposal = new ExactUtf8PatchProposal(
-            "patch-1",
+            TestPatchId,
             1,
             "proj-1",
             "root-1",
@@ -83,7 +105,7 @@ public class PatchOrchestratorTests
             Array.Empty<byte>());
 
         var preview = new ExactUtf8PatchPreview(
-            "patch-1",
+            TestPatchId,
             1,
             proposal.ProposalSha256,
             "path-1",
@@ -99,7 +121,7 @@ public class PatchOrchestratorTests
         var approval = new ExactUtf8PatchApproval(
             "approval-1",
             1,
-            "patch-1",
+            TestPatchId,
             proposal.ProposalSha256,
             preview.PreviewDigestSha256,
             "approver",
@@ -113,16 +135,19 @@ public class PatchOrchestratorTests
     {
         var store = new FakePatchStateStore();
         var pipeline = new FakePatchExecutionPipeline();
-        var orchestrator = new PatchOrchestrator(pipeline, store);
+        var recovery = new FakeRecoveryOrchestrator();
+        var orchestrator = new PatchOrchestrator(pipeline, store, recovery);
 
         var (proposal, preview, approval) = CreateTestObjects();
 
         await orchestrator.OrchestratePatchExecutionAsync(
-            approval, preview, proposal, "approver", "target", "root", "cmd-1");
+            approval, preview, proposal, "approver", "target", "root", "cmd-1",
+            TestContext.Current.CancellationToken);
 
         Assert.Equal(1, store.TransitionCallCount);
-        Assert.Equal("patch-1", store.LastPatchId);
+        Assert.Equal(TestPatchId, store.LastPatchId);
         Assert.Equal(PatchLifecycleState.Applied, store.LastTargetState);
+        Assert.Equal(0, recovery.RecordCallCount);
     }
 
     [Fact]
@@ -130,32 +155,63 @@ public class PatchOrchestratorTests
     {
         var store = new FakePatchStateStore();
         var pipeline = new FakePatchExecutionPipeline(new PreconditionFailedException("test"));
-        var orchestrator = new PatchOrchestrator(pipeline, store);
+        var recovery = new FakeRecoveryOrchestrator();
+        var orchestrator = new PatchOrchestrator(pipeline, store, recovery);
 
         var (proposal, preview, approval) = CreateTestObjects();
 
         await Assert.ThrowsAsync<PreconditionFailedException>(() => orchestrator.OrchestratePatchExecutionAsync(
-            approval, preview, proposal, "approver", "target", "root", "cmd-1"));
+            approval, preview, proposal, "approver", "target", "root", "cmd-1",
+            TestContext.Current.CancellationToken));
 
         Assert.Equal(1, store.TransitionCallCount);
-        Assert.Equal("patch-1", store.LastPatchId);
+        Assert.Equal(TestPatchId, store.LastPatchId);
         Assert.Equal(PatchLifecycleState.Failed, store.LastTargetState);
+        Assert.Equal(0, recovery.RecordCallCount);
     }
 
     [Fact]
     public async Task OrchestratePatchExecutionAsync_PostconditionFailed_TransitionsToRecoveryRequired()
     {
         var store = new FakePatchStateStore();
-        var pipeline = new FakePatchExecutionPipeline(new PostconditionFailedException("test"));
-        var orchestrator = new PatchOrchestrator(pipeline, store);
+        var actualHash = new string('a', 64);
+        var pipeline = new FakePatchExecutionPipeline(
+            new PostconditionFailedException("test", actualHash));
+        var recovery = new FakeRecoveryOrchestrator();
+        var orchestrator = new PatchOrchestrator(pipeline, store, recovery);
 
         var (proposal, preview, approval) = CreateTestObjects();
 
         await Assert.ThrowsAsync<PostconditionFailedException>(() => orchestrator.OrchestratePatchExecutionAsync(
-            approval, preview, proposal, "approver", "target", "root", "cmd-1"));
+            approval, preview, proposal, "approver", "target", "root", "cmd-1",
+            TestContext.Current.CancellationToken));
 
         Assert.Equal(1, store.TransitionCallCount);
-        Assert.Equal("patch-1", store.LastPatchId);
+        Assert.Equal(TestPatchId, store.LastPatchId);
         Assert.Equal(PatchLifecycleState.RecoveryRequired, store.LastTargetState);
+        Assert.Equal(1, recovery.RecordCallCount);
+        Assert.NotNull(recovery.LastRecord);
+        Assert.Equal(actualHash, recovery.LastRecord!.ActualHash);
+    }
+
+    [Fact]
+    public async Task OrchestratePatchExecutionAsync_PostconditionFailed_RecordContainsProposalExpectedHash()
+    {
+        var store = new FakePatchStateStore();
+        var actualHash = new string('b', 64);
+        var pipeline = new FakePatchExecutionPipeline(
+            new PostconditionFailedException("test", actualHash));
+        var recovery = new FakeRecoveryOrchestrator();
+        var orchestrator = new PatchOrchestrator(pipeline, store, recovery);
+
+        var (proposal, preview, approval) = CreateTestObjects();
+
+        await Assert.ThrowsAsync<PostconditionFailedException>(() => orchestrator.OrchestratePatchExecutionAsync(
+            approval, preview, proposal, "approver", "target", "root", "cmd-1",
+            TestContext.Current.CancellationToken));
+
+        Assert.NotNull(recovery.LastRecord);
+        Assert.Equal(proposal.ResultingContentSha256, recovery.LastRecord!.ExpectedHash);
+        Assert.Equal("approver", recovery.LastRecord!.ApproverIdentity);
     }
 }

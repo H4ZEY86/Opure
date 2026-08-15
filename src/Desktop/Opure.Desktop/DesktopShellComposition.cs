@@ -25,8 +25,13 @@ public static class DesktopShellComposition
                     DesktopLaunchContext.ReleaseChannel)),
             recoveryPoints: new RecoveryPointGatewayClient(
                 DesktopLaunchContext.ReleaseChannel),
+            recoveryAudits: new DesktopRecoveryViewModel(
+                new RecoveryGatewaySource(DesktopLaunchContext.ReleaseChannel)),
             trustCentre: new DesktopTrustCentreViewModel(
                 RuntimeHealthGatewayClient.CreateTrustCentreSource(
+                    DesktopLaunchContext.ReleaseChannel)),
+            patchReview: new DesktopPatchReviewViewModel(
+                RuntimeHealthGatewayClient.CreatePatchReviewSource(
                     DesktopLaunchContext.ReleaseChannel)));
     }
 

@@ -42,6 +42,12 @@ public static class RuntimeHealthGatewayClient
             : new UnavailableProjectOpenGatewayReceiver();
     }
 
+    public static IDesktopPatchReviewSource CreatePatchReviewSource(string releaseChannel)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(releaseChannel);
+        return new PatchReviewGatewaySource(releaseChannel);
+    }
+
     public static IDisposable CreateTraceSession(string releaseChannel)
     {
         return new OperationalTraceSession(

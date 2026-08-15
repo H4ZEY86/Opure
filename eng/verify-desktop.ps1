@@ -63,7 +63,7 @@ try {
         $windowHandle = $process.MainWindowHandle
         $windowTitle = $process.MainWindowTitle
 
-        if ($windowHandle -ne [IntPtr]::Zero) {
+        if ($windowHandle -ne [IntPtr]::Zero -and -not [string]::IsNullOrWhiteSpace($windowTitle)) {
             break
         }
 

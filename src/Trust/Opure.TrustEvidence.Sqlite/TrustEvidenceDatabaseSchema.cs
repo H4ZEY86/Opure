@@ -10,7 +10,7 @@ namespace Opure.TrustEvidence.Sqlite;
 /// </summary>
 public static class TrustEvidenceDatabaseSchema
 {
-    public const int CurrentVersion = 6;
+    public const int CurrentVersion = 7;
     public const string EvidenceTypeDefinitionTable = "evidence_type_definitions";
     public const string EvidenceTypeRevisionTable = "evidence_type_revisions";
     public const string EvidenceRecordTable = "evidence_records";
@@ -27,6 +27,8 @@ public static class TrustEvidenceDatabaseSchema
     public const string OwnerReconciliationTable = "evidence_owner_reconciliation";
     public const string ReconciliationQuarantineTable = "evidence_reconciliation_quarantine";
     public const string ProjectionStateTable = "trust_projection_state";
+    public const string RecoveryAuditTable = "recovery_audit";
+    public const string RecoveryAuditStatusIndex = "ix_recovery_audit_resolution_status";
     public const string OwnerSequenceIndex = "ix_evidence_records_owner_sequence";
     public const string ProjectQueryIndex = "ix_trust_projection_project_query";
     public const string OperationQueryIndex = "ix_trust_projection_operation_query";
@@ -408,6 +410,27 @@ public static class TrustEvidenceDatabaseSchema
             """
         ]);
 
+    private static readonly ReadOnlyCollection<string> RecoveryAuditCommands =
+        Array.AsReadOnly(
+        [
+            $"""
+            CREATE TABLE {RecoveryAuditTable} (
+                patch_id TEXT PRIMARY KEY CHECK (length(patch_id) = 36),
+                timestamp TEXT NOT NULL,
+                approver_identity TEXT NOT NULL,
+                expected_hash TEXT NOT NULL CHECK (length(expected_hash) = 64),
+                actual_hash TEXT NOT NULL CHECK (length(actual_hash) = 64),
+                resolution_status TEXT NOT NULL
+                    DEFAULT 'Pending'
+                    CHECK (resolution_status IN ('Pending', 'Restored', 'Discarded'))
+            ) STRICT
+            """,
+            $"""
+            CREATE INDEX {RecoveryAuditStatusIndex}
+                ON {RecoveryAuditTable} (resolution_status, timestamp)
+            """
+        ]);
+
     public static SqliteMigrationCatalogue CreateCatalogue(
         int targetVersion = CurrentVersion)
     {
@@ -477,6 +500,16 @@ public static class TrustEvidenceDatabaseSchema
                 ReconciliationCommands));
         }
 
+        if (targetVersion >= 7)
+        {
+            migrations.Add(new SqliteMigration(
+                "trust-evidence-recovery-audit-v7",
+                sourceVersion: 6,
+                targetVersion: 7,
+                "Creates the recovery_audit table for post-condition failure forensic records and developer resolution tracking.",
+                RecoveryAuditCommands));
+        }
+
         return new SqliteMigrationCatalogue(
             migrations,
             CreateValidations(targetVersion));
@@ -503,6 +536,7 @@ public static class TrustEvidenceDatabaseSchema
             OwnerReconciliationTable,
             ReconciliationQuarantineTable,
             ProjectionStateTable,
+            RecoveryAuditTable,
             OwnerSequenceIndex,
             ProjectQueryIndex,
             OperationQueryIndex,
@@ -511,6 +545,7 @@ public static class TrustEvidenceDatabaseSchema
             QuarantineLatestIndex,
             OwnerGapStateIndex,
             ProjectChannelQueryIndex,
+            RecoveryAuditStatusIndex,
             "ix_evidence_owner_reconciliation_state",
             "__opure_inbox_conflicts_latest",
             "__opure_inbox_receipts_immutable",
@@ -631,6 +666,28 @@ public static class TrustEvidenceDatabaseSchema
                     "trust-reconciliation-index-present",
                     minimumSchemaVersion: 6,
                     "SELECT COUNT(*) FROM sqlite_schema WHERE type = 'index' AND name = 'ix_evidence_owner_reconciliation_state'",
+                    "1")
+            ]);
+        }
+
+        if (targetVersion >= 7)
+        {
+            validations.AddRange(
+            [
+                new SqliteSchemaValidation(
+                    "trust-recovery-audit-table-present",
+                    minimumSchemaVersion: 7,
+                    $"SELECT COUNT(*) FROM sqlite_schema WHERE type = 'table' AND name = '{RecoveryAuditTable}'",
+                    "1"),
+                new SqliteSchemaValidation(
+                    "trust-recovery-audit-index-present",
+                    minimumSchemaVersion: 7,
+                    $"SELECT COUNT(*) FROM sqlite_schema WHERE type = 'index' AND name = '{RecoveryAuditStatusIndex}'",
+                    "1"),
+                new SqliteSchemaValidation(
+                    "trust-recovery-audit-pk-strict",
+                    minimumSchemaVersion: 7,
+                    $"SELECT COUNT(*) FROM pragma_table_info('{RecoveryAuditTable}') WHERE pk = 1 AND name = 'patch_id'",
                     "1")
             ]);
         }

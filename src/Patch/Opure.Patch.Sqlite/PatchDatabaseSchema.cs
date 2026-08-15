@@ -4,7 +4,7 @@ namespace Opure.Patch.Sqlite;
 
 public static class PatchDatabaseSchema
 {
-    public const int CurrentVersion = 1;
+    public const int CurrentVersion = 2;
     public const string PatchTable = "patches";
     public const string CommandTable = "patch_commands";
     public const string TransitionTable = "patch_transitions";
@@ -69,19 +69,25 @@ public static class PatchDatabaseSchema
                 """
             ]);
 
+        List<SqliteSchemaValidation> validations =
+        [
+            new SqliteSchemaValidation(
+                "patch-state-tables-present",
+                minimumSchemaVersion: 1,
+                $"SELECT COUNT(*) FROM sqlite_schema WHERE type = 'table' AND name IN ('{PatchTable}','{CommandTable}','{TransitionTable}')",
+                "3"),
+            new SqliteSchemaValidation(
+                "patch-identity-trigger-present",
+                minimumSchemaVersion: 1,
+                "SELECT COUNT(*) FROM sqlite_schema WHERE type = 'trigger' AND name = 'patches_identity_immutable'",
+                "1")
+        ];
+        validations.AddRange(SqliteOutboxSchema.CreateSchemaValidations(minimumSchemaVersion: 2));
+        
         return new SqliteMigrationCatalogue(
-            [migration],
-            [
-                new SqliteSchemaValidation(
-                    "patch-state-tables-present",
-                    minimumSchemaVersion: 1,
-                    $"SELECT COUNT(*) FROM sqlite_schema WHERE type = 'table' AND name IN ('{PatchTable}','{CommandTable}','{TransitionTable}')",
-                    "3"),
-                new SqliteSchemaValidation(
-                    "patch-identity-trigger-present",
-                    minimumSchemaVersion: 1,
-                    "SELECT COUNT(*) FROM sqlite_schema WHERE type = 'trigger' AND name = 'patches_identity_immutable'",
-                    "1")
-            ]);
+            [migration, SqliteOutboxSchema.CreateMigration("patch-trust-outbox-v2", 1, 2)],
+            validations);
     }
+
+
 }

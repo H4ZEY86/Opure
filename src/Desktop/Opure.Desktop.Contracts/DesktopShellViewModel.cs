@@ -29,8 +29,10 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
         DesktopProjectFolderPickerViewModel? projectFolderPicker = null,
         DesktopConfigurationViewModel? configuration = null,
         DesktopRecoveryPointViewModel? recoveryPoints = null,
+        DesktopRecoveryViewModel? recoveryAudits = null,
         DesktopTrustCentreViewModel? trustCentre = null,
-        DesktopLicenseViewModel? license = null)
+        DesktopLicenseViewModel? license = null,
+        DesktopPatchReviewViewModel? patchReview = null)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
         ArgumentNullException.ThrowIfNull(runtimeHealth);
@@ -43,9 +45,11 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
                 new UnavailableProjectFolderSelectionCoordinator());
         Configuration = configuration ?? new DesktopConfigurationViewModel(new UnavailableDesktopConfigurationSource());
         RecoveryPoints = recoveryPoints;
+        RecoveryAudits = recoveryAudits;
         TrustCentre = trustCentre ??
             new DesktopTrustCentreViewModel(new UnavailableDesktopTrustCentreSource());
         License = license ?? new DesktopLicenseViewModel();
+        PatchReview = patchReview;
         selectedSection = DesktopNavigationSection.Home;
         pageTitle = "Home";
         pageDetail =
@@ -66,9 +70,13 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
 
     public DesktopRecoveryPointViewModel? RecoveryPoints { get; }
 
+    public DesktopRecoveryViewModel? RecoveryAudits { get; }
+
     public DesktopTrustCentreViewModel TrustCentre { get; }
 
     public DesktopLicenseViewModel License { get; }
+
+    public DesktopPatchReviewViewModel? PatchReview { get; }
 
     public string WindowTitle => Snapshot.WindowTitle;
 

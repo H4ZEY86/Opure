@@ -11,6 +11,8 @@
     <ProjectReference Include="..\..\Trust\Opure.TrustEvidence.Service\Opure.TrustEvidence.Service.csproj" />
     <ProjectReference Include="..\..\Workspace\Opure.Workspace.Service\Opure.Workspace.Service.csproj" />
     <ProjectReference Include="..\..\Recovery\Opure.Recovery.Service\Opure.Recovery.Service.csproj" />
+    <ProjectReference Include="..\..\Patch\Opure.Patch.Service\Opure.Patch.Service.csproj" />
+    <ProjectReference Include="..\..\Workspace\Opure.Workspace.Execution\Opure.Workspace.Execution.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

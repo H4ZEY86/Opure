@@ -196,7 +196,8 @@
         "type": "Project",
         "dependencies": {
           "Opure.Patch.Contracts": "[1.0.0, )",
-          "Opure.Persistence.Sqlite": "[1.0.0, )"
+          "Opure.Persistence.Sqlite": "[1.0.0, )",
+          "Opure.TrustEvidence.Contracts": "[1.0.0, )"
         }
       },
       "opure.persistence.sqlite": {
@@ -205,6 +206,9 @@
           "Microsoft.Data.Sqlite": "[10.0.10, )",
           "SQLitePCLRaw.bundle_e_sqlite3": "[2.1.12, )"
         }
+      },
+      "opure.trustevidence.contracts": {
+        "type": "Project"
       },
       "Microsoft.Data.Sqlite": {
         "type": "CentralTransitive",

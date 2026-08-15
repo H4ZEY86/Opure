@@ -55,6 +55,15 @@ public sealed class TrustEvidenceServiceHost : IDisposable
         }
     }
 
+    public TrustEvidenceDatabase Database
+    {
+        get
+        {
+            ObjectDisposedException.ThrowIf(disposed, this);
+            return database;
+        }
+    }
+
     public static TrustEvidenceServiceHost Start(
         string channelDataRoot,
         TimeProvider? timeProvider = null,

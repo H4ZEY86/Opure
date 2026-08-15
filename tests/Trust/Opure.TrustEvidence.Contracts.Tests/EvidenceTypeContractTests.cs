@@ -246,6 +246,7 @@ public sealed class EvidenceTypeContractTests
             "configuration.snapshot-committed",
             "configuration.transaction-requested",
             "configuration.transaction-result",
+            "patch.state-transitioned",
             "project.closed",
             "project.opened",
             "project.registered",
@@ -257,7 +258,7 @@ public sealed class EvidenceTypeContractTests
             "workspace.snapshot-created"
         ];
 
-        Assert.Equal(13, catalogue.Definitions.Count);
+        Assert.Equal(14, catalogue.Definitions.Count);
         Assert.Equal(
             expectedTypeIds,
             catalogue.Definitions

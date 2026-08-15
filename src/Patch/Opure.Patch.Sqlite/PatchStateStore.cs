@@ -11,6 +11,7 @@ public sealed class PatchStateStore : IPatchStateStore
 {
     private readonly SqliteServiceDatabase database;
     private readonly TimeProvider timeProvider;
+    private readonly SqliteOutboxWriter outbox;
 
     internal PatchStateStore(
         SqliteServiceDatabase database,
@@ -18,6 +19,7 @@ public sealed class PatchStateStore : IPatchStateStore
     {
         this.database = database;
         this.timeProvider = timeProvider ?? TimeProvider.System;
+        this.outbox = new SqliteOutboxWriter(database.Descriptor, this.timeProvider);
     }
 
     public PatchStateCommandResult Register(
@@ -58,6 +60,9 @@ public sealed class PatchStateStore : IPatchStateStore
                 InsertTransition(
                     connection, transaction, proposal.PatchId, 1, commandId,
                     null, PatchLifecycleState.Draft, now);
+                PatchTrustEvidenceOutbox.Enqueue(
+                    outbox, connection, transaction, proposal.PatchId, proposal.ProjectId,
+                    proposal.ProposalSha256, commandId, null, PatchLifecycleState.Draft, now);
                 return new PatchStateCommandResult(
                     PatchStateCommandDisposition.Applied,
                     new PatchStateSnapshot(
@@ -124,6 +129,9 @@ public sealed class PatchStateStore : IPatchStateStore
                 InsertTransition(
                     connection, transaction, patchId, nextVersion, commandId,
                     current.State, target, now);
+                PatchTrustEvidenceOutbox.Enqueue(
+                    outbox, connection, transaction, patchId, current.ProjectId,
+                    proposalSha256, commandId, current.State, target, now);
                 return new PatchStateCommandResult(
                     PatchStateCommandDisposition.Applied,
                     current with { State = target, StateVersion = nextVersion, UpdatedAtUtc = now });

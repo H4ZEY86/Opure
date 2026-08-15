@@ -31,7 +31,8 @@ public static class FoundationEvidenceTypeCatalogue
             RecoveryPointCreated(),
             SecurityPolicyDenied(),
             ConfigurationTransactionRequested(),
-            ConfigurationTransactionResult()
+            ConfigurationTransactionResult(),
+            PatchStateTransitioned()
         ]);
 
     private static EvidenceTypeDefinition RuntimeStarted()
@@ -522,6 +523,47 @@ public static class FoundationEvidenceTypeCatalogue
             fieldType,
             classification,
             isRequired);
+    }
+
+    private static EvidenceTypeDefinition PatchStateTransitioned()
+    {
+        return Define(
+            "patch.state-transitioned",
+            "opure.patch",
+            EvidenceAuthorityClass.AuthoritativeDomainStateTransition,
+            [
+                Field(
+                    "patch_id",
+                    EvidencePayloadFieldType.Identifier,
+                    EvidenceDataClassification.Pseudonymous),
+                Field(
+                    "project_id",
+                    EvidencePayloadFieldType.Identifier,
+                    EvidenceDataClassification.Pseudonymous),
+                Field(
+                    "proposal_sha256",
+                    EvidencePayloadFieldType.Sha256,
+                    EvidenceDataClassification.Safe),
+                Field(
+                    "command_id",
+                    EvidencePayloadFieldType.Identifier,
+                    EvidenceDataClassification.Pseudonymous),
+                Field(
+                    "previous_state",
+                    EvidencePayloadFieldType.String,
+                    EvidenceDataClassification.Safe,
+                    isRequired: false),
+                Field(
+                    "current_state",
+                    EvidencePayloadFieldType.String,
+                    EvidenceDataClassification.Safe)
+            ],
+            ["patch_id", "project_id", "proposal_sha256", "command_id", "current_state"],
+            [
+                EvidenceRelationshipKind.CausedBy,
+                EvidenceRelationshipKind.Produces,
+                EvidenceRelationshipKind.CorrelatesWith
+            ]);
     }
 }
 

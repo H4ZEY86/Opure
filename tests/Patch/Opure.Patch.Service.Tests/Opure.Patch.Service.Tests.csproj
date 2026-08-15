@@ -12,5 +12,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Patch\Opure.Patch.Service\Opure.Patch.Service.csproj" />
+    <ProjectReference Include="..\..\..\src\Patch\Opure.Patch.Sqlite\Opure.Patch.Sqlite.csproj" />
+    <ProjectReference Include="..\..\..\src\Trust\Opure.TrustEvidence.Contracts\Opure.TrustEvidence.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\src\Trust\Opure.TrustEvidence.Service\Opure.TrustEvidence.Service.csproj" />
+    <ProjectReference Include="..\..\..\src\Trust\Opure.TrustEvidence.Sqlite\Opure.TrustEvidence.Sqlite.csproj" />
   </ItemGroup>
 </Project>

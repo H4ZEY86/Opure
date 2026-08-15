@@ -202,4 +202,84 @@ public class PatchExecutionPipelineTests
             File.Delete(tempFile);
         }
     }
+
+    [Fact]
+    public async Task ExecutePatchAsync_ReplacePostconditionMismatch_SecuresSnapshotInVault()
+    {
+        // Arrange
+        byte[] oldContent = Encoding.UTF8.GetBytes("Old content");
+        byte[] newContent = Encoding.UTF8.GetBytes("New content");
+        
+        string expectedSourceSha256 = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(oldContent));
+        
+        var proposal = new ExactUtf8PatchProposal(
+            "patch-replace-1",
+            1,
+            "project-1",
+            "root-1",
+            1,
+            new string('0', 64), // irrelevant for ResultingContent here
+            "target-1",
+            ExactUtf8PatchOperationKind.Replace,
+            expectedSourceSha256,
+            (long)oldContent.Length,
+            PatchLineEndingIntent.Lf,
+            PatchCreatorKind.DeterministicService,
+            "Replace content",
+            DateTimeOffset.UtcNow,
+            newContent);
+
+        // Tamper ResultingContentSha256 to force failure
+        typeof(ExactUtf8PatchProposal)
+            .GetField("<ResultingContentSha256>k__BackingField", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+            .SetValue(proposal, new string('a', 64));
+
+        var preview = new ExactUtf8PatchPreview(
+            "patch-replace-1",
+            1,
+            proposal.ProposalSha256,
+            "target-1",
+            ExactUtf8PatchOperationKind.Replace,
+            expectedSourceSha256,
+            proposal.ResultingContentSha256,
+            PatchLineEndingIntent.Lf,
+            PatchLineEndingIntent.Lf,
+            false,
+            false,
+            PatchEffectIntentClass.Unknown);
+
+        var approval = new ExactUtf8PatchApproval(
+            "app-1",
+            1,
+            "patch-replace-1",
+            proposal.ProposalSha256,
+            preview.PreviewDigestSha256,
+            "dev-1",
+            DateTimeOffset.UtcNow);
+
+        string tempFile = Path.GetTempFileName();
+        File.WriteAllBytes(tempFile, oldContent); // Setup initial state for replace
+        
+        try
+        {
+            var pipeline = new PatchExecutionPipeline(_workerPath, new TestWorkspaceSourceProvider(), new TestFileIdentityVerifier());
+            string workspaceRoot = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(workspaceRoot);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<PostconditionFailedException>(() =>
+                pipeline.ExecutePatchAsync(approval, preview, proposal, "dev-1", tempFile, workspaceRoot));
+                
+            // Verify snapshot exists in vault
+            string expectedVaultPath = Path.Combine(workspaceRoot, ".opure-recovery", "patch-replace-1.recovery");
+            Assert.True(File.Exists(expectedVaultPath), "Snapshot was not secured in vault");
+            
+            byte[] snapshotBytes = await File.ReadAllBytesAsync(expectedVaultPath, TestContext.Current.CancellationToken);
+            Assert.Equal(oldContent, snapshotBytes);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
 }

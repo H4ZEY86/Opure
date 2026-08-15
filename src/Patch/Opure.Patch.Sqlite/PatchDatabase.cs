@@ -57,6 +57,14 @@ public sealed class PatchDatabase : IDisposable
         return new PatchStateStore(database, timeProvider);
     }
 
+    public SqliteOutboxDispatcher CreateOutboxDispatcher(
+        SqliteOutboxRetryPolicy? retryPolicy = null,
+        TimeProvider? timeProvider = null)
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        return new SqliteOutboxDispatcher(database, retryPolicy, timeProvider);
+    }
+
     public void Dispose()
     {
         if (disposed)

@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package opure.patch.protocol;
+
+option csharp_namespace = "Opure.Patch.Protocol";
+
+import "google/protobuf/timestamp.proto";
+
+service RecoveryOrchestrator {
+  rpc GetUnresolvedAudits (GetUnresolvedAuditsRequest) returns (GetUnresolvedAuditsResponse);
+  rpc RestoreSnapshot (RestoreSnapshotRequest) returns (RestoreSnapshotResponse);
+  rpc DiscardSnapshot (DiscardSnapshotRequest) returns (DiscardSnapshotResponse);
+}
+
+message GetUnresolvedAuditsRequest {
+}
+
+message GetUnresolvedAuditsResponse {
+  repeated RecoveryAuditRecord audits = 1;
+}
+
+message RecoveryAuditRecord {
+  string patch_id = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  string approver_identity = 3;
+  string expected_hash = 4;
+  string actual_hash = 5;
+  int32 resolution_status = 6;
+}
+
+message RestoreSnapshotRequest {
+  string patch_id = 1;
+}
+
+message RestoreSnapshotResponse {
+}
+
+message DiscardSnapshotRequest {
+  string patch_id = 1;
+}
+
+message DiscardSnapshotResponse {
+}

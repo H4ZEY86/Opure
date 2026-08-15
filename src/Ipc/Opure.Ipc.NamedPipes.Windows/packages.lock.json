@@ -43,6 +43,17 @@
       "opure.observability.contracts": {
         "type": "Project"
       },
+      "opure.patch.contracts": {
+        "type": "Project"
+      },
+      "opure.patch.protocol": {
+        "type": "Project",
+        "dependencies": {
+          "Google.Protobuf": "[3.35.1, )",
+          "Grpc.Core.Api": "[2.80.0, )",
+          "Opure.Patch.Contracts": "[1.0.0, )"
+        }
+      },
       "opure.project.protocol": {
         "type": "Project",
         "dependencies": {

@@ -44,6 +44,9 @@
           "SQLitePCLRaw.bundle_e_sqlite3": "[2.1.12, )"
         }
       },
+      "opure.trustevidence.contracts": {
+        "type": "Project"
+      },
       "Microsoft.Data.Sqlite": {
         "type": "CentralTransitive",
         "requested": "[10.0.10, )",
