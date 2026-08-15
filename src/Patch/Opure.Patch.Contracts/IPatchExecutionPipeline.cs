@@ -11,4 +11,8 @@ public interface IPatchExecutionPipeline
         string approverIdentity,
         string absoluteTargetPath,
         string workspaceRootPath);
+
+    Task<PatchExecutionResult> ExecuteUnifiedPatchAsync(
+        ExecutePatchCommand command,
+        System.Threading.CancellationToken cancellationToken);
 }

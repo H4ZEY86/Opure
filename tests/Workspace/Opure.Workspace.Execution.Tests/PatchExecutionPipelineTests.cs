@@ -282,4 +282,144 @@ public class PatchExecutionPipelineTests
             File.Delete(tempFile);
         }
     }
+
+    [Fact]
+    public async Task ExecuteUnifiedPatchAsync_TwoFileSuccess_SwapsAtomically()
+    {
+        string workspaceRoot = Path.Combine(Path.GetTempPath(), "UnifiedSuccess_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(workspaceRoot);
+        
+        string file1 = Path.Combine(workspaceRoot, "file1.txt");
+        string file2 = Path.Combine(workspaceRoot, "file2.txt");
+        
+        await File.WriteAllBytesAsync(file1, "A\nB\n"u8.ToArray(), TestContext.Current.CancellationToken);
+        await File.WriteAllBytesAsync(file2, "C\nD\n"u8.ToArray(), TestContext.Current.CancellationToken);
+
+        var proposal1 = new UnifiedPatchProposal
+        {
+            OriginalFileHeader = "file1.txt",
+            TargetFileHeader = "file1.txt",
+            Hunks = new[] { new UnifiedHunk { OriginalStartLine = 1, OriginalLineCount = 2, TargetStartLine = 1, TargetLineCount = 2, Lines = new[] { new UnifiedHunkLine { Type = UnifiedHunkLineType.Deletion, Content = new ReadOnlyMemory<byte>("A\n"u8.ToArray()) }, new UnifiedHunkLine { Type = UnifiedHunkLineType.Addition, Content = new ReadOnlyMemory<byte>("A2\n"u8.ToArray()) }, new UnifiedHunkLine { Type = UnifiedHunkLineType.Context, Content = new ReadOnlyMemory<byte>("B\n"u8.ToArray()) } } } }
+        };
+
+        var proposal2 = new UnifiedPatchProposal
+        {
+            OriginalFileHeader = "file2.txt",
+            TargetFileHeader = "file2.txt",
+            Hunks = new[] { new UnifiedHunk { OriginalStartLine = 1, OriginalLineCount = 2, TargetStartLine = 1, TargetLineCount = 2, Lines = new[] { new UnifiedHunkLine { Type = UnifiedHunkLineType.Deletion, Content = new ReadOnlyMemory<byte>("C\n"u8.ToArray()) }, new UnifiedHunkLine { Type = UnifiedHunkLineType.Addition, Content = new ReadOnlyMemory<byte>("C2\n"u8.ToArray()) }, new UnifiedHunkLine { Type = UnifiedHunkLineType.Context, Content = new ReadOnlyMemory<byte>("D\n"u8.ToArray()) } } } }
+        };
+
+        var command = new ExecutePatchCommand
+        {
+            PatchId = "unified-1",
+            ApproverIdentity = "dev-1",
+            WorkspaceRootPath = workspaceRoot,
+            Proposals = new[] { proposal1, proposal2 }
+        };
+
+        var pipeline = new PatchExecutionPipeline(_workerPath, new TestWorkspaceSourceProvider(), new TestFileIdentityVerifier());
+        
+        var result = await pipeline.ExecuteUnifiedPatchAsync(command, TestContext.Current.CancellationToken);
+        
+        Assert.True(result.Success, result.ErrorMessage);
+        Assert.Equal("A2\nB\n", await File.ReadAllTextAsync(file1, TestContext.Current.CancellationToken));
+        Assert.Equal("C2\nD\n", await File.ReadAllTextAsync(file2, TestContext.Current.CancellationToken));
+        
+        Directory.Delete(workspaceRoot, true);
+    }
+
+    private class ThrowingIdentityVerifier : IFileIdentityVerifier
+    {
+        public Task VerifyPreconditionsAsync(string workspaceRootPath, string logicalPath, bool expectedExists, long expectedLength, string expectedSha256)
+        {
+            throw new PreconditionFailedException("Concurrent modification detected.");
+        }
+    }
+
+    [Fact]
+    public async Task ExecuteUnifiedPatchAsync_ConcurrentModification_AbortsBeforeMutation()
+    {
+        string workspaceRoot = Path.Combine(Path.GetTempPath(), "UnifiedConcurrent_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(workspaceRoot);
+        
+        string file1 = Path.Combine(workspaceRoot, "file1.txt");
+        await File.WriteAllBytesAsync(file1, "A\nB\n"u8.ToArray(), TestContext.Current.CancellationToken);
+
+        var proposal1 = new UnifiedPatchProposal
+        {
+            OriginalFileHeader = "file1.txt",
+            TargetFileHeader = "file1.txt",
+            Hunks = new[] { new UnifiedHunk { OriginalStartLine = 1, OriginalLineCount = 2, TargetStartLine = 1, TargetLineCount = 2, Lines = new[] { new UnifiedHunkLine { Type = UnifiedHunkLineType.Deletion, Content = new ReadOnlyMemory<byte>("A\n"u8.ToArray()) }, new UnifiedHunkLine { Type = UnifiedHunkLineType.Addition, Content = new ReadOnlyMemory<byte>("A2\n"u8.ToArray()) }, new UnifiedHunkLine { Type = UnifiedHunkLineType.Context, Content = new ReadOnlyMemory<byte>("B\n"u8.ToArray()) } } } }
+        };
+
+        var command = new ExecutePatchCommand
+        {
+            PatchId = "unified-2",
+            ApproverIdentity = "dev-1",
+            WorkspaceRootPath = workspaceRoot,
+            Proposals = new[] { proposal1 }
+        };
+
+        // Inject the throwing verifier to simulate TOCTOU drift
+        var pipeline = new PatchExecutionPipeline(_workerPath, new TestWorkspaceSourceProvider(), new ThrowingIdentityVerifier());
+        
+        var result = await pipeline.ExecuteUnifiedPatchAsync(command, TestContext.Current.CancellationToken);
+        
+        Assert.False(result.Success);
+        Assert.Contains("Concurrent modification", result.ErrorMessage);
+        
+        // Ensure file was not mutated
+        Assert.Equal("A\nB\n", await File.ReadAllTextAsync(file1, TestContext.Current.CancellationToken));
+        
+        Directory.Delete(workspaceRoot, true);
+    }
+
+    [Fact]
+    public async Task ExecuteUnifiedPatchAsync_NthFileFailure_RollbacksFlawlessly()
+    {
+        string workspaceRoot = Path.Combine(Path.GetTempPath(), "UnifiedRollback_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(workspaceRoot);
+        
+        string file1 = Path.Combine(workspaceRoot, "file1.txt");
+        // file2 will be in a non-existent directory to force the native MoveFileEx / ReplaceFileW to fail!
+        string file2 = Path.Combine(workspaceRoot, "missingdir", "file2.txt");
+        
+        await File.WriteAllBytesAsync(file1, "A\nB\n"u8.ToArray(), TestContext.Current.CancellationToken);
+
+        var proposal1 = new UnifiedPatchProposal
+        {
+            OriginalFileHeader = "file1.txt",
+            TargetFileHeader = "file1.txt",
+            Hunks = new[] { new UnifiedHunk { OriginalStartLine = 1, OriginalLineCount = 2, TargetStartLine = 1, TargetLineCount = 2, Lines = new[] { new UnifiedHunkLine { Type = UnifiedHunkLineType.Deletion, Content = new ReadOnlyMemory<byte>("A\n"u8.ToArray()) }, new UnifiedHunkLine { Type = UnifiedHunkLineType.Addition, Content = new ReadOnlyMemory<byte>("A2\n"u8.ToArray()) }, new UnifiedHunkLine { Type = UnifiedHunkLineType.Context, Content = new ReadOnlyMemory<byte>("B\n"u8.ToArray()) } } } }
+        };
+
+        // File2 is a create, so it has no original bytes. Staging will succeed.
+        var proposal2 = new UnifiedPatchProposal
+        {
+            OriginalFileHeader = "/dev/null",
+            TargetFileHeader = "missingdir/file2.txt",
+            Hunks = new[] { new UnifiedHunk { OriginalStartLine = 0, OriginalLineCount = 0, TargetStartLine = 1, TargetLineCount = 1, Lines = new[] { new UnifiedHunkLine { Type = UnifiedHunkLineType.Addition, Content = new ReadOnlyMemory<byte>("C2\n"u8.ToArray()) } } } }
+        };
+
+        var command = new ExecutePatchCommand
+        {
+            PatchId = "unified-3",
+            ApproverIdentity = "dev-1",
+            WorkspaceRootPath = workspaceRoot,
+            Proposals = new[] { proposal1, proposal2 }
+        };
+
+        var pipeline = new PatchExecutionPipeline(_workerPath, new TestWorkspaceSourceProvider(), new TestFileIdentityVerifier());
+        
+        var result = await pipeline.ExecuteUnifiedPatchAsync(command, TestContext.Current.CancellationToken);
+        
+        Assert.False(result.Success);
+        Assert.Contains("Transaction failed and rolled back", result.ErrorMessage);
+        
+        // Ensure file1 was rolled back after file2 swap failed
+        Assert.Equal("A\nB\n", await File.ReadAllTextAsync(file1, TestContext.Current.CancellationToken));
+        Assert.False(File.Exists(file2));
+        
+        Directory.Delete(workspaceRoot, true);
+    }
 }

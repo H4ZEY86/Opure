@@ -61,6 +61,15 @@ public class PatchOrchestratorTests
             }
             return Task.CompletedTask;
         }
+
+        public Task<PatchExecutionResult> ExecuteUnifiedPatchAsync(ExecutePatchCommand command, CancellationToken cancellationToken)
+        {
+            if (_exceptionToThrow != null)
+            {
+                return Task.FromResult(new PatchExecutionResult { Success = false, ErrorMessage = _exceptionToThrow.Message });
+            }
+            return Task.FromResult(new PatchExecutionResult { Success = true, ErrorMessage = null });
+        }
     }
 
     private class FakeRecoveryOrchestrator : IRecoveryOrchestrator
