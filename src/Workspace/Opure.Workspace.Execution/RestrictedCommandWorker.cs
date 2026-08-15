@@ -10,7 +10,7 @@ namespace Opure.Workspace.Execution;
 
 public interface IRestrictedCommandWorker
 {
-    Task<int> ExecuteAsync(ToolTemplate template, string workingDirectory, CancellationToken cancellationToken);
+    Task<CommandExecutionResult> ExecuteAsync(ToolTemplate template, string workingDirectory, CancellationToken cancellationToken);
 }
 
 public class RestrictedCommandWorker : IRestrictedCommandWorker
@@ -22,7 +22,7 @@ public class RestrictedCommandWorker : IRestrictedCommandWorker
         _resolver = resolver;
     }
 
-    public async Task<int> ExecuteAsync(ToolTemplate template, string workingDirectory, CancellationToken cancellationToken)
+    public async Task<CommandExecutionResult> ExecuteAsync(ToolTemplate template, string workingDirectory, CancellationToken cancellationToken)
     {
         ToolTemplateValidator.Validate(template);
 
@@ -72,9 +72,12 @@ public class RestrictedCommandWorker : IRestrictedCommandWorker
             throw;
         }
 
+        var outTask = BoundedStreamDrainer.DrainAsync(process.StandardOutput.BaseStream, cts.Token);
+        var errTask = BoundedStreamDrainer.DrainAsync(process.StandardError.BaseStream, cts.Token);
+
         try
         {
-            await process.WaitForExitAsync(cts.Token);
+            await Task.WhenAll(process.WaitForExitAsync(cts.Token), outTask, errTask);
         }
         catch (OperationCanceledException)
         {
@@ -85,6 +88,10 @@ public class RestrictedCommandWorker : IRestrictedCommandWorker
             throw new TimeoutException($"Command exceeded timeout of {template.TimeoutMilliseconds}ms.");
         }
 
-        return process.ExitCode;
+        // Even if the process exits, we must ensure we got the buffers.
+        var stdout = await outTask;
+        var stderr = await errTask;
+
+        return new CommandExecutionResult(process.ExitCode, stdout, stderr);
     }
 }

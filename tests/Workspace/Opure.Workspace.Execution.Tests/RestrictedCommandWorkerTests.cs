@@ -38,8 +38,10 @@ public class RestrictedCommandWorkerTests
         var worker = new RestrictedCommandWorker(resolver);
         var template = CreateValidTemplate();
 
-        var exitCode = await worker.ExecuteAsync(template, Path.GetTempPath(), CancellationToken.None);
-        Assert.Equal(0, exitCode);
+        var result = await worker.ExecuteAsync(template, Path.GetTempPath(), CancellationToken.None);
+        Assert.Equal(0, result.ExitCode);
+        Assert.NotNull(result.StandardOutput);
+        Assert.NotNull(result.StandardError);
     }
 
     [Fact]
