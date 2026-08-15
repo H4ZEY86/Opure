@@ -353,6 +353,7 @@
       "opure.patch.service": {
         "type": "Project",
         "dependencies": {
+          "Opure.Filesystem.Contracts": "[1.0.0, )",
           "Opure.Patch.Contracts": "[1.0.0, )",
           "Opure.Patch.Sqlite": "[1.0.0, )",
           "Opure.TrustEvidence.Contracts": "[1.0.0, )",
