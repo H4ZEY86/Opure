@@ -198,6 +198,28 @@
           "Opure.Filesystem.Contracts": "[1.0.0, )"
         }
       },
+      "opure.patch.contracts": {
+        "type": "Project"
+      },
+      "opure.patch.service": {
+        "type": "Project",
+        "dependencies": {
+          "Opure.Filesystem.Contracts": "[1.0.0, )",
+          "Opure.Patch.Contracts": "[1.0.0, )",
+          "Opure.Patch.Sqlite": "[1.0.0, )",
+          "Opure.TrustEvidence.Contracts": "[1.0.0, )",
+          "Opure.TrustEvidence.Sqlite": "[1.0.0, )",
+          "Opure.Workspace.Contracts": "[1.0.0, )"
+        }
+      },
+      "opure.patch.sqlite": {
+        "type": "Project",
+        "dependencies": {
+          "Opure.Patch.Contracts": "[1.0.0, )",
+          "Opure.Persistence.Sqlite": "[1.0.0, )",
+          "Opure.TrustEvidence.Contracts": "[1.0.0, )"
+        }
+      },
       "opure.persistence.sqlite": {
         "type": "Project",
         "dependencies": {
@@ -244,8 +266,25 @@
           "Opure.TrustEvidence.Contracts": "[1.0.0, )"
         }
       },
+      "opure.workspace.containment": {
+        "type": "Project",
+        "dependencies": {
+          "Opure.Workspace.Contracts": "[1.0.0, )"
+        }
+      },
       "opure.workspace.contracts": {
         "type": "Project"
+      },
+      "opure.workspace.execution": {
+        "type": "Project",
+        "dependencies": {
+          "Opure.Filesystem.Contracts": "[1.0.0, )",
+          "Opure.Filesystem.Windows": "[1.0.0, )",
+          "Opure.Patch.Contracts": "[1.0.0, )",
+          "Opure.Patch.Service": "[1.0.0, )",
+          "Opure.Workspace.Containment": "[1.0.0, )",
+          "System.IO.FileSystem.AccessControl": "[5.0.0, )"
+        }
       },
       "opure.workspace.service": {
         "type": "Project",
@@ -254,6 +293,7 @@
           "Opure.Persistence.Sqlite": "[1.0.0, )",
           "Opure.TrustEvidence.Contracts": "[1.0.0, )",
           "Opure.Workspace.Contracts": "[1.0.0, )",
+          "Opure.Workspace.Execution": "[1.0.0, )",
           "Opure.Workspace.Sqlite": "[1.0.0, )",
           "Opure.Workspace.Windows": "[1.0.0, )"
         }
@@ -308,6 +348,12 @@
           "SQLitePCLRaw.lib.e_sqlite3": "2.1.12",
           "SQLitePCLRaw.provider.e_sqlite3": "2.1.12"
         }
+      },
+      "System.IO.FileSystem.AccessControl": {
+        "type": "CentralTransitive",
+        "requested": "[5.0.0, )",
+        "resolved": "5.0.0",
+        "contentHash": "SxHB3nuNrpptVk+vZ/F+7OHEpoHUIKKMl02bUmYHQr1r+glbZQxs7pRtsf4ENO29TVm2TH3AEeep2fJcy92oYw=="
       }
     }
   }

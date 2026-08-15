@@ -24,6 +24,7 @@
     <ProjectReference Include="..\..\..\src\Workspace\Opure.Workspace.Service\Opure.Workspace.Service.csproj" />
     <ProjectReference Include="..\..\..\src\Workspace\Opure.Workspace.Sqlite\Opure.Workspace.Sqlite.csproj" />
     <ProjectReference Include="..\..\..\src\Workspace\Opure.Workspace.Windows\Opure.Workspace.Windows.csproj" />
+    <ProjectReference Include="..\..\..\src\Workspace\Opure.Workspace.Execution\Opure.Workspace.Execution.csproj" />
   </ItemGroup>
 
 </Project>

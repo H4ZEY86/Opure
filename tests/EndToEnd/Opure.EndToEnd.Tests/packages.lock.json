@@ -539,6 +539,7 @@
           "Opure.Persistence.Sqlite": "[1.0.0, )",
           "Opure.TrustEvidence.Contracts": "[1.0.0, )",
           "Opure.Workspace.Contracts": "[1.0.0, )",
+          "Opure.Workspace.Execution": "[1.0.0, )",
           "Opure.Workspace.Sqlite": "[1.0.0, )",
           "Opure.Workspace.Windows": "[1.0.0, )"
         }

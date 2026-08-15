@@ -12,6 +12,7 @@
     <ProjectReference Include="..\Opure.Workspace.Contracts\Opure.Workspace.Contracts.csproj" />
     <ProjectReference Include="..\Opure.Workspace.Sqlite\Opure.Workspace.Sqlite.csproj" />
     <ProjectReference Include="..\Opure.Workspace.Windows\Opure.Workspace.Windows.csproj" />
+    <ProjectReference Include="..\Opure.Workspace.Execution\Opure.Workspace.Execution.csproj" />
   </ItemGroup>
 
 </Project>
