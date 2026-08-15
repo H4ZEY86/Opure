@@ -164,6 +164,12 @@
         }
       },
       "opure.workspace.containment": {
+        "type": "Project",
+        "dependencies": {
+          "Opure.Workspace.Contracts": "[1.0.0, )"
+        }
+      },
+      "opure.workspace.contracts": {
         "type": "Project"
       }
     }
