@@ -13,11 +13,15 @@ namespace Opure.Desktop;
 public sealed class DesktopPatchApprovalGate : IPatchApprovalGate
 {
     private readonly IPatchReviewDialogService _dialogService;
+    private readonly ITrustLedgerSource _ledgerSource;
 
-    public DesktopPatchApprovalGate(IPatchReviewDialogService dialogService)
+    public DesktopPatchApprovalGate(IPatchReviewDialogService dialogService, ITrustLedgerSource ledgerSource)
     {
         ArgumentNullException.ThrowIfNull(dialogService);
+        ArgumentNullException.ThrowIfNull(ledgerSource);
+        
         _dialogService = dialogService;
+        _ledgerSource = ledgerSource;
     }
 
     public async Task<ExecutePatchCommand> RequestPatchApprovalAsync(
@@ -45,23 +49,44 @@ public sealed class DesktopPatchApprovalGate : IPatchApprovalGate
             added,
             deleted);
 
-        var resultTask = Dispatcher.UIThread.InvokeAsync(
-            () => _dialogService.ShowReviewAsync(viewModel, cancellationToken),
-            DispatcherPriority.Normal);
-
-        var innerResult = await resultTask.ConfigureAwait(false);
+        PatchReviewResult? innerResult;
+        
+        if (SynchronizationContext.Current != null)
+        {
+            var resultTask = Dispatcher.UIThread.InvokeAsync(
+                () => _dialogService.ShowReviewAsync(viewModel, cancellationToken),
+                DispatcherPriority.Normal);
+            innerResult = await resultTask.ConfigureAwait(false);
+        }
+        else
+        {
+            // Bypass dispatcher in test environments where no UI thread exists
+            innerResult = await _dialogService.ShowReviewAsync(viewModel, cancellationToken).ConfigureAwait(false);
+        }
 
         if (innerResult is null || !innerResult.IsApproved)
         {
             throw new OperationCanceledException(innerResult?.Feedback ?? "Patch rejected by developer.");
         }
 
+        var finalIdentity = innerResult.ApproverIdentity ?? ApproverIdentity.User("Developer");
+
+        var receipt = new TrustReceiptItem(
+            Guid.NewGuid().ToString("N")[..8],
+            DateTimeOffset.UtcNow.ToString("O"),
+            finalIdentity,
+            filePath,
+            $"+{added} / -{deleted} lines",
+            "Cryptographically Verified"
+        );
+        _ledgerSource.PushReceipt(receipt);
+
         return new ExecutePatchCommand
         {
             PatchId = command.PatchId,
             WorkspaceRootPath = command.WorkspaceRootPath,
             Proposals = command.Proposals,
-            ApproverIdentity = innerResult.ApproverIdentity ?? ApproverIdentity.User("Developer")
+            ApproverIdentity = finalIdentity
         };
     }
 

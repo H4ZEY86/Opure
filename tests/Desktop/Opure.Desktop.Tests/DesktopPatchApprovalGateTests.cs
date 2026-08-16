@@ -26,11 +26,18 @@ public sealed class DesktopPatchApprovalGateTests
         }
     }
 
+    private sealed class MockTrustLedgerSource : ITrustLedgerSource
+    {
+        public event EventHandler<TrustReceiptItem>? ReceiptAdded { add { } remove { } }
+        public IReadOnlyList<TrustReceiptItem> GetHistoricalReceipts() => Array.Empty<TrustReceiptItem>();
+        public void PushReceipt(TrustReceiptItem item) { }
+    }
+
     [Fact]
     public async Task RequestPatchApprovalAsync_Approved_ReturnsCommandWithUserIdentity()
     {
         var service = new MockDialogService(new PatchReviewResult(true, "User:TestUser", null));
-        var gate = new DesktopPatchApprovalGate(service);
+        var gate = new DesktopPatchApprovalGate(service, new MockTrustLedgerSource());
 
         var originalCommand = new ExecutePatchCommand
         {
@@ -50,7 +57,7 @@ public sealed class DesktopPatchApprovalGateTests
     public async Task RequestPatchApprovalAsync_Rejected_ThrowsOperationCanceledException()
     {
         var service = new MockDialogService(new PatchReviewResult(false, null, "I reject this"));
-        var gate = new DesktopPatchApprovalGate(service);
+        var gate = new DesktopPatchApprovalGate(service, new MockTrustLedgerSource());
 
         var originalCommand = new ExecutePatchCommand
         {
