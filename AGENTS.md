@@ -275,12 +275,12 @@ Completed and committed:
 
 Locally implemented, verified and committed; pending reviewed pushes:
 
-* WP-018 — Local Model Runtime (Stems 1 & 2: Isolation & Manifests)
+* WP-018 — Local Model Runtime (Stems 1, 2, and 3: Isolation, Hash Manifests, and Zero-Allocation Streaming Router) verified against 954 passing tests.
 
 The next planned ticket is:
 
 ```text
-WP-018 — Local Model Runtime (Phase 8: Local Intelligence, Stem 3)
+WP-018 — Local Model Runtime (Phase 8: Local Intelligence, Final Integration Stems)
 ```
 
 GATE-A-001 passed its repeatable 32-step Development-channel demonstration and
