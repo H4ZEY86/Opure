@@ -7,6 +7,7 @@ using Opure.Runtime.Contracts.Models;
 using Opure.Runtime.Models;
 using Opure.TrustEvidence.Contracts;
 using Opure.Workspace.Contracts;
+using Opure.Workspace.Contracts.Models;
 using Opure.Workspace.Service;
 using Xunit;
 
@@ -80,11 +81,17 @@ public class ToolchainExecutionBridgeTests
         }
     }
 
+    private class FakeTrustedWorkspaceDirectory : ITrustedWorkspaceDirectory
+    {
+        public string TrustedRoot => System.IO.Path.GetFullPath("C:\\OpureFakeTrustedRoot");
+        public void EnsureExists() { }
+    }
+
     [Fact]
     public async Task ExecuteToolAsync_WhenValidationFails_ReturnsRejection()
     {
         var provider = new FakeToolchainProvider { ValidateSuccess = false };
-        var bridge = new ToolchainExecutionBridge(provider, new FakePatchPipeline(), new FakeCommandPipeline(), new FakeApprovalGate());
+        var bridge = new ToolchainExecutionBridge(provider, new FakePatchPipeline(), new FakeCommandPipeline(), new FakeApprovalGate(), new FakeTrustedWorkspaceDirectory());
         var request = new ToolRequest("apply_patch", new Dictionary<string, object>());
 
         var result = await bridge.ExecuteToolAsync(request, CancellationToken.None);
@@ -96,7 +103,7 @@ public class ToolchainExecutionBridgeTests
     [Fact]
     public async Task ExecuteToolAsync_ApplyPatch_ExecutesSuccessfully()
     {
-        var bridge = new ToolchainExecutionBridge(new FakeToolchainProvider(), new FakePatchPipeline(), new FakeCommandPipeline(), new FakeApprovalGate());
+        var bridge = new ToolchainExecutionBridge(new FakeToolchainProvider(), new FakePatchPipeline(), new FakeCommandPipeline(), new FakeApprovalGate(), new FakeTrustedWorkspaceDirectory());
         var request = new ToolRequest("apply_patch", new Dictionary<string, object>());
 
         var result = await bridge.ExecuteToolAsync(request, CancellationToken.None);
@@ -108,12 +115,27 @@ public class ToolchainExecutionBridgeTests
     [Fact]
     public async Task ExecuteToolAsync_RunCommand_ExecutesSuccessfully()
     {
-        var bridge = new ToolchainExecutionBridge(new FakeToolchainProvider(), new FakePatchPipeline(), new FakeCommandPipeline(), new FakeApprovalGate());
+        var bridge = new ToolchainExecutionBridge(new FakeToolchainProvider(), new FakePatchPipeline(), new FakeCommandPipeline(), new FakeApprovalGate(), new FakeTrustedWorkspaceDirectory());
         var request = new ToolRequest("run_command", new Dictionary<string, object>());
 
         var result = await bridge.ExecuteToolAsync(request, CancellationToken.None);
 
         Assert.Contains("Command executed", result);
         Assert.Contains("Exit code: 0", result);
+    }
+
+    [Fact]
+    public async Task ExecuteToolAsync_ReadFile_PathTraversalReturnsError()
+    {
+        var bridge = new ToolchainExecutionBridge(new FakeToolchainProvider(), new FakePatchPipeline(), new FakeCommandPipeline(), new FakeApprovalGate(), new FakeTrustedWorkspaceDirectory());
+        var request = new ToolRequest("read_file_range", new Dictionary<string, object>
+        {
+            { "path", System.Text.Json.JsonDocument.Parse("\"../../Windows/System32\"").RootElement }
+        });
+
+        var result = await bridge.ExecuteToolAsync(request, CancellationToken.None);
+
+        Assert.Contains("Error", result);
+        Assert.Contains("Path traversal detected", result);
     }
 }

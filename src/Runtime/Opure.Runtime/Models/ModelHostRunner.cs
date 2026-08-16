@@ -65,10 +65,24 @@ public sealed class ModelHostRunner : IModelHostRunner
         try
         {
             // 4. Routing via ModelRequestRouter
+            int consecutiveToolCalls = 0;
             await foreach (var chunk in _router.RouteRequestAsync(session, request, cancellationToken).ConfigureAwait(false))
             {
                 if (chunk.IsToolCall)
                 {
+                    consecutiveToolCalls++;
+                    if (consecutiveToolCalls > 10)
+                    {
+                        if (session.Process != null && !session.Process.HasExited)
+                        {
+                            var stdin = session.Process.StandardInput;
+                            var errorResult = $"{{\"tool_result\": \"error\", \"error\": \"Max consecutive tool calls exceeded.\"}}\n";
+                            await stdin.WriteAsync(errorResult.AsMemory(), cancellationToken).ConfigureAwait(false);
+                            await stdin.FlushAsync(cancellationToken).ConfigureAwait(false);
+                        }
+                        break;
+                    }
+
                     var toolRequest = System.Text.Json.JsonSerializer.Deserialize(
                         chunk.Content,
                         ModelContractsJsonContext.Default.ToolRequest);
@@ -88,6 +102,7 @@ public sealed class ModelHostRunner : IModelHostRunner
                 }
                 else
                 {
+                    consecutiveToolCalls = 0;
                     yield return chunk;
                 }
             }

@@ -49,7 +49,8 @@ public class ModelHostIntegrationTests
         var patchPipeline = new FakePatchPipeline();
         var cmdPipeline = new FakeCommandPipeline();
         var gate = new FakeApprovalGate();
-        var bridge = new ToolchainExecutionBridge(provider, patchPipeline, cmdPipeline, gate);
+        var trustedDir = new FakeTrustedWorkspaceDirectory();
+        var bridge = new ToolchainExecutionBridge(provider, patchPipeline, cmdPipeline, gate, trustedDir);
         var runner = new ModelHostRunner(manifestStoreFake, launcher, router, builder, bridge);
 
         var request = ModelRequest.FromPrompt("Dummy prompt");
@@ -140,5 +141,11 @@ public class ModelHostIntegrationTests
     {
         public Task<CommandApproval> RequestCommandApprovalAsync(ToolTemplate template, string agentIdentity, CancellationToken cancellationToken) => Task.FromResult(new CommandApproval("hash", "args", "snap", "path", "dir", "env", "res", "intent", DateTimeOffset.UtcNow));
         public Task<ExecutePatchCommand> RequestPatchApprovalAsync(ExecutePatchCommand command, string agentIdentity, CancellationToken cancellationToken) => Task.FromResult(command);
+    }
+
+    private class FakeTrustedWorkspaceDirectory : ITrustedWorkspaceDirectory
+    {
+        public string TrustedRoot => System.IO.Path.GetFullPath("C:\\OpureFakeTrustedRoot");
+        public void EnsureExists() { }
     }
 }
