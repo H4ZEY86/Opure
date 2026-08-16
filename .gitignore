@@ -353,7 +353,7 @@ Desktop.ini
 # -------------------------
 # Opure Runtime / AI
 # -------------------------
-models/
+/models/
 downloads/
 coverage/
 release/

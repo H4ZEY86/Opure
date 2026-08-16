@@ -257,15 +257,28 @@ Completed and committed:
 * GATE-A-010 — Founder Gate A Review.
 * GATE-A-011 — Prepare Controlled Mutation Backlog.
 * CM-001 — Version Patch Contracts and Exact UTF-8 Operation.
+* CM-002 — Patch State Store and Transition Machine.
+* CM-003 — Patch Precondition Verifier.
+* CM-004 — Staged Write with Atomic Swap.
+* CM-005 — Postcondition Verifier.
+* CM-006 — Patch Approval Identity.
+* CM-007 — Patch Execution Pipeline.
+* CM-008 — Patch Trust Receipt Emission.
+* CM-009 — Last-Known-Good Patch Rollback.
+* CM-010 — Recovery Orchestrator.
+* CM-011 — Unified Diff Parser.
+* CM-012 — Typed Read-Only Tool Templates and ToolTemplateValidator.
+* CM-013 — RestrictedCommandWorker with Windows Job Objects.
+* CM-014 — BoundedStreamDrainer and FND-020 Redaction Pipeline.
+* CM-015 — CommandExecutionPipeline with compound cryptographic approvals.
+* CM-016 — Controlled Mutation Adversarial Suite and Gate B verification.
 
-Locally implemented, verified and committed; pending reviewed pushes:
-
-* None.
+* WP-018 — Local Model Runtime (Phase 8: Local Intelligence, COMPLETED & MERGE-READY)
 
 The next planned ticket is:
 
 ```text
-CM-002 — Add Patch State Store and Transition Machine
+WP-019 — Workspace Agent Toolchain & Remote Providers (Phase 9: Toolchain Integration)
 ```
 
 GATE-A-001 passed its repeatable 32-step Development-channel demonstration and
@@ -372,14 +385,11 @@ state are denied. Architecture tests prove that the contract has no filesystem,
 persistence, Desktop, process, network or apply authority. The complete Release
 verification passed 777 tests with zero warnings and zero errors.
 
-This completes GATE-A-001 through GATE-A-011 and records Founder Gate A acceptance
-with amendments. Phase 7 implementation begins at CM-001 under the verified
-Controlled Mutation backlog.
-The next programme phase is Controlled Mutation: deterministic reviewable file
-patches first, followed by capability-bound curated commands. Local intelligence
-follows Founder Gate B. Remote providers, plugins and MCP remain Phase 9 work
-after local intelligence and Founder Gate C; do not pull them into the Gate B
-critical path.
+GATE-B verification officially marks Phase 7 (Controlled Mutation) as completed. 
+The release of `v0.2.0-gate-b` has been finalized, recording 950 passing tests with a complete zero-AI security baseline. 
+
+Phase 8 (Local Intelligence) is now formally authorized, unlocking WP-018 (Local Model Runtime) and subsequent local AI stems.
+The next programme phase is Local Intelligence: a local inference engine operating strictly within the offline-first, developer-authority model established by Gate B. Remote providers, plugins and MCP remain Phase 9 work after local intelligence and Founder Gate C; do not pull them into the Gate B critical path. No AI-generated patch is authorised before Founder Gate C.
 
 ## Build policy
 
