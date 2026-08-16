@@ -94,7 +94,7 @@ public class ToolchainExecutionBridgeTests
         var bridge = new ToolchainExecutionBridge(provider, new FakePatchPipeline(), new FakeCommandPipeline(), new FakeApprovalGate(), new FakeTrustedWorkspaceDirectory());
         var request = new ToolRequest("apply_patch", new Dictionary<string, object>());
 
-        var result = await bridge.ExecuteToolAsync(request, CancellationToken.None);
+        var result = await bridge.ExecuteToolAsync(request, ApproverIdentity.Agent("LocalIntelligenceAgent"), CancellationToken.None);
 
         Assert.Contains("rejected", result);
         Assert.Contains("Fake rejection", result);
@@ -106,7 +106,7 @@ public class ToolchainExecutionBridgeTests
         var bridge = new ToolchainExecutionBridge(new FakeToolchainProvider(), new FakePatchPipeline(), new FakeCommandPipeline(), new FakeApprovalGate(), new FakeTrustedWorkspaceDirectory());
         var request = new ToolRequest("apply_patch", new Dictionary<string, object>());
 
-        var result = await bridge.ExecuteToolAsync(request, CancellationToken.None);
+        var result = await bridge.ExecuteToolAsync(request, ApproverIdentity.Agent("LocalIntelligenceAgent"), CancellationToken.None);
 
         Assert.Contains("Patch executed", result);
         Assert.Contains("True", result);
@@ -118,7 +118,7 @@ public class ToolchainExecutionBridgeTests
         var bridge = new ToolchainExecutionBridge(new FakeToolchainProvider(), new FakePatchPipeline(), new FakeCommandPipeline(), new FakeApprovalGate(), new FakeTrustedWorkspaceDirectory());
         var request = new ToolRequest("run_command", new Dictionary<string, object>());
 
-        var result = await bridge.ExecuteToolAsync(request, CancellationToken.None);
+        var result = await bridge.ExecuteToolAsync(request, ApproverIdentity.Agent("LocalIntelligenceAgent"), CancellationToken.None);
 
         Assert.Contains("Command executed", result);
         Assert.Contains("Exit code: 0", result);
@@ -133,7 +133,7 @@ public class ToolchainExecutionBridgeTests
             { "path", System.Text.Json.JsonDocument.Parse("\"../../Windows/System32\"").RootElement }
         });
 
-        var result = await bridge.ExecuteToolAsync(request, CancellationToken.None);
+        var result = await bridge.ExecuteToolAsync(request, ApproverIdentity.Agent("LocalIntelligenceAgent"), CancellationToken.None);
 
         Assert.Contains("Error", result);
         Assert.Contains("Path traversal detected", result);

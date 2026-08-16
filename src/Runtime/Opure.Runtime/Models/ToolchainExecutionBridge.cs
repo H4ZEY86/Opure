@@ -56,7 +56,7 @@ public class ToolchainExecutionBridge
     /// <summary>
     /// Executes a tool request parsed from the model stream.
     /// </summary>
-    public async Task<string> ExecuteToolAsync(ToolRequest toolRequest, CancellationToken cancellationToken)
+    public async Task<string> ExecuteToolAsync(ToolRequest toolRequest, string agentIdentity, CancellationToken cancellationToken)
     {
         var validation = await _toolchainProvider.ValidateToolRequestAsync(toolRequest, cancellationToken).ConfigureAwait(false);
 
@@ -64,8 +64,6 @@ public class ToolchainExecutionBridge
         {
             return $"Error: Tool execution rejected. Reason: {validation.RejectionReason}";
         }
-
-        string agentIdentity = ApproverIdentity.Agent("LocalIntelligenceAgent");
 
         if (toolRequest.ToolName == "read_file_range")
         {

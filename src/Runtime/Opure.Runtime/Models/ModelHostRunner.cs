@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using Opure.Runtime.Contracts.Models;
 using Opure.Workspace.Contracts.Models;
+using Opure.TrustEvidence.Contracts;
 
 namespace Opure.Runtime.Models;
 
@@ -89,7 +90,7 @@ public sealed class ModelHostRunner : IModelHostRunner
                     
                     if (toolRequest != null)
                     {
-                        var toolResult = await _bridge.ExecuteToolAsync(toolRequest, cancellationToken).ConfigureAwait(false);
+                        var toolResult = await _bridge.ExecuteToolAsync(toolRequest, ApproverIdentity.Agent("LocalIntelligenceAgent"), cancellationToken).ConfigureAwait(false);
                         
                         if (session.Process != null && !session.Process.HasExited)
                         {

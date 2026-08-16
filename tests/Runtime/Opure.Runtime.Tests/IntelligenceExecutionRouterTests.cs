@@ -142,4 +142,77 @@ public class IntelligenceExecutionRouterTests
         Assert.Single(payloads);
         Assert.Equal("Remote Response", payloads[0].Content);
     }
+
+    private class FailingModelHostRunner : IModelHostRunner
+    {
+        public async IAsyncEnumerable<StreamPayload> RunModelAsync(
+            string workspaceId, string manifestHash, ModelRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            throw new InvalidOperationException("Failed to launch local model.");
+#pragma warning disable CS0162 // Unreachable code detected
+            yield break;
+#pragma warning restore CS0162
+        }
+    }
+
+    [Fact]
+    public async Task RouteIntelligenceAsync_LocalFailure_WithRemoteConfig_FallsBackToRemote()
+    {
+        // Arrange
+        var localRunner = new FailingModelHostRunner();
+        var remoteClient = new FakeRemoteModelClient();
+        var bridge = new ToolchainExecutionBridge(
+            new FakeToolchainProvider(),
+            new FakePatchPipeline(),
+            new FakeCommandPipeline(),
+            new FakePatchApprovalGate(),
+            new FakeTrustedWorkspaceDirectory());
+
+        var router = new IntelligenceExecutionRouter(localRunner, remoteClient, bridge);
+        var request = ModelRequest.FromPrompt("Hello");
+        var config = new RemoteProviderConfiguration { EndpointUrl = "http://test" };
+
+        // Act
+        var payloads = new List<StreamPayload>();
+        await foreach (var p in router.RouteIntelligenceAsync(false, config, "ws-1", "hash", request, TestContext.Current.CancellationToken))
+        {
+            payloads.Add(p);
+        }
+
+        // Assert
+        Assert.Equal(2, payloads.Count);
+        Assert.Contains("Falling back to remote", payloads[0].Content);
+        Assert.Equal("Remote Response", payloads[1].Content);
+    }
+
+    [Fact]
+    public async Task RouteIntelligenceAsync_LocalFailure_NoRemoteConfig_ReturnsError()
+    {
+        // Arrange
+        var localRunner = new FailingModelHostRunner();
+        var remoteClient = new FakeRemoteModelClient();
+        var bridge = new ToolchainExecutionBridge(
+            new FakeToolchainProvider(),
+            new FakePatchPipeline(),
+            new FakeCommandPipeline(),
+            new FakePatchApprovalGate(),
+            new FakeTrustedWorkspaceDirectory());
+
+        var router = new IntelligenceExecutionRouter(localRunner, remoteClient, bridge);
+        var request = ModelRequest.FromPrompt("Hello");
+
+        // Act
+        var payloads = new List<StreamPayload>();
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
+        await foreach (var p in router.RouteIntelligenceAsync(false, null, "ws-1", "hash", request, TestContext.Current.CancellationToken))
+#pragma warning restore CS8625
+        {
+            payloads.Add(p);
+        }
+
+        // Assert
+        Assert.Equal(2, payloads.Count);
+        Assert.Contains("Diagnostic", payloads[0].Content);
+        Assert.Contains("no remote fallback configured", payloads[1].Content);
+    }
 }
