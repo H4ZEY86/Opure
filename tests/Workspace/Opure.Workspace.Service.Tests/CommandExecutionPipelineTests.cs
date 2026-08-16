@@ -14,7 +14,7 @@ public class CommandExecutionPipelineTests
 {
     private static readonly string[] EmptyEnv = Array.Empty<string>();
 
-    private static CommandApproval CreateApproval(string templateHash, string snapshotId, string args = "")
+    private static CommandApproval CreateApproval(string templateHash, string snapshotId, string args = "{}")
     {
         return new CommandApproval(
             templateHash,
@@ -53,7 +53,7 @@ public class CommandExecutionPipelineTests
         var template = CreateTemplate("different-hash");
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => 
-            pipeline.ExecuteAsync(approval, template, Path.GetTempPath(), CancellationToken.None));
+            pipeline.ExecuteAsync(approval, template, Path.GetTempPath(), TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -74,7 +74,7 @@ public class CommandExecutionPipelineTests
         // Since CommandApproval computes it securely in the constructor, any drift would mean the caller instantiated it with different inputs.
         // If the ID was forged, it wouldn't match.
 
-        var receipt = await pipeline.ExecuteAsync(approval, template, Path.GetTempPath(), CancellationToken.None);
+        var receipt = await pipeline.ExecuteAsync(approval, template, Path.GetTempPath(), TestContext.Current.CancellationToken);
         Assert.NotNull(receipt);
     }
 
@@ -87,7 +87,7 @@ public class CommandExecutionPipelineTests
         var approval = CreateApproval("valid-hash", "snapshot-1");
         var template = CreateTemplate("valid-hash");
 
-        var receipt = await pipeline.ExecuteAsync(approval, template, Path.GetTempPath(), CancellationToken.None);
+        var receipt = await pipeline.ExecuteAsync(approval, template, Path.GetTempPath(), TestContext.Current.CancellationToken);
 
         Assert.True(receipt.WasTimeout);
         Assert.Equal(-2, receipt.ExitCode);
@@ -102,7 +102,7 @@ public class CommandExecutionPipelineTests
         var approval = CreateApproval("valid-hash", "snapshot-1");
         var template = CreateTemplate("valid-hash");
 
-        var receipt = await pipeline.ExecuteAsync(approval, template, Path.GetTempPath(), CancellationToken.None);
+        var receipt = await pipeline.ExecuteAsync(approval, template, Path.GetTempPath(), TestContext.Current.CancellationToken);
 
         Assert.True(receipt.WasCancelled);
         Assert.Equal(-1, receipt.ExitCode);
@@ -119,7 +119,7 @@ public class CommandExecutionPipelineTests
         
         string stagingDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
 
-        var receipt = await pipeline.ExecuteAsync(approval, template, stagingDir, CancellationToken.None);
+        var receipt = await pipeline.ExecuteAsync(approval, template, stagingDir, TestContext.Current.CancellationToken);
 
         Assert.False(receipt.WasCancelled);
         Assert.False(receipt.WasTimeout);
@@ -129,7 +129,7 @@ public class CommandExecutionPipelineTests
         string blobPath = Path.Combine(stagingDir, receipt.StandardOutput.StagingBlobHash);
         Assert.True(File.Exists(blobPath));
         
-        string diskContent = await File.ReadAllTextAsync(blobPath);
+        string diskContent = await File.ReadAllTextAsync(blobPath, TestContext.Current.CancellationToken);
         Assert.Equal("hello world", diskContent);
         
         if (Directory.Exists(stagingDir)) Directory.Delete(stagingDir, true);

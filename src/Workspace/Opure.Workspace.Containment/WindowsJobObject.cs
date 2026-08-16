@@ -109,7 +109,12 @@ public sealed class WindowsJobObject : IDisposable
 
         if (!AssignProcessToJobObject(_handle, process.Handle))
         {
-            throw new Win32Exception(Marshal.GetLastWin32Error());
+            int error = Marshal.GetLastWin32Error();
+            if (error == 5) // ERROR_ACCESS_DENIED (usually process terminating)
+            {
+                return;
+            }
+            throw new Win32Exception(error);
         }
     }
 
