@@ -36,10 +36,17 @@ public class ModelRequestRouter : IModelRequestRouter
 
         // Serialize and write request using UTF8 JSON
         var requestJson = JsonSerializer.Serialize(request, _jsonOptions);
-        
-        // Write out the JSON request payload
-        await stdin.WriteLineAsync(requestJson.AsMemory(), cancellationToken).ConfigureAwait(false);
-        await stdin.FlushAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            // Write out the JSON request payload
+            await stdin.WriteLineAsync(requestJson.AsMemory(), cancellationToken).ConfigureAwait(false);
+            await stdin.FlushAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (System.IO.IOException)
+        {
+            // Process may have exited before reading all input, which closes the pipe.
+            // We ignore this and let the read loop capture any stdout output or exit.
+        }
 
         // Zero-allocation streaming buffer read
         char[] buffer = ArrayPool<char>.Shared.Rent(4096);

@@ -10,8 +10,5 @@ public interface IModelHostProcessLauncher : IDisposable
         string modelPath,
         string? prompt = null,
         CancellationToken cancellationToken = default);
-
-    Task SendPromptAsync(ModelHostSession session, string prompt, CancellationToken cancellationToken = default);
-
-    Task<ModelHostResponse?> ReadResponseAsync(ModelHostSession session, CancellationToken cancellationToken = default);
 }
+

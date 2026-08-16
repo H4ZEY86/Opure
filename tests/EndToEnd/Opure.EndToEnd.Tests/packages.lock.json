@@ -528,6 +528,7 @@
           "Opure.Filesystem.Windows": "[1.0.0, )",
           "Opure.Patch.Contracts": "[1.0.0, )",
           "Opure.Patch.Service": "[1.0.0, )",
+          "Opure.Runtime.Contracts": "[1.0.0, )",
           "Opure.Workspace.Containment": "[1.0.0, )",
           "System.IO.FileSystem.AccessControl": "[5.0.0, )"
         }

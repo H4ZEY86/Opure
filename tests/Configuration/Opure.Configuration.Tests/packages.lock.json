@@ -273,6 +273,13 @@
           "SQLitePCLRaw.bundle_e_sqlite3": "[2.1.12, )"
         }
       },
+      "opure.runtime.contracts": {
+        "type": "Project",
+        "dependencies": {
+          "Google.Protobuf": "[3.35.1, )",
+          "Grpc.Core.Api": "[2.80.0, )"
+        }
+      },
       "opure.trustevidence.contracts": {
         "type": "Project"
       },
@@ -309,6 +316,7 @@
           "Opure.Filesystem.Windows": "[1.0.0, )",
           "Opure.Patch.Contracts": "[1.0.0, )",
           "Opure.Patch.Service": "[1.0.0, )",
+          "Opure.Runtime.Contracts": "[1.0.0, )",
           "Opure.Workspace.Containment": "[1.0.0, )",
           "System.IO.FileSystem.AccessControl": "[5.0.0, )"
         }
