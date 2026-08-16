@@ -25,6 +25,15 @@
         "requested": "[3.10.70, )",
         "resolved": "3.10.70",
         "contentHash": "ekrfhtcVnPp4rn3+41MCh2eTBC4DKxCtqZFeA1AF5fAIrMNHQGNaCzG8+HdrCLDmDuHpGfKvL1ukTtAK1iN+UA=="
+      },
+      "opure.patch.contracts": {
+        "type": "Project"
+      },
+      "opure.trustevidence.contracts": {
+        "type": "Project"
+      },
+      "opure.workspace.contracts": {
+        "type": "Project"
       }
     }
   }

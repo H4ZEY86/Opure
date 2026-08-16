@@ -6,7 +6,7 @@ namespace Opure.Runtime.Contracts.Models;
 
 public interface IModelRequestRouter
 {
-    IAsyncEnumerable<string> RouteRequestAsync(
+    IAsyncEnumerable<StreamPayload> RouteRequestAsync(
         ModelHostSession session,
         ModelRequest request,
         CancellationToken cancellationToken);

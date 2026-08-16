@@ -217,7 +217,10 @@
         "contentHash": "11YMr7FnAbL83bQmVxlhbIKHvSLxjO81D12Ej0QMSGXMDTxNA9MTOa4MQxx43nv5el/efuPHwzyrj6a5ha2gug=="
       },
       "opure.desktop.contracts": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "Opure.Runtime.Contracts": "[1.0.0, )"
+        }
       },
       "opure.desktop.gatewayclient": {
         "type": "Project",
@@ -305,7 +308,10 @@
         "type": "Project",
         "dependencies": {
           "Google.Protobuf": "[3.35.1, )",
-          "Grpc.Core.Api": "[2.80.0, )"
+          "Grpc.Core.Api": "[2.80.0, )",
+          "Opure.Patch.Contracts": "[1.0.0, )",
+          "Opure.TrustEvidence.Contracts": "[1.0.0, )",
+          "Opure.Workspace.Contracts": "[1.0.0, )"
         }
       },
       "opure.trustevidence.contracts": {
@@ -318,6 +324,9 @@
           "Grpc.Core.Api": "[2.80.0, )",
           "Opure.TrustEvidence.Contracts": "[1.0.0, )"
         }
+      },
+      "opure.workspace.contracts": {
+        "type": "Project"
       },
       "Google.Protobuf": {
         "type": "CentralTransitive",

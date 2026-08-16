@@ -34,6 +34,9 @@
           "SQLitePCLRaw.core": "2.1.12"
         }
       },
+      "opure.patch.contracts": {
+        "type": "Project"
+      },
       "opure.persistence.sqlite": {
         "type": "Project",
         "dependencies": {
@@ -56,7 +59,10 @@
         "type": "Project",
         "dependencies": {
           "Google.Protobuf": "[3.35.1, )",
-          "Grpc.Core.Api": "[2.80.0, )"
+          "Grpc.Core.Api": "[2.80.0, )",
+          "Opure.Patch.Contracts": "[1.0.0, )",
+          "Opure.TrustEvidence.Contracts": "[1.0.0, )",
+          "Opure.Workspace.Contracts": "[1.0.0, )"
         }
       },
       "opure.trustevidence.contracts": {
@@ -86,6 +92,9 @@
           "Opure.Recovery.ServiceAdapters": "[1.0.0, )",
           "Opure.TrustEvidence.Contracts": "[1.0.0, )"
         }
+      },
+      "opure.workspace.contracts": {
+        "type": "Project"
       },
       "Google.Protobuf": {
         "type": "CentralTransitive",

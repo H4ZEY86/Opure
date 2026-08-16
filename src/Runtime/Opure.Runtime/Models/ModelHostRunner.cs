@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using Opure.Runtime.Contracts.Models;
 using Opure.Workspace.Contracts.Models;
+using Opure.TrustEvidence.Contracts;
 
 namespace Opure.Runtime.Models;
 
@@ -14,20 +15,23 @@ public sealed class ModelHostRunner : IModelHostRunner
     private readonly IModelHostProcessLauncher _launcher;
     private readonly IModelRequestRouter _router;
     private readonly IModelCommandBuilder _commandBuilder;
+    private readonly ToolchainExecutionBridge _bridge;
 
     public ModelHostRunner(
         IModelManifestStore manifestStore,
         IModelHostProcessLauncher launcher,
         IModelRequestRouter router,
-        IModelCommandBuilder commandBuilder)
+        IModelCommandBuilder commandBuilder,
+        ToolchainExecutionBridge bridge)
     {
         _manifestStore = manifestStore ?? throw new ArgumentNullException(nameof(manifestStore));
         _launcher = launcher ?? throw new ArgumentNullException(nameof(launcher));
         _router = router ?? throw new ArgumentNullException(nameof(router));
         _commandBuilder = commandBuilder ?? throw new ArgumentNullException(nameof(commandBuilder));
+        _bridge = bridge ?? throw new ArgumentNullException(nameof(bridge));
     }
 
-    public async IAsyncEnumerable<string> RunModelAsync(
+    public async IAsyncEnumerable<StreamPayload> RunModelAsync(
         string workspaceId,
         string manifestHash,
         ModelRequest request,
@@ -62,9 +66,46 @@ public sealed class ModelHostRunner : IModelHostRunner
         try
         {
             // 4. Routing via ModelRequestRouter
+            int consecutiveToolCalls = 0;
             await foreach (var chunk in _router.RouteRequestAsync(session, request, cancellationToken).ConfigureAwait(false))
             {
-                yield return chunk;
+                if (chunk.IsToolCall)
+                {
+                    consecutiveToolCalls++;
+                    if (consecutiveToolCalls > 10)
+                    {
+                        if (session.Process != null && !session.Process.HasExited)
+                        {
+                            var stdin = session.Process.StandardInput;
+                            var errorResult = $"{{\"tool_result\": \"error\", \"error\": \"Max consecutive tool calls exceeded.\"}}\n";
+                            await stdin.WriteAsync(errorResult.AsMemory(), cancellationToken).ConfigureAwait(false);
+                            await stdin.FlushAsync(cancellationToken).ConfigureAwait(false);
+                        }
+                        break;
+                    }
+
+                    var toolRequest = System.Text.Json.JsonSerializer.Deserialize(
+                        chunk.Content,
+                        ModelContractsJsonContext.Default.ToolRequest);
+                    
+                    if (toolRequest != null)
+                    {
+                        var toolResult = await _bridge.ExecuteToolAsync(toolRequest, ApproverIdentity.Agent("LocalIntelligenceAgent"), cancellationToken).ConfigureAwait(false);
+                        
+                        if (session.Process != null && !session.Process.HasExited)
+                        {
+                            var stdin = session.Process.StandardInput;
+                            var formattedResult = $"{{\"tool_result\": \"{toolRequest.ToolName}\", \"result\": \"{toolResult.Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "")}\"}}\n";
+                            await stdin.WriteAsync(formattedResult.AsMemory(), cancellationToken).ConfigureAwait(false);
+                            await stdin.FlushAsync(cancellationToken).ConfigureAwait(false);
+                        }
+                    }
+                }
+                else
+                {
+                    consecutiveToolCalls = 0;
+                    yield return chunk;
+                }
             }
         }
         finally

@@ -1,14 +1,12 @@
-using System;
 using System.Collections.Generic;
 using System.Threading;
 
 namespace Opure.Runtime.Contracts.Models;
 
-public interface IModelHostRunner
+public interface IRemoteModelClient
 {
-    IAsyncEnumerable<StreamPayload> RunModelAsync(
-        string workspaceId,
-        string manifestHash,
+    IAsyncEnumerable<StreamPayload> RunRemoteModelAsync(
+        RemoteProviderConfiguration config,
         ModelRequest request,
         CancellationToken cancellationToken = default);
 }
