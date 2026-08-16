@@ -16,8 +16,7 @@ public sealed class ModelHostProcessLauncher : IModelHostProcessLauncher
     }
 
     public Task<ModelHostSession> LaunchAsync(
-        string modelPath,
-        string? prompt = null,
+        ModelProcessConfiguration configuration,
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -30,18 +29,23 @@ public sealed class ModelHostProcessLauncher : IModelHostProcessLauncher
             // 2. Configure ProcessStartInfo
             var startInfo = new ProcessStartInfo
             {
-                FileName = modelPath,
+                FileName = configuration.ExecutablePath,
                 RedirectStandardInput = true,
                 RedirectStandardOutput = true,
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
 
+            foreach (var arg in configuration.Arguments)
+            {
+                startInfo.ArgumentList.Add(arg);
+            }
+
             // 3. Start Process
             var process = new Process { StartInfo = startInfo };
             if (!process.Start())
             {
-                throw new InvalidOperationException($"Failed to start process for model at path: {modelPath}");
+                throw new InvalidOperationException($"Failed to start process for model at path: {configuration.ExecutablePath}");
             }
 
             try

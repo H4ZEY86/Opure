@@ -7,8 +7,7 @@ namespace Opure.Runtime.Contracts.Models;
 public interface IModelHostProcessLauncher : IDisposable
 {
     Task<ModelHostSession> LaunchAsync(
-        string modelPath,
-        string? prompt = null,
+        ModelProcessConfiguration configuration,
         CancellationToken cancellationToken = default);
 }
 

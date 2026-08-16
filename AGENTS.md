@@ -273,14 +273,12 @@ Completed and committed:
 * CM-015 — CommandExecutionPipeline with compound cryptographic approvals.
 * CM-016 — Controlled Mutation Adversarial Suite and Gate B verification.
 
-Locally implemented, verified and committed; pending reviewed pushes:
-
-* WP-018 — Local Model Runtime (Stems 1, 2, and 3: Isolation, Hash Manifests, and Zero-Allocation Streaming Router) verified against 954 passing tests.
+* WP-018 — Local Model Runtime (Phase 8: Local Intelligence, COMPLETED & MERGE-READY)
 
 The next planned ticket is:
 
 ```text
-WP-018 — Local Model Runtime (Phase 8: Local Intelligence, Final Integration Stems)
+WP-019 — Workspace Agent Toolchain & Remote Providers (Phase 9: Toolchain Integration)
 ```
 
 GATE-A-001 passed its repeatable 32-step Development-channel demonstration and

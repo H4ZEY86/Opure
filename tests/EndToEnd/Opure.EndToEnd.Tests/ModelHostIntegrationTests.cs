@@ -40,7 +40,8 @@ public class ModelHostIntegrationTests
 
         var launcher = new ModelHostProcessLauncher();
         var router = new ModelRequestRouter();
-        var runner = new ModelHostRunner(manifestStoreFake, launcher, router);
+        var builder = new OllamaCommandBuilder();
+        var runner = new ModelHostRunner(manifestStoreFake, launcher, router, builder);
 
         var request = ModelRequest.FromPrompt("Dummy prompt");
         

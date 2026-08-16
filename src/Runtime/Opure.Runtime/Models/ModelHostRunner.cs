@@ -13,15 +13,18 @@ public sealed class ModelHostRunner : IModelHostRunner
     private readonly IModelManifestStore _manifestStore;
     private readonly IModelHostProcessLauncher _launcher;
     private readonly IModelRequestRouter _router;
+    private readonly IModelCommandBuilder _commandBuilder;
 
     public ModelHostRunner(
         IModelManifestStore manifestStore,
         IModelHostProcessLauncher launcher,
-        IModelRequestRouter router)
+        IModelRequestRouter router,
+        IModelCommandBuilder commandBuilder)
     {
         _manifestStore = manifestStore ?? throw new ArgumentNullException(nameof(manifestStore));
         _launcher = launcher ?? throw new ArgumentNullException(nameof(launcher));
         _router = router ?? throw new ArgumentNullException(nameof(router));
+        _commandBuilder = commandBuilder ?? throw new ArgumentNullException(nameof(commandBuilder));
     }
 
     public async IAsyncEnumerable<string> RunModelAsync(
@@ -50,12 +53,15 @@ public sealed class ModelHostRunner : IModelHostRunner
         // We assume the manifest contains the verified path to the executable model runner.
         string modelPath = manifest.ModelPath;
 
-        // 2. Launch via ModelHostProcessLauncher
-        ModelHostSession session = await _launcher.LaunchAsync(modelPath, null, cancellationToken).ConfigureAwait(false);
+        // 2. Build Command Configuration
+        var config = _commandBuilder.Build(modelPath, request);
+
+        // 3. Launch via ModelHostProcessLauncher
+        ModelHostSession session = await _launcher.LaunchAsync(config, cancellationToken).ConfigureAwait(false);
 
         try
         {
-            // 3. Routing via ModelRequestRouter
+            // 4. Routing via ModelRequestRouter
             await foreach (var chunk in _router.RouteRequestAsync(session, request, cancellationToken).ConfigureAwait(false))
             {
                 yield return chunk;

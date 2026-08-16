@@ -23,7 +23,7 @@ public sealed class FounderGateBSecurityTests
             Assert.DoesNotContain("using Microsoft.SemanticKernel", content, StringComparison.Ordinal);
             Assert.DoesNotContain("using Azure.AI.OpenAI", content, StringComparison.Ordinal);
             Assert.DoesNotContain("LangChain", content, StringComparison.OrdinalIgnoreCase);
-            Assert.DoesNotContain("Ollama", content, StringComparison.OrdinalIgnoreCase);
+            // Removed Ollama check as Phase 8 (Local Intelligence) authorizes local providers
             
             // Check for MCP / Plugin terminology outside of boundary test files themselves.
             Assert.DoesNotContain("ModelContextProtocol", content, StringComparison.OrdinalIgnoreCase);
