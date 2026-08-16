@@ -279,7 +279,7 @@ Completed and committed:
 The next planned ticket is:
 
 ```text
-WP-020 — Trust Centre Agent Capabilities Overview
+WP-020 — Trust Centre Agent Capabilities Overview (Phase 10: Interactive Agent UX & Patch Review Surface, AUTHORIZED) Stem 1 completed (Tool Activity Telemetry & UI Stream Marshaling). Stems 2-4 authorized.
 ```
 
 GATE-A-001 passed its repeatable 32-step Development-channel demonstration and

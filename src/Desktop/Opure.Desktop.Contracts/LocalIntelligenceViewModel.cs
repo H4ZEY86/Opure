@@ -1,6 +1,8 @@
 using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -55,6 +57,8 @@ public sealed class LocalIntelligenceViewModel : INotifyPropertyChanged
         }
     }
 
+    public ObservableCollection<ToolActivityItem> ToolActivity { get; } = new();
+
     public ICommand GenerateCommand { get; }
     public ICommand StopCommand { get; }
 
@@ -66,13 +70,27 @@ public sealed class LocalIntelligenceViewModel : INotifyPropertyChanged
 
         IsGenerating = true;
         GeneratedText = string.Empty;
+        
+        if (_syncContext != null)
+        {
+            _syncContext.Post(_ => ToolActivity.Clear(), null);
+        }
+        else
+        {
+            ToolActivity.Clear();
+        }
+
         _cancellationTokenSource = new CancellationTokenSource();
 
         try
         {
             await foreach (var payload in _source.GenerateStreamAsync(Prompt, _cancellationTokenSource.Token).ConfigureAwait(false))
             {
-                if (!payload.IsToolCall)
+                if (payload.IsToolCall)
+                {
+                    AddOrUpdateToolActivity(payload.Content);
+                }
+                else
                 {
                     AppendToken(payload.Content);
                 }
@@ -90,9 +108,72 @@ public sealed class LocalIntelligenceViewModel : INotifyPropertyChanged
         finally
         {
             IsGenerating = false;
+            DeactivateAllTools();
             _cancellationTokenSource.Dispose();
             _cancellationTokenSource = null;
         }
+    }
+
+    private void AddOrUpdateToolActivity(string content)
+    {
+        var statusText = FormatToolActivity(content);
+        
+        Action updateAction = () =>
+        {
+            // Deactivate any currently active tools before adding a new one
+            foreach (var item in ToolActivity)
+            {
+                item.IsActive = false;
+            }
+
+            ToolActivity.Add(new ToolActivityItem
+            {
+                Id = Guid.NewGuid().ToString(),
+                StatusText = statusText,
+                IsActive = true
+            });
+        };
+
+        if (_syncContext != null)
+        {
+            _syncContext.Post(_ => updateAction(), null);
+        }
+        else
+        {
+            updateAction();
+        }
+    }
+
+    private static string FormatToolActivity(string content)
+    {
+        try
+        {
+            var toolRequest = JsonSerializer.Deserialize(content, ModelContractsJsonContext.Default.ToolRequest);
+            if (toolRequest == null) return "Executing tool...";
+
+            return toolRequest.ToolName switch
+            {
+                "read_file_range" => $"Reading {GetArg(toolRequest, "path")} (lines {GetArg(toolRequest, "start")}-{GetArg(toolRequest, "end")})...",
+                "list_directory" => $"Listing directory {GetArg(toolRequest, "path")}...",
+                "inspect_diff" => "Inspecting workspace diff...",
+                "apply_patch" => $"Staging workspace patch for {GetArg(toolRequest, "path")}...",
+                "run_command" => $"Executing sandboxed command: {GetArg(toolRequest, "command")}...",
+                _ => $"Executing {toolRequest.ToolName}..."
+            };
+        }
+        catch
+        {
+            return "Executing tool...";
+        }
+    }
+
+    private static string GetArg(ToolRequest req, string key)
+    {
+        if (req.Arguments != null && req.Arguments.TryGetValue(key, out var val))
+        {
+            return val?.ToString() ?? string.Empty;
+        }
+        return string.Empty;
     }
 
     private void AppendToken(string token)
@@ -107,6 +188,26 @@ public sealed class LocalIntelligenceViewModel : INotifyPropertyChanged
         else
         {
             GeneratedText += token;
+        }
+    }
+
+    private void DeactivateAllTools()
+    {
+        Action deactivateAction = () =>
+        {
+            foreach (var item in ToolActivity)
+            {
+                item.IsActive = false;
+            }
+        };
+
+        if (_syncContext != null)
+        {
+            _syncContext.Post(_ => deactivateAction(), null);
+        }
+        else
+        {
+            deactivateAction();
         }
     }
 
