@@ -10,6 +10,10 @@ using Opure.Runtime.Models;
 using Opure.Workspace.Contracts.Models;
 using Opure.Workspace.Execution;
 using Opure.Workspace.Execution.Models;
+using Opure.Patch.Contracts;
+using Opure.TrustEvidence.Contracts;
+using Opure.Workspace.Contracts;
+using Opure.Workspace.Service;
 using Xunit;
 
 namespace Opure.EndToEnd.Tests;
@@ -41,15 +45,20 @@ public class ModelHostIntegrationTests
         var launcher = new ModelHostProcessLauncher();
         var router = new ModelRequestRouter();
         var builder = new OllamaCommandBuilder();
-        var runner = new ModelHostRunner(manifestStoreFake, launcher, router, builder);
+        var provider = new FakeToolchainProvider();
+        var patchPipeline = new FakePatchPipeline();
+        var cmdPipeline = new FakeCommandPipeline();
+        var gate = new FakeApprovalGate();
+        var bridge = new ToolchainExecutionBridge(provider, patchPipeline, cmdPipeline, gate);
+        var runner = new ModelHostRunner(manifestStoreFake, launcher, router, builder, bridge);
 
         var request = ModelRequest.FromPrompt("Dummy prompt");
         
         // Act
         var tokens = string.Empty;
-        await foreach (var chunk in runner.RunModelAsync("workspace-123", hashStr, request, TestContext.Current.CancellationToken))
+        await foreach (var payload in runner.RunModelAsync("workspace-123", hashStr, request, TestContext.Current.CancellationToken))
         {
-            tokens += chunk;
+            tokens += payload.Content;
         }
 
         // Assert
@@ -108,5 +117,28 @@ public class ModelHostIntegrationTests
         public Task RecordImportAsync(ModelHostManifest manifest, CancellationToken cancellationToken = default) => Task.CompletedTask;
 
         public Task<IReadOnlyList<ModelHostManifest>> ListManifestsAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<ModelHostManifest>>(new[] { _manifest });
+    }
+
+    private class FakeToolchainProvider : IToolchainProvider
+    {
+        public IAsyncEnumerable<ToolTemplate> GetAvailableToolsAsync(CancellationToken cancellationToken) => AsyncEnumerable.Empty<ToolTemplate>();
+        public Task<ToolRequestValidationResult> ValidateToolRequestAsync(ToolRequest request, CancellationToken cancellationToken) => Task.FromResult(ToolRequestValidationResult.Success(request.Arguments));
+    }
+
+    private class FakePatchPipeline : IPatchExecutionPipeline
+    {
+        public Task<PatchExecutionResult> ExecuteUnifiedPatchAsync(ExecutePatchCommand command, CancellationToken cancellationToken) => Task.FromResult(new PatchExecutionResult { Success = true, ErrorMessage = null, CommittedFiles = null });
+        public Task ExecutePatchAsync(ExactUtf8PatchApproval approval, ExactUtf8PatchPreview preview, ExactUtf8PatchProposal proposal, string approverIdentity, string absoluteTargetPath, string workspaceRootPath) => Task.CompletedTask;
+    }
+
+    private class FakeCommandPipeline : ICommandExecutionPipeline
+    {
+        public Task<CommandExitReceipt> ExecuteAsync(CommandApproval approval, ToolTemplate template, string stagingDirectory, CancellationToken cancellationToken) => Task.FromResult(new CommandExitReceipt("id", "appId", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, 0, false, false, new CommandStreamReceipt(0, false, false, false, "h1"), new CommandStreamReceipt(0, false, false, false, "h2")));
+    }
+
+    private class FakeApprovalGate : IPatchApprovalGate
+    {
+        public Task<CommandApproval> RequestCommandApprovalAsync(ToolTemplate template, string agentIdentity, CancellationToken cancellationToken) => Task.FromResult(new CommandApproval("hash", "args", "snap", "path", "dir", "env", "res", "intent", DateTimeOffset.UtcNow));
+        public Task<ExecutePatchCommand> RequestPatchApprovalAsync(ExecutePatchCommand command, string agentIdentity, CancellationToken cancellationToken) => Task.FromResult(command);
     }
 }

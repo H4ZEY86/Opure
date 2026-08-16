@@ -35,7 +35,7 @@ public sealed class RuntimeHealthContractBoundaryTests
         Assert.Equal(expectedPackages, packageReferences);
         Assert.False(
             project.Descendants()
-                .Any(element => element.Name.LocalName == "ProjectReference"),
+                .Any(element => element.Name.LocalName == "ProjectReference" && !(element.Attribute("Include")?.Value.EndsWith(".Contracts.csproj") ?? false)),
             "Runtime contracts must not reference Runtime implementation projects.");
     }
 

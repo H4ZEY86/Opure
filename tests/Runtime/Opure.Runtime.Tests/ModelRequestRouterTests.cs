@@ -15,12 +15,14 @@ public class ModelRequestRouterTests
     public async Task RouteRequestAsync_StreamsTokensAndCompletes()
     {
         // Arrange
+        var scriptPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "mock_router.cmd");
+        System.IO.File.WriteAllText(scriptPath, "@echo off\nset /p dummy=\necho token1\necho {\"isToolCall\":true,\"content\":\"myTool\"}\necho token2\n");
+
         using var process = new Process
         {
             StartInfo = new ProcessStartInfo
             {
-                FileName = "pwsh",
-                Arguments = "-NoProfile -Command \"$req = [Console]::In.ReadLine(); Write-Output 'token1'; Write-Output 'token2'\"",
+                FileName = scriptPath,
                 RedirectStandardInput = true,
                 RedirectStandardOutput = true,
                 UseShellExecute = false,
@@ -34,15 +36,24 @@ public class ModelRequestRouterTests
         var request = ModelRequest.FromPrompt("Test prompt");
 
         // Act
-        var tokens = string.Empty;
-        await foreach (var chunk in router.RouteRequestAsync(session, request, CancellationToken.None))
+        var textTokens = string.Empty;
+        var toolTokens = string.Empty;
+        await foreach (var payload in router.RouteRequestAsync(session, request, CancellationToken.None))
         {
-            tokens += chunk;
+            if (payload.IsToolCall)
+            {
+                toolTokens += payload.Content;
+            }
+            else
+            {
+                textTokens += payload.Content;
+            }
         }
 
         // Assert
-        Assert.Contains("token1", tokens);
-        Assert.Contains("token2", tokens);
+        Assert.Contains("token1", textTokens);
+        Assert.Contains("token2", textTokens);
+        Assert.Contains("myTool", toolTokens);
     }
 
     [Fact]

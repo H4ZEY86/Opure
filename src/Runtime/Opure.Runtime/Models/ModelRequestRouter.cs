@@ -1,5 +1,4 @@
 using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
@@ -20,7 +19,7 @@ public class ModelRequestRouter : IModelRequestRouter
         };
     }
 
-    public async IAsyncEnumerable<string> RouteRequestAsync(
+    public async IAsyncEnumerable<StreamPayload> RouteRequestAsync(
         ModelHostSession session,
         ModelRequest request,
         [EnumeratorCancellation] CancellationToken cancellationToken)
@@ -35,7 +34,7 @@ public class ModelRequestRouter : IModelRequestRouter
         var stdout = process.StandardOutput;
 
         // Serialize and write request using UTF8 JSON
-        var requestJson = JsonSerializer.Serialize(request, _jsonOptions);
+        var requestJson = JsonSerializer.Serialize(request, ModelContractsJsonContext.Default.ModelRequest);
         try
         {
             // Write out the JSON request payload
@@ -48,27 +47,35 @@ public class ModelRequestRouter : IModelRequestRouter
             // We ignore this and let the read loop capture any stdout output or exit.
         }
 
-        // Zero-allocation streaming buffer read
-        char[] buffer = ArrayPool<char>.Shared.Rent(4096);
-        try
+        while (!cancellationToken.IsCancellationRequested)
         {
-            Memory<char> memory = buffer;
-
-            while (!cancellationToken.IsCancellationRequested)
+            var line = await stdout.ReadLineAsync(cancellationToken).ConfigureAwait(false);
+            if (line == null)
             {
-                int bytesRead = await stdout.ReadAsync(memory, cancellationToken).ConfigureAwait(false);
-                if (bytesRead == 0)
-                {
-                    break;
-                }
-
-                // Yield the buffered chunk
-                yield return new string(buffer, 0, bytesRead);
+                break;
             }
-        }
-        finally
-        {
-            ArrayPool<char>.Shared.Return(buffer);
+
+            StreamPayload? payload = null;
+            if (line.TrimStart().StartsWith('{') && line.TrimEnd().EndsWith('}'))
+            {
+                try
+                {
+                    payload = JsonSerializer.Deserialize(line, ModelContractsJsonContext.Default.StreamPayload);
+                }
+                catch (JsonException)
+                {
+                    // Fallback to text if JSON is malformed
+                }
+            }
+
+            if (payload != null)
+            {
+                yield return payload;
+            }
+            else
+            {
+                yield return new StreamPayload(false, line + Environment.NewLine);
+            }
         }
 
         // Enforce tight cancellation propagation

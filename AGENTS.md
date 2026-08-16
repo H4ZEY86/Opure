@@ -274,11 +274,12 @@ Completed and committed:
 * CM-016 — Controlled Mutation Adversarial Suite and Gate B verification.
 
 * WP-018 — Local Model Runtime (Phase 8: Local Intelligence, COMPLETED & MERGE-READY)
+* WP-019 (Stem 1) — Toolchain Contracts & IPC Framing (COMPLETED)
 
 The next planned ticket is:
 
 ```text
-WP-019 — Workspace Agent Toolchain & Remote Providers (Phase 9: Toolchain Integration)
+WP-019 (Stem 2) — Workspace Agent Toolchain & Remote Providers (Tool Execution Implementation)
 ```
 
 GATE-A-001 passed its repeatable 32-step Development-channel demonstration and

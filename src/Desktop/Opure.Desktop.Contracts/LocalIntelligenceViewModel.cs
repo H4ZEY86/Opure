@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Opure.Runtime.Contracts.Models;
 
 namespace Opure.Desktop.Contracts;
 
@@ -69,9 +70,12 @@ public sealed class LocalIntelligenceViewModel : INotifyPropertyChanged
 
         try
         {
-            await foreach (var token in _source.GenerateStreamAsync(Prompt, _cancellationTokenSource.Token).ConfigureAwait(false))
+            await foreach (var payload in _source.GenerateStreamAsync(Prompt, _cancellationTokenSource.Token).ConfigureAwait(false))
             {
-                AppendToken(token);
+                if (!payload.IsToolCall)
+                {
+                    AppendToken(payload.Content);
+                }
             }
         }
         catch (OperationCanceledException)

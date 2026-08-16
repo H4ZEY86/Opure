@@ -430,7 +430,10 @@
         "type": "Project",
         "dependencies": {
           "Google.Protobuf": "[3.35.1, )",
-          "Grpc.Core.Api": "[2.80.0, )"
+          "Grpc.Core.Api": "[2.80.0, )",
+          "Opure.Patch.Contracts": "[1.0.0, )",
+          "Opure.TrustEvidence.Contracts": "[1.0.0, )",
+          "Opure.Workspace.Contracts": "[1.0.0, )"
         }
       },
       "opure.trustevidence.contracts": {

@@ -6,7 +6,7 @@ namespace Opure.Runtime.Contracts.Models;
 
 public interface IModelHostRunner
 {
-    IAsyncEnumerable<string> RunModelAsync(
+    IAsyncEnumerable<StreamPayload> RunModelAsync(
         string workspaceId,
         string manifestHash,
         ModelRequest request,
