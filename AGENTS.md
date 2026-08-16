@@ -276,11 +276,12 @@ Completed and committed:
 * WP-018 — Local Model Runtime (Phase 8: Local Intelligence, COMPLETED & MERGE-READY)
 * WP-019 (Stem 1) — Toolchain Contracts & IPC Framing (COMPLETED)
 * WP-019 (Stem 2) — Workspace Inspection Tools & Multi-Turn Tool Resolution Loop (COMPLETED)
+* WP-019 (Stem 3) — Remote Provider Abstraction & Fallback Pipeline (COMPLETED)
 
 The next planned ticket is:
 
 ```text
-WP-019 (Stem 3) — Remote Provider Abstraction & Fallback Pipeline
+WP-019 (Stem 4) — Local & Remote Fallback Sandbox Verification
 ```
 
 GATE-A-001 passed its repeatable 32-step Development-channel demonstration and
