@@ -284,7 +284,7 @@ Completed and committed:
 The next planned ticket is:
 
 ```text
-GATE-D-001 — Prepare Phase 11 & Founder Gate D.
+WP-021 — Local Hybrid RAG & Semantic Workspace Indexing Pipeline (Phase 11, AUTHORIZED). Stems 1-4 authorized.
 ```
 
 GATE-A-001 passed its repeatable 32-step Development-channel demonstration and
