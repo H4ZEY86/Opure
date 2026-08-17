@@ -277,10 +277,14 @@ Completed and committed:
 * WP-019 — Workspace Agent Toolchain & Remote Providers (COMPLETED). Stems 1-4 completed. Deterministic failover from local model failure to remote SSE fallback is verified and active.
 * WP-020 — Trust Centre Agent Capabilities Overview (Phase 10: Interactive Agent UX & Patch Review Surface, COMPLETED & MERGED). Stems 1-4 completed. Full Desktop E2E Integration & Verification is clean.
 
+* GATE-C-001 — Verify End-to-End Local Intelligence & Prepare Founder Gate C (COMPLETED).
+
+**Gate C: FORMALLY VERIFIED & LOCKED**
+
 The next planned ticket is:
 
 ```text
-GATE-C-001 — Verify End-to-End Local Intelligence & Prepare Founder Gate C.
+GATE-D-001 — Prepare Phase 11 & Founder Gate D.
 ```
 
 GATE-A-001 passed its repeatable 32-step Development-channel demonstration and
