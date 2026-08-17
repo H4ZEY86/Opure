@@ -19,6 +19,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Desktop\Opure.Desktop.GatewayClient\Opure.Desktop.GatewayClient.csproj" />
+    <ProjectReference Include="..\..\..\src\Desktop\Opure.Desktop.Contracts\Opure.Desktop.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\src\Desktop\Opure.Desktop\Opure.Desktop.csproj" />
     <ProjectReference Include="..\..\..\src\Cli\Opure.Cli\Opure.Cli.csproj" />
     <ProjectReference Include="..\..\..\src\Runtime\Opure.Runtime\Opure.Runtime.csproj" />
     <ProjectReference Include="..\..\..\src\Recovery\Opure.Recovery.Contracts\Opure.Recovery.Contracts.csproj" />
