@@ -34,6 +34,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Opure.Desktop\Opure.Desktop.csproj" />
+    <ProjectReference Include="..\..\Runtime\Opure.Runtime\Opure.Runtime.csproj" />
   </ItemGroup>
   <Import Project="$(WapProjPath)\Microsoft.DesktopBridge.targets" />
 </Project>
