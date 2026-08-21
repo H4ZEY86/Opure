@@ -88,6 +88,7 @@ public sealed class DesktopExecutableBoundaryTests
 
         string[] projectReferences = project.Descendants()
             .Where(element => element.Name.LocalName == "ProjectReference")
+            .Where(element => element.Attribute("ReferenceOutputAssembly")?.Value != "false")
             .Select(element => element.Attribute("Include")?.Value)
             .OfType<string>()
             .ToArray();
