@@ -9,6 +9,7 @@
     <PackageVersion Include="Nerdbank.GitVersioning" Version="3.10.70" />
     <PackageVersion Include="System.Drawing.Common" Version="10.0.10" />
     <PackageVersion Include="System.IO.FileSystem.AccessControl" Version="5.0.0" />
+    <PackageVersion Include="System.Numerics.Tensors" Version="10.0.11" />
   </ItemGroup>
   <ItemGroup Label="Desktop">
     <PackageVersion Include="Avalonia" Version="12.1.0" />
@@ -29,6 +30,11 @@
   </ItemGroup>
   <ItemGroup Label="Repository">
     <PackageVersion Include="LibGit2Sharp" Version="0.32.0" />
+  </ItemGroup>
+  <ItemGroup Label="Machine Learning">
+    <PackageVersion Include="Microsoft.ML.OnnxRuntime" Version="1.19.2" />
+    <PackageVersion Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.19.2" />
+    <PackageVersion Include="Microsoft.ML.Tokenizers" Version="0.22.0-preview.24378.1" />
   </ItemGroup>
   <ItemGroup Label="Testing">
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />

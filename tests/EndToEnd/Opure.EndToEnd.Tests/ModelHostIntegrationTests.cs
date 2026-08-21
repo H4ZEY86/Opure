@@ -50,7 +50,7 @@ public class ModelHostIntegrationTests
         var cmdPipeline = new FakeCommandPipeline();
         var gate = new FakeApprovalGate();
         var trustedDir = new FakeTrustedWorkspaceDirectory();
-        var bridge = new ToolchainExecutionBridge(provider, patchPipeline, cmdPipeline, gate, trustedDir);
+        var bridge = new ToolchainExecutionBridge(provider, patchPipeline, cmdPipeline, gate, trustedDir, null, null);
         var runner = new ModelHostRunner(manifestStoreFake, launcher, router, builder, bridge);
 
         var request = ModelRequest.FromPrompt("Dummy prompt");
