@@ -13,14 +13,16 @@ namespace Opure.Desktop.Contracts;
 public sealed class LocalIntelligenceViewModel : INotifyPropertyChanged
 {
     private readonly ILocalIntelligenceSource _source;
+    private readonly WorkspaceGraphViewModel? _graphViewModel;
     private readonly SynchronizationContext? _syncContext;
     private string _generatedText = string.Empty;
     private bool _isGenerating;
     private CancellationTokenSource? _cancellationTokenSource;
 
-    public LocalIntelligenceViewModel(ILocalIntelligenceSource source)
+    public LocalIntelligenceViewModel(ILocalIntelligenceSource source, WorkspaceGraphViewModel? graphViewModel = null)
     {
         _source = source ?? throw new ArgumentNullException(nameof(source));
+        _graphViewModel = graphViewModel;
         _syncContext = SynchronizationContext.Current;
 
         GenerateCommand = new DelegateCommand(async _ => await GenerateAsync(), _ => !IsGenerating);
@@ -79,6 +81,8 @@ public sealed class LocalIntelligenceViewModel : INotifyPropertyChanged
         {
             ToolActivity.Clear();
         }
+        
+        _graphViewModel?.ClearHighlights();
 
         _cancellationTokenSource = new CancellationTokenSource();
 
@@ -109,6 +113,7 @@ public sealed class LocalIntelligenceViewModel : INotifyPropertyChanged
         {
             IsGenerating = false;
             DeactivateAllTools();
+            _graphViewModel?.ClearHighlights();
             _cancellationTokenSource.Dispose();
             _cancellationTokenSource = null;
         }
@@ -117,6 +122,8 @@ public sealed class LocalIntelligenceViewModel : INotifyPropertyChanged
     private void AddOrUpdateToolActivity(string content)
     {
         var statusText = FormatToolActivity(content);
+        
+        TryHighlightGraphNode(content);
         
         Action updateAction = () =>
         {
@@ -141,6 +148,42 @@ public sealed class LocalIntelligenceViewModel : INotifyPropertyChanged
         else
         {
             updateAction();
+        }
+    }
+
+    private void TryHighlightGraphNode(string content)
+    {
+        if (_graphViewModel == null) return;
+
+        try
+        {
+            var toolRequest = JsonSerializer.Deserialize(content, ModelContractsJsonContext.Default.ToolRequest);
+            if (toolRequest == null) return;
+
+            string? nodeId = null;
+
+            if (toolRequest.ToolName is "read_file_range" or "apply_patch")
+            {
+                var path = GetArg(toolRequest, "path");
+                if (!string.IsNullOrWhiteSpace(path))
+                {
+                    // Convert backslashes to forward slashes to match canonical node ID
+                    nodeId = $"file:{path.Replace('\\', '/')}";
+                }
+            }
+            else if (toolRequest.ToolName == "explore_graph_neighborhood")
+            {
+                nodeId = GetArg(toolRequest, "node_id");
+            }
+
+            if (!string.IsNullOrWhiteSpace(nodeId))
+            {
+                _graphViewModel.HighlightNode(nodeId);
+            }
+        }
+        catch
+        {
+            // Ignore deserialization errors for telemetry
         }
     }
 

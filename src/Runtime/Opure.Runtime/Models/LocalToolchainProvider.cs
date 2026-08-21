@@ -69,6 +69,15 @@ public sealed class LocalToolchainProvider : IToolchainProvider
             EffectClass: ToolEffectClass.ReadOnly,
             EnvironmentPolicy: new ToolEnvironmentPolicy(Array.Empty<string>()),
             InputOutputPolicy: new ToolInputOutputPolicy(true, 1024 * 1024 * 10),
+            ResourceClass: ResourceClass.Lightweight),
+        new ToolTemplate(
+            Id: "explore_graph_neighborhood",
+            ExecutableName: "explore_graph_neighborhood",
+            Arguments: Array.Empty<string>(),
+            TimeoutMilliseconds: 30000,
+            EffectClass: ToolEffectClass.ReadOnly,
+            EnvironmentPolicy: new ToolEnvironmentPolicy(Array.Empty<string>()),
+            InputOutputPolicy: new ToolInputOutputPolicy(true, 1024 * 1024 * 10),
             ResourceClass: ResourceClass.Lightweight)
     };
 
@@ -83,7 +92,7 @@ public sealed class LocalToolchainProvider : IToolchainProvider
 
     public Task<ToolRequestValidationResult> ValidateToolRequestAsync(ToolRequest request, CancellationToken cancellationToken)
     {
-        if (request.ToolName is "apply_patch" or "run_command" or "read_file_range" or "list_directory" or "inspect_diff" or "search_workspace")
+        if (request.ToolName is "apply_patch" or "run_command" or "read_file_range" or "list_directory" or "inspect_diff" or "search_workspace" or "explore_graph_neighborhood")
         {
             return Task.FromResult(ToolRequestValidationResult.Success(request.Arguments));
         }

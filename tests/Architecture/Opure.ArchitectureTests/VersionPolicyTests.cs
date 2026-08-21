@@ -7,7 +7,7 @@ namespace Opure.ArchitectureTests;
 public sealed class VersionPolicyTests
 {
     private const string ExpectedVersioningToolVersion = "3.10.70";
-    private const string ExpectedDevelopmentVersion = "0.1.0-preview.0";
+    private const string ExpectedDevelopmentVersion = "0.3.0";
 
     private static readonly string RepositoryRoot = FindRepositoryRoot();
 

@@ -23,6 +23,7 @@ public class ToolchainExecutionBridge
     private readonly ITrustedWorkspaceDirectory _trustedDirectory;
     private readonly IEmbeddingGenerator? _embeddingGenerator;
     private readonly ISemanticSearchEngine? _searchEngine;
+    private readonly IWorkspaceGraphStore? _graphStore;
 
     public ToolchainExecutionBridge(
         IToolchainProvider toolchainProvider,
@@ -31,7 +32,8 @@ public class ToolchainExecutionBridge
         IPatchApprovalGate approvalGate,
         ITrustedWorkspaceDirectory trustedDirectory,
         IEmbeddingGenerator? embeddingGenerator = null,
-        ISemanticSearchEngine? searchEngine = null)
+        ISemanticSearchEngine? searchEngine = null,
+        IWorkspaceGraphStore? graphStore = null)
     {
         _toolchainProvider = toolchainProvider ?? throw new ArgumentNullException(nameof(toolchainProvider));
         _patchPipeline = patchPipeline ?? throw new ArgumentNullException(nameof(patchPipeline));
@@ -40,6 +42,7 @@ public class ToolchainExecutionBridge
         _trustedDirectory = trustedDirectory ?? throw new ArgumentNullException(nameof(trustedDirectory));
         _embeddingGenerator = embeddingGenerator;
         _searchEngine = searchEngine;
+        _graphStore = graphStore;
     }
 
     private string GetCanonicalPath(string requestPath)
@@ -199,6 +202,25 @@ public class ToolchainExecutionBridge
                     toolRequest, 
                     _embeddingGenerator, 
                     _searchEngine, 
+                    cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                return $"Error: {ex.Message}";
+            }
+        }
+        else if (toolRequest.ToolName == "explore_graph_neighborhood")
+        {
+            if (_graphStore == null)
+            {
+                return "Workspace graph topological indexing is unavailable: graph store service is not registered.";
+            }
+
+            try
+            {
+                return await Opure.Workspace.Execution.WorkspaceGraphTool.ExecuteAsync(
+                    toolRequest,
+                    _graphStore,
                     cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
