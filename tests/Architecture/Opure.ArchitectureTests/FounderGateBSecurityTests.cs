@@ -74,8 +74,8 @@ public sealed class FounderGateBSecurityTests
             Assert.DoesNotContain("HttpListener", content, StringComparison.Ordinal);
             Assert.DoesNotContain("SocketType.Stream", content, StringComparison.Ordinal);
             
-            // WP-019 Stem 3 Remote Provider Abstraction authorizes HttpClient in RemoteModelClient.cs
-            if (!file.EndsWith("RemoteModelClient.cs", StringComparison.OrdinalIgnoreCase))
+            // WP-023 Stem 1: Forbid direct HttpClient usage to enforce INetworkGateway
+            if (!file.EndsWith("NetworkGateway.cs", StringComparison.OrdinalIgnoreCase))
             {
                 Assert.DoesNotContain("HttpClient", content, StringComparison.Ordinal);
             }

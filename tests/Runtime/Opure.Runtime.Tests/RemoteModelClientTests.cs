@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Opure.Runtime.Contracts.Models;
+using Opure.Runtime.Contracts.Providers;
 using Opure.Runtime.Models;
 using Xunit;
 
@@ -15,22 +16,28 @@ namespace Opure.Runtime.Tests;
 
 public class RemoteModelClientTests
 {
-    private class MockHttpMessageHandler : HttpMessageHandler
+    private class MockNetworkGateway : INetworkGateway
     {
         private readonly string _sseContent;
 
-        public MockHttpMessageHandler(string sseContent)
+        public MockNetworkGateway(string sseContent)
         {
             _sseContent = sseContent;
         }
 
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        public Task<(HttpResponseMessage Response, ProviderReceipt Receipt)> SendAsync(HttpRequestMessage request, DataSharingPlan plan, CancellationToken cancellationToken)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return Task.FromCanceled<(HttpResponseMessage, ProviderReceipt)>(cancellationToken);
+            }
+
             var response = new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent(_sseContent, Encoding.UTF8, "text/event-stream")
             };
-            return Task.FromResult(response);
+            var receipt = new ProviderReceipt(plan.ProviderId, request.RequestUri ?? new Uri("https://localhost"), 100, 100, DateTimeOffset.UtcNow, 200);
+            return Task.FromResult((response, receipt));
         }
     }
 
@@ -45,8 +52,8 @@ public class RemoteModelClientTests
             $"data: {JsonSerializer.Serialize(payload2, ModelContractsJsonContext.Default.StreamPayload)}\n\n" +
             $"data: [DONE]\n\n";
 
-        var httpClient = new HttpClient(new MockHttpMessageHandler(sseData));
-        var client = new RemoteModelClient(httpClient);
+        var gateway = new MockNetworkGateway(sseData);
+        var client = new RemoteModelClient(gateway);
 
         var config = new RemoteProviderConfiguration
         {
@@ -72,8 +79,8 @@ public class RemoteModelClientTests
     public async Task RunRemoteModelAsync_RespectsCancellation()
     {
         // Arrange
-        var httpClient = new HttpClient(new MockHttpMessageHandler("data: [DONE]\n\n"));
-        var client = new RemoteModelClient(httpClient);
+        var gateway = new MockNetworkGateway("data: [DONE]\n\n");
+        var client = new RemoteModelClient(gateway);
 
         var config = new RemoteProviderConfiguration
         {

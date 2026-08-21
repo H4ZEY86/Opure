@@ -11,16 +11,17 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Opure.Runtime.Contracts.Models;
+using Opure.Runtime.Contracts.Providers;
 
 namespace Opure.Runtime.Models;
 
 public class RemoteModelClient : IRemoteModelClient
 {
-    private readonly HttpClient _httpClient;
+    private readonly INetworkGateway _gateway;
 
-    public RemoteModelClient(HttpClient httpClient)
+    public RemoteModelClient(INetworkGateway gateway)
     {
-        _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        _gateway = gateway ?? throw new ArgumentNullException(nameof(gateway));
     }
 
     public async IAsyncEnumerable<StreamPayload> RunRemoteModelAsync(
@@ -38,7 +39,10 @@ public class RemoteModelClient : IRemoteModelClient
         var requestJson = JsonSerializer.Serialize(request, ModelContractsJsonContext.Default.ModelRequest);
         httpRequest.Content = new StringContent(requestJson, Encoding.UTF8, "application/json");
 
-        using var response = await _httpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        // Dummy plan for Gate C transition. A full implementation will resolve the actual plan per provider.
+        var plan = new DataSharingPlan("plan:system", "provider:system", Array.Empty<string>(), false, ApprovalStatus.Active, DateTimeOffset.UtcNow);
+
+        var (response, receipt) = await _gateway.SendAsync(httpRequest, plan, cancellationToken);
         response.EnsureSuccessStatusCode();
 
         using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);

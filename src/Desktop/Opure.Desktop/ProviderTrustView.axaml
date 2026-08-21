@@ -1,0 +1,178 @@
+<UserControl
+    x:Class="Opure.Desktop.ProviderTrustView"
+    x:DataType="contracts:ProviderTrustViewModel"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:contracts="clr-namespace:Opure.Desktop.Contracts;assembly=Opure.Desktop.Contracts"
+    mc:Ignorable="d"
+    d:DesignWidth="640"
+    d:DesignHeight="480"
+    AutomationProperties.Name="Provider Trust Consent Panel"
+    AutomationProperties.AutomationId="ProviderTrustPanel">
+
+  <Border
+      BorderThickness="2"
+      CornerRadius="0"
+      Padding="24"
+      Margin="24">
+    <Border.Styles>
+      <Style Selector="Border">
+        <Setter Property="Background" Value="{DynamicResource SystemRegionBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumHighBrush}" />
+      </Style>
+    </Border.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,*,Auto">
+
+      <!-- Header -->
+      <StackPanel Grid.Row="0" Spacing="4">
+        <TextBlock
+            Text="PROVIDER BOUNDARY CONSENT"
+            FontSize="18"
+            FontWeight="Bold"
+            AutomationProperties.HeadingLevel="1"
+            AutomationProperties.AutomationId="ProviderTrustHeading" />
+        <TextBlock
+            Text="Review the data-sharing boundary before approving. This decision is recorded in the local Trust Ledger."
+            TextWrapping="Wrap"
+            Opacity="0.8" />
+      </StackPanel>
+
+      <!-- Provider identity -->
+      <Border
+          Grid.Row="1"
+          Margin="0,16,0,0"
+          BorderThickness="1"
+          CornerRadius="0"
+          Padding="12">
+        <Border.Styles>
+          <Style Selector="Border">
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
+          </Style>
+        </Border.Styles>
+        <Grid ColumnDefinitions="160,*" RowDefinitions="Auto,Auto,Auto">
+          <TextBlock Text="Provider" FontWeight="SemiBold" VerticalAlignment="Center" />
+          <TextBlock
+              Grid.Column="1"
+              Margin="12,0,0,0"
+              Text="{Binding Profile.Name}"
+              FontWeight="Bold"
+              AutomationProperties.AutomationId="ProviderName" />
+
+          <TextBlock Grid.Row="1" Text="Endpoint" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,6,0,0" />
+          <TextBlock
+              Grid.Row="1"
+              Grid.Column="1"
+              Margin="12,6,0,0"
+              Text="{Binding Profile.EndpointUrl}"
+              AutomationProperties.AutomationId="ProviderEndpoint" />
+
+          <TextBlock Grid.Row="2" Text="Data retention" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,6,0,0" />
+          <TextBlock
+              Grid.Row="2"
+              Grid.Column="1"
+              Margin="12,6,0,0"
+              Text="{Binding RetentionSummary}"
+              AutomationProperties.AutomationId="ProviderRetention" />
+        </Grid>
+      </Border>
+
+      <!-- Training data warning (stark neon accent, only shown when UsesDataForTraining) -->
+      <Border
+          Grid.Row="2"
+          IsVisible="{Binding ShowTrainingWarning}"
+          Margin="0,12,0,0"
+          BorderThickness="2"
+          CornerRadius="0"
+          Padding="12">
+        <Border.Styles>
+          <Style Selector="Border">
+            <Setter Property="BorderBrush" Value="#FFEE00" />
+            <Setter Property="Background" Value="#1A1A00" />
+          </Style>
+        </Border.Styles>
+        <StackPanel Spacing="4">
+          <TextBlock
+              Text="⚠  TRAINING DATA DISCLOSURE"
+              FontWeight="Bold"
+              AutomationProperties.AutomationId="TrainingWarningHeading">
+            <TextBlock.Styles>
+              <Style Selector="TextBlock">
+                <Setter Property="Foreground" Value="#FFEE00" />
+              </Style>
+            </TextBlock.Styles>
+          </TextBlock>
+          <TextBlock
+              Text="This provider declares that submitted data may be used to train or improve AI models. Approve only if this is acceptable for your project."
+              TextWrapping="Wrap"
+              AutomationProperties.AutomationId="TrainingWarningDetail">
+            <TextBlock.Styles>
+              <Style Selector="TextBlock">
+                <Setter Property="Foreground" Value="#FFEE00" />
+              </Style>
+            </TextBlock.Styles>
+          </TextBlock>
+        </StackPanel>
+      </Border>
+
+      <!-- Approved capabilities -->
+      <Border
+          Grid.Row="3"
+          Margin="0,12,0,0"
+          BorderThickness="1"
+          CornerRadius="0"
+          Padding="12">
+        <Border.Styles>
+          <Style Selector="Border">
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
+          </Style>
+        </Border.Styles>
+        <StackPanel Spacing="4">
+          <TextBlock Text="Approved capabilities" FontWeight="SemiBold" />
+          <ItemsControl ItemsSource="{Binding Plan.ApprovedCapabilities}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding}" Margin="12,2,0,0" FontFamily="Consolas, Courier New, monospace" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+
+      <!-- Approval status -->
+      <TextBlock
+          Grid.Row="4"
+          Margin="0,16,0,0"
+          Text="{Binding ApprovalStatusLabel}"
+          FontWeight="SemiBold"
+          AutomationProperties.Name="{Binding ApprovalStatusLabel}"
+          AutomationProperties.AutomationId="ApprovalStatus" />
+
+      <!-- Spacer -->
+      <Panel Grid.Row="5" />
+
+      <!-- Action buttons -->
+      <StackPanel
+          Grid.Row="6"
+          Margin="0,16,0,0"
+          Orientation="Horizontal"
+          Spacing="12"
+          HorizontalAlignment="Right">
+        <Button
+            x:Name="ApproveBoundaryButton"
+            Content="_Approve Boundary"
+            Command="{Binding ApprovePlanCommand}"
+            IsEnabled="{Binding !IsApproved}"
+            IsTabStop="True"
+            TabIndex="1"
+            Classes="accent"
+            AutomationProperties.Name="Approve provider data-sharing boundary"
+            AutomationProperties.AutomationId="ApproveBoundaryButton"
+            AutomationProperties.AccessKey="Alt+A" />
+      </StackPanel>
+
+    </Grid>
+  </Border>
+</UserControl>

@@ -58,6 +58,7 @@
   <Folder Name="/src/Runtime/">
     <Project Path="src/Runtime/Opure.Runtime.Contracts/Opure.Runtime.Contracts.csproj" />
     <Project Path="src/Runtime/Opure.Runtime/Opure.Runtime.csproj" />
+    <Project Path="src/Runtime/Opure.Runtime.Sqlite/Opure.Runtime.Sqlite.csproj" />
   </Folder>
   <Folder Name="/src/Trust/">
     <Project Path="src/Trust/Opure.TrustEvidence.Contracts/Opure.TrustEvidence.Contracts.csproj" />

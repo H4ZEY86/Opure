@@ -678,6 +678,14 @@
           "Opure.Workspace.Contracts": "[1.0.0, )"
         }
       },
+      "opure.runtime.sqlite": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Data.Sqlite": "[10.0.10, )",
+          "Opure.Runtime.Contracts": "[1.0.0, )",
+          "SQLitePCLRaw.bundle_e_sqlite3": "[2.1.12, )"
+        }
+      },
       "opure.trustevidence.contracts": {
         "type": "Project"
       },
