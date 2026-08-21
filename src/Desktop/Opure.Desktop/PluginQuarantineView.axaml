@@ -1,0 +1,51 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:Opure.Desktop"
+             xmlns:vm="using:Opure.Desktop.Contracts.Plugins"
+             x:Class="Opure.Desktop.PluginQuarantineView"
+             x:DataType="vm:PluginQuarantineViewModel"
+             Background="#0A0A0A"
+             Foreground="#E0E0E0"
+             FontFamily="Consolas, Monospace">
+    <UserControl.Resources>
+        <local:CapabilityColorConverter x:Key="CapabilityColorConverter" />
+    </UserControl.Resources>
+
+    <StackPanel Spacing="20" Margin="20">
+        <TextBlock Text="PLUGIN QUARANTINE: PENDING CONSENT" FontSize="20" FontWeight="Bold" Foreground="#FFFFFF" />
+        
+        <Border BorderBrush="#333333" BorderThickness="1" Padding="15" Background="#111111">
+            <StackPanel Spacing="10">
+                <TextBlock Text="{Binding Package.Manifest.Name}" FontSize="18" FontWeight="Bold" />
+                <TextBlock Text="{Binding Package.PackageId, StringFormat='ID: {0}'}" FontSize="14" Foreground="#888888" />
+                <TextBlock Text="{Binding Package.Sha256Hash, StringFormat='HASH: {0}'}" FontSize="12" Foreground="#888888" />
+                <TextBlock Text="{Binding Package.State, StringFormat='STATE: {0}'}" FontSize="14" FontWeight="Bold" Foreground="#FFAA00" />
+            </StackPanel>
+        </Border>
+
+        <TextBlock Text="REQUESTED CAPABILITIES" FontSize="14" FontWeight="Bold" Foreground="#AAAAAA" />
+        
+        <ItemsControl ItemsSource="{Binding RequestedCapabilities}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="x:String">
+                    <Border BorderBrush="#333333" BorderThickness="1" Margin="0,0,0,8" Padding="10" Background="#1A1A1A">
+                        <TextBlock Text="{Binding}" 
+                                   Foreground="{Binding Converter={StaticResource CapabilityColorConverter}}" 
+                                   FontFamily="Consolas, Monospace" 
+                                   FontWeight="Bold" />
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <Button Content="GRANT LEASE &amp; ACTIVATE" 
+                Command="{Binding ApproveAndLeaseCommand}"
+                Background="#333333" 
+                Foreground="#FFFFFF" 
+                FontWeight="Bold" 
+                Padding="15,10" 
+                HorizontalAlignment="Stretch" 
+                HorizontalContentAlignment="Center" 
+                CornerRadius="0"/>
+    </StackPanel>
+</UserControl>
