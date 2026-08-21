@@ -290,6 +290,7 @@ The next planned ticket is:
 
 ```text
 * WP-025 — MCP Gateway (Phase 15, COMPLETED & MERGED). Stems 1-4 completed. JSON-RPC 2.0 Stdio Client, Job Object Isolation, SQLite Audit Ledger, and Declarative Consent UI are fully verified.
+* GATE-D-MSIX — Physical Sandbox Release (COMPLETED & MERGED). `Opure.Runtime` CLI auto-included in `Opure.Desktop` MSIX payload via content reference, verified via 1062 tests.
 
 **Gate D: FORMALLY VERIFIED & LOCKED**
 
