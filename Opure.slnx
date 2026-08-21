@@ -120,6 +120,7 @@
     <Project Path="tests/Recovery/Opure.Recovery.Service.Tests/Opure.Recovery.Service.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Runtime/">
+    <Project Path="tests/Runtime/Opure.Runtime.Contracts.Tests/Opure.Runtime.Contracts.Tests.csproj" />
     <Project Path="tests/Runtime/Opure.Runtime.Tests/Opure.Runtime.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Trust/">

@@ -285,8 +285,10 @@ Completed and committed:
 
 The next planned ticket is:
 
+* WP-023 — Remote Providers & Extension Plugins Pipeline (Phase 13, COMPLETED & MERGED). Stems 1-4 completed. Full E2E Trust UI, network gateway decorator, and SQLite audit ledger verified.
+
 ```text
-WP-023 — Remote Providers & Extension Plugins Pipeline (Phase 13, AUTHORIZED).
+WP-024 — Plugin Package and Host (Phase 14, AUTHORIZED).
 ```
 
 GATE-A-001 passed its repeatable 32-step Development-channel demonstration and
