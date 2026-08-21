@@ -33,6 +33,11 @@
           "xunit.v3.mtp-v1": "[3.2.2]"
         }
       },
+      "Microsoft.AI.DirectML": {
+        "type": "Transitive",
+        "resolved": "1.15.1",
+        "contentHash": "j1zJaXb6nKpYFaHLTH/jA5xr0Am1TeRUadkve63Gs1Mkg6xZiwDbXvPg4qMDRcpEZmYKzwHax53duheEz3nzAg=="
+      },
       "Microsoft.ApplicationInsights": {
         "type": "Transitive",
         "resolved": "2.23.0",
@@ -55,6 +60,11 @@
         "dependencies": {
           "SQLitePCLRaw.core": "2.1.11"
         }
+      },
+      "Microsoft.ML.OnnxRuntime.Managed": {
+        "type": "Transitive",
+        "resolved": "1.19.2",
+        "contentHash": "4oNu7/L1ar3PmXNvAnary0/MbyqNkKDmisrG54QVbFoSuW1GNw1CcWDBrlYHbafo41p4/cnVQ3lF/IHuSm8quQ=="
       },
       "Microsoft.Testing.Extensions.Telemetry": {
         "type": "Transitive",
@@ -288,13 +298,18 @@
       "opure.workspace.execution": {
         "type": "Project",
         "dependencies": {
+          "Microsoft.Data.Sqlite": "[10.0.10, )",
+          "Microsoft.ML.OnnxRuntime": "[1.19.2, )",
+          "Microsoft.ML.OnnxRuntime.DirectML": "[1.19.2, )",
+          "Microsoft.ML.Tokenizers": "[0.22.0-preview.24378.1, )",
           "Opure.Filesystem.Contracts": "[1.0.0, )",
           "Opure.Filesystem.Windows": "[1.0.0, )",
           "Opure.Patch.Contracts": "[1.0.0, )",
           "Opure.Patch.Service": "[1.0.0, )",
           "Opure.Runtime.Contracts": "[1.0.0, )",
           "Opure.Workspace.Containment": "[1.0.0, )",
-          "System.IO.FileSystem.AccessControl": "[5.0.0, )"
+          "System.IO.FileSystem.AccessControl": "[5.0.0, )",
+          "System.Numerics.Tensors": "[10.0.11, )"
         }
       },
       "opure.workspace.service": {
@@ -350,6 +365,34 @@
           "SQLitePCLRaw.core": "2.1.11"
         }
       },
+      "Microsoft.ML.OnnxRuntime": {
+        "type": "CentralTransitive",
+        "requested": "[1.19.2, )",
+        "resolved": "1.19.2",
+        "contentHash": "V1v8BebP1ZEFcZf2hGWuN7S5jAqmE2zBOq9RbGebZi2jd/aTZpg4PiTDtpQoGAIhZg4EPQUsHAyOJxwue44pBA==",
+        "dependencies": {
+          "Microsoft.ML.OnnxRuntime.Managed": "1.19.2"
+        }
+      },
+      "Microsoft.ML.OnnxRuntime.DirectML": {
+        "type": "CentralTransitive",
+        "requested": "[1.19.2, )",
+        "resolved": "1.19.2",
+        "contentHash": "tNSSwJoPiJy92mdP6Y2Kb3JyEwxqlzfYkhbtT9QrU2XMGCyXA+Rbc07Y892rTtYBK/8btE3zWCZ3VdEYlHrtfA==",
+        "dependencies": {
+          "Microsoft.AI.DirectML": "1.15.1",
+          "Microsoft.ML.OnnxRuntime.Managed": "1.19.2"
+        }
+      },
+      "Microsoft.ML.Tokenizers": {
+        "type": "CentralTransitive",
+        "requested": "[0.22.0-preview.24378.1, )",
+        "resolved": "0.22.0-preview.24378.1",
+        "contentHash": "f+iWRizqQtf5Y1ikhWreKUryHizbciL/mhh5fS2+hbu5ECgth2ZbI7KSi9otQOe3z3PFPp7USgUnyFIVav2Qhg==",
+        "dependencies": {
+          "Google.Protobuf": "3.19.6"
+        }
+      },
       "SQLitePCLRaw.bundle_e_sqlite3": {
         "type": "CentralTransitive",
         "requested": "[2.1.12, )",
@@ -365,6 +408,12 @@
         "requested": "[5.0.0, )",
         "resolved": "5.0.0",
         "contentHash": "SxHB3nuNrpptVk+vZ/F+7OHEpoHUIKKMl02bUmYHQr1r+glbZQxs7pRtsf4ENO29TVm2TH3AEeep2fJcy92oYw=="
+      },
+      "System.Numerics.Tensors": {
+        "type": "CentralTransitive",
+        "requested": "[10.0.11, )",
+        "resolved": "10.0.11",
+        "contentHash": "4jNNt67NhCqf3bf2FN0mrsC+EH60L7Sny6poqVeiviB27Kw7TQzMmgn8HIaPc8E9EcuGusUyfeu21gLfzcBpDA=="
       }
     }
   }

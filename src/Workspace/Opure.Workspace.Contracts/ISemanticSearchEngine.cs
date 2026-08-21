@@ -13,5 +13,5 @@ public interface ISemanticSearchEngine
     /// <summary>
     /// Searches the local index for code chunks most similar to the provided query embedding.
     /// </summary>
-    Task<IReadOnlyList<CodeChunk>> SearchAsync(EmbeddingVector queryVector, int topK, CancellationToken cancellationToken);
+    Task<IReadOnlyList<CodeChunk>> SearchAsync(string query, EmbeddingVector queryVector, int topK, CancellationToken cancellationToken);
 }

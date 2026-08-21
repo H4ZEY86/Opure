@@ -21,19 +21,25 @@ public class ToolchainExecutionBridge
     private readonly ICommandExecutionPipeline _commandPipeline;
     private readonly IPatchApprovalGate _approvalGate;
     private readonly ITrustedWorkspaceDirectory _trustedDirectory;
+    private readonly IEmbeddingGenerator? _embeddingGenerator;
+    private readonly ISemanticSearchEngine? _searchEngine;
 
     public ToolchainExecutionBridge(
         IToolchainProvider toolchainProvider,
         IPatchExecutionPipeline patchPipeline,
         ICommandExecutionPipeline commandPipeline,
         IPatchApprovalGate approvalGate,
-        ITrustedWorkspaceDirectory trustedDirectory)
+        ITrustedWorkspaceDirectory trustedDirectory,
+        IEmbeddingGenerator? embeddingGenerator = null,
+        ISemanticSearchEngine? searchEngine = null)
     {
         _toolchainProvider = toolchainProvider ?? throw new ArgumentNullException(nameof(toolchainProvider));
         _patchPipeline = patchPipeline ?? throw new ArgumentNullException(nameof(patchPipeline));
         _commandPipeline = commandPipeline ?? throw new ArgumentNullException(nameof(commandPipeline));
         _approvalGate = approvalGate ?? throw new ArgumentNullException(nameof(approvalGate));
         _trustedDirectory = trustedDirectory ?? throw new ArgumentNullException(nameof(trustedDirectory));
+        _embeddingGenerator = embeddingGenerator;
+        _searchEngine = searchEngine;
     }
 
     private string GetCanonicalPath(string requestPath)
@@ -179,6 +185,26 @@ public class ToolchainExecutionBridge
 
             var result = await _commandPipeline.ExecuteAsync(approval, targetTemplate, stagingDir, cancellationToken).ConfigureAwait(false);
             return $"Command executed. Exit code: {result.ExitCode}";
+        }
+        else if (toolRequest.ToolName == "search_workspace")
+        {
+            if (_embeddingGenerator == null || _searchEngine == null)
+            {
+                return "Hybrid RAG search is unavailable: indexing services are not registered.";
+            }
+
+            try
+            {
+                return await Opure.Workspace.Execution.WorkspaceSearchTool.ExecuteAsync(
+                    toolRequest, 
+                    _embeddingGenerator, 
+                    _searchEngine, 
+                    cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                return $"Error: {ex.Message}";
+            }
         }
 
         return $"Error: Unsupported tool '{toolRequest.ToolName}' despite validation success.";

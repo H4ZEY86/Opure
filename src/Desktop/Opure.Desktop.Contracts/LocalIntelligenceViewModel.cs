@@ -158,6 +158,7 @@ public sealed class LocalIntelligenceViewModel : INotifyPropertyChanged
                 "inspect_diff" => "Inspecting workspace diff...",
                 "apply_patch" => $"Staging workspace patch for {GetArg(toolRequest, "path")}...",
                 "run_command" => $"Executing sandboxed command: {GetArg(toolRequest, "command")}...",
+                "search_workspace" => $"Searching codebase for '{GetArg(toolRequest, "query")}'...",
                 _ => $"Executing {toolRequest.ToolName}..."
             };
         }

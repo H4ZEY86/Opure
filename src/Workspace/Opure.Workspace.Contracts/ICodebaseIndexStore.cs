@@ -14,7 +14,7 @@ public interface ICodebaseIndexStore
     /// Upserts a collection of semantic chunks into the local index.
     /// Existing chunks with the same ChunkId will be ignored or updated.
     /// </summary>
-    Task UpsertChunksAsync(IEnumerable<CodeChunk> chunks, CancellationToken cancellationToken);
+    Task UpsertChunksAsync(IEnumerable<(CodeChunk Chunk, EmbeddingVector Vector)> items, CancellationToken cancellationToken);
 
     /// <summary>
     /// Removes all chunks associated with a specific file path from the index.

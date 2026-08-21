@@ -37,7 +37,7 @@ public class DesktopIntegrationWorkflowTests
         var cmdPipeline = new FakeCommandPipeline();
         var trustedDir = new FakeTrustedWorkspaceDirectory();
         
-        var bridge = new ToolchainExecutionBridge(provider, patchPipeline, cmdPipeline, approvalGate, trustedDir);
+        var bridge = new ToolchainExecutionBridge(provider, patchPipeline, cmdPipeline, approvalGate, trustedDir, null, null);
         
         // 4. Setup Local Intelligence ViewModel
         var fakeModelStream = new List<StreamPayload>
