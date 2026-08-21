@@ -1,0 +1,119 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Opure.Desktop.Contracts"
+             xmlns:local="using:Opure.Desktop"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="Opure.Desktop.WorkspaceGraphCanvas"
+             x:DataType="vm:WorkspaceGraphViewModel"
+             ClipToBounds="True"
+             Background="#0F0F0F">
+
+  <UserControl.Resources>
+    <local:EnumMatchConverter x:Key="EnumMatchConverter"/>
+  </UserControl.Resources>
+
+  <UserControl.Styles>
+    <Style Selector="Path.NodeGeometry">
+      <Setter Property="Stroke" Value="#555555"/>
+      <Setter Property="StrokeThickness" Value="1.5"/>
+      <Setter Property="Fill" Value="#1A1A1A"/>
+      <Setter Property="Opacity" Value="0.9"/>
+    </Style>
+    <Style Selector="Path.NodeGeometry:is-active">
+      <!-- Vivid neon magenta for active node -->
+      <Setter Property="Stroke" Value="#FF00FF"/>
+      <Setter Property="StrokeThickness" Value="3"/>
+      <Setter Property="Fill" Value="#330033"/>
+      <Setter Property="Opacity" Value="1"/>
+    </Style>
+  </UserControl.Styles>
+
+  <Border x:Name="CanvasBorder" Background="Transparent" ClipToBounds="True">
+    <Grid>
+      <Grid.RenderTransform>
+        <TransformGroup>
+          <ScaleTransform ScaleX="1" ScaleY="1"/>
+          <TranslateTransform X="0" Y="0"/>
+        </TransformGroup>
+      </Grid.RenderTransform>
+
+      <!-- Edges Layer -->
+      <ItemsControl ItemsSource="{Binding Edges}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <Canvas />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate DataType="vm:GraphEdgeViewModel">
+            <!-- Line element binds directly to StartPoint/EndPoint string representations converted to Avalonia Point -->
+            <Line StartPoint="{Binding StartPoint}" 
+                  EndPoint="{Binding EndPoint}" 
+                  Stroke="#333333" 
+                  StrokeThickness="1.5"/>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+
+      <!-- Nodes Layer -->
+      <ItemsControl ItemsSource="{Binding Nodes}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <Canvas />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.Styles>
+          <Style Selector="ContentPresenter" x:DataType="vm:GraphNodeViewModel">
+            <Setter Property="Canvas.Left" Value="{Binding X}"/>
+            <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+          </Style>
+        </ItemsControl.Styles>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate DataType="vm:GraphNodeViewModel">
+            <Panel ToolTip.Tip="{Binding Label}">
+              
+              <!-- Project: Stark Hexagon -->
+              <Path Classes="NodeGeometry"
+                    Classes.is-active="{Binding IsActive}"
+                    Data="M 15,-10 L 30,0 L 30,15 L 15,25 L 0,15 L 0,0 Z"
+                    IsVisible="{Binding Kind, Converter={StaticResource EnumMatchConverter}, ConverterParameter=Project}"/>
+              
+              <!-- File: Sharp Square -->
+              <Path Classes="NodeGeometry"
+                    Classes.is-active="{Binding IsActive}"
+                    Data="M 0,0 L 20,0 L 20,20 L 0,20 Z"
+                    IsVisible="{Binding Kind, Converter={StaticResource EnumMatchConverter}, ConverterParameter=File}"/>
+
+              <!-- Class: Brutalist Diamond -->
+              <Path Classes="NodeGeometry"
+                    Classes.is-active="{Binding IsActive}"
+                    Data="M 10,-5 L 25,10 L 10,25 L -5,10 Z"
+                    IsVisible="{Binding Kind, Converter={StaticResource EnumMatchConverter}, ConverterParameter=Class}"/>
+              
+              <!-- Interface: Brutalist Circle (approx) or Triangle -->
+              <Path Classes="NodeGeometry"
+                    Classes.is-active="{Binding IsActive}"
+                    Data="M 10,0 L 20,20 L 0,20 Z"
+                    IsVisible="{Binding Kind, Converter={StaticResource EnumMatchConverter}, ConverterParameter=Interface}"/>
+
+              <!-- Method: Small Square -->
+              <Path Classes="NodeGeometry"
+                    Classes.is-active="{Binding IsActive}"
+                    Data="M 5,5 L 15,5 L 15,15 L 5,15 Z"
+                    IsVisible="{Binding Kind, Converter={StaticResource EnumMatchConverter}, ConverterParameter=Method}"/>
+
+              <!-- Struct: Small Hexagon -->
+              <Path Classes="NodeGeometry"
+                    Classes.is-active="{Binding IsActive}"
+                    Data="M 10,0 L 20,6 L 20,16 L 10,22 L 0,16 L 0,6 Z"
+                    IsVisible="{Binding Kind, Converter={StaticResource EnumMatchConverter}, ConverterParameter=Struct}"/>
+              
+            </Panel>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </Grid>
+  </Border>
+</UserControl>

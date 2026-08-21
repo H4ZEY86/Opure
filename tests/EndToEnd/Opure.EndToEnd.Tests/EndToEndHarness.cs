@@ -202,7 +202,15 @@ public sealed class EndToEndHarness : IDisposable
             catch { }
         }
 
-        // 3. Now that handles are released, cleanly wipe the state for the next test
+        // 3. Clear SQLite connection pools and add explicit backoff to release local file locks
+        try
+        {
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+            Thread.Sleep(100);
+        }
+        catch { }
+
+        // 4. Now that handles are released, cleanly wipe the state for the next test
         if (Directory.Exists(DataRoot))
         {
             // Try up to 3 times to account for lingering OS locks

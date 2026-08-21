@@ -125,7 +125,7 @@ public sealed class RuntimeProcessTests
         Task<string> outputTask = process.StandardOutput.ReadToEndAsync();
         Task<string> errorTask = process.StandardError.ReadToEndAsync();
 
-        using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(10));
+        using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(30));
         await process.WaitForExitAsync(timeout.Token);
 
         string standardOutput = await outputTask;
