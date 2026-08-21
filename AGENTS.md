@@ -289,8 +289,9 @@ The next planned ticket is:
 * WP-024 — Plugin Package and Host (Phase 14, COMPLETED & MERGED). Stems 1-4 completed. Package validator, SQLite plugin store, job object execution host, and UI consent capabilities are verified.
 
 ```text
-WP-025 — Plugin Communication & Host Integration (Phase 15, AUTHORIZED).
-```
+* WP-025 — MCP Gateway (Phase 15, COMPLETED & MERGED). Stems 1-4 completed. JSON-RPC 2.0 Stdio Client, Job Object Isolation, SQLite Audit Ledger, and Declarative Consent UI are fully verified.
+
+**Gate D: FORMALLY VERIFIED & LOCKED**
 
 GATE-A-001 passed its repeatable 32-step Development-channel demonstration and
 the complete Release verification at commit

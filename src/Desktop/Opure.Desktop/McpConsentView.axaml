@@ -1,0 +1,89 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mcp="clr-namespace:Opure.Desktop.Contracts.Mcp;assembly=Opure.Desktop.Contracts"
+             x:Class="Opure.Desktop.McpConsentView"
+             x:DataType="mcp:McpConsentViewModel"
+             Background="#0C0C0C">
+    
+    <UserControl.Styles>
+        <Style Selector="TextBlock">
+            <Setter Property="FontFamily" Value="Cascadia Code, Consolas, monospace"/>
+            <Setter Property="Foreground" Value="#E0E0E0"/>
+        </Style>
+        <Style Selector="Button">
+            <Setter Property="FontFamily" Value="Cascadia Code, Consolas, monospace"/>
+            <Setter Property="Background" Value="#333333"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#555555"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+        <Style Selector="Button:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#FF007F"/>
+            <Setter Property="BorderBrush" Value="#FF007F"/>
+        </Style>
+        <Style Selector="Button:disabled /template/ ContentPresenter">
+            <Setter Property="Background" Value="#1A1A1A"/>
+            <Setter Property="Foreground" Value="#555555"/>
+            <Setter Property="BorderBrush" Value="#333333"/>
+        </Style>
+        <Style Selector="CheckBox">
+            <Setter Property="FontFamily" Value="Cascadia Code, Consolas, monospace"/>
+            <Setter Property="Foreground" Value="#E0E0E0"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*,Auto" Margin="24">
+        
+        <!-- Header -->
+        <Border Grid.Row="0" BorderBrush="#333333" BorderThickness="0,0,0,1" Padding="0,0,0,16" Margin="0,0,0,16">
+            <StackPanel Spacing="8">
+                <TextBlock Text="MCP SERVER LEASE" FontSize="20" FontWeight="Bold" Foreground="#FF007F"/>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="Server:" Foreground="#888888"/>
+                    <TextBlock Text="{Binding Profile.Name}" FontWeight="Bold"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="Executable:" Foreground="#888888"/>
+                    <TextBlock Text="{Binding Profile.ExecutablePath}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="Fingerprint:" Foreground="#888888"/>
+                    <TextBlock Text="{Binding Profile.Sha256Fingerprint}" Foreground="#FFC107"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Tools List -->
+        <ScrollViewer Grid.Row="1">
+            <ItemsControl ItemsSource="{Binding Tools}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="mcp:McpToolSelectionViewModel">
+                        <Border BorderBrush="#222222" BorderThickness="1" Background="#111111" Margin="0,0,0,8" Padding="12">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <CheckBox Grid.Column="0" IsChecked="{Binding IsSelected}" VerticalAlignment="Top" Margin="0,4,16,0"/>
+                                <StackPanel Grid.Column="1" Spacing="4">
+                                    <TextBlock Text="{Binding Schema.ToolName}" FontWeight="Bold" FontSize="14" Foreground="#4CAF50"/>
+                                    <TextBlock Text="{Binding Schema.Description}" TextWrapping="Wrap" Foreground="#AAAAAA"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <!-- Footer -->
+        <Border Grid.Row="2" BorderBrush="#333333" BorderThickness="0,1,0,0" Padding="0,16,0,0" Margin="0,16,0,0">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0" Text="SELECT TOOLS TO AUTHORIZE" VerticalAlignment="Center" Foreground="#888888"/>
+                <Button Grid.Column="1" 
+                        Content="GRANT TOOL LEASE" 
+                        Command="{Binding ApproveSelectedToolsCommand}"/>
+            </Grid>
+        </Border>
+
+    </Grid>
+</UserControl>
