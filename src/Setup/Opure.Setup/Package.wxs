@@ -1,6 +1,7 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
   <Package Name="Opure Gate D" Manufacturer="OpureDev" Version="0.4.0.0" UpgradeCode="8B744CA5-331B-450C-9E52-ADBE42F9A95C">
     <MajorUpgrade DowngradeErrorMessage="A newer version is already installed." />
+    <MediaTemplate EmbedCab="yes" />
     <StandardDirectory Id="ProgramFiles64Folder">
       <Directory Id="INSTALLFOLDER" Name="Opure">
         <Component Id="DesktopExe" Guid="*">
