@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package opure.mcp.v1;
+option csharp_namespace = "Opure.Runtime.Contracts.Mcp.V1";
+
+service McpCommandCenterService {
+  rpc GetMcpTools (GetMcpToolsRequest) returns (GetMcpToolsResponse);
+}
+
+message GetMcpToolsRequest {
+}
+
+message McpToolDefinition {
+  string tool_id = 1;
+  string name = 2;
+  string description = 3;
+  repeated string granted_capabilities = 4;
+}
+
+message GetMcpToolsResponse {
+  repeated McpToolDefinition tools = 1;
+}

@@ -169,6 +169,8 @@ public sealed class RuntimeApplication
 
             var configStore = new OpureConfigStore(dataRoot.FullPath);
             
+            var mcpCommandCenterRequestHandler = new Opure.Runtime.Mcp.McpCommandCenterRequestHandler();
+            
             healthTransport = await NamedPipeGatewayServer.StartAsync(
                 endpoint,
                 new RuntimeHealthRequestHandler(
@@ -198,7 +200,8 @@ public sealed class RuntimeApplication
                 trustProjectRequestHandler:
                     trustEvidenceService.TrustCentreHandler,
                 recoveryAuditRequestHandler: recoveryAuditHandler,
-                patchReviewRequestHandler: patchReviewHandler)
+                patchReviewRequestHandler: patchReviewHandler,
+                mcpCommandCenterRequestHandler: mcpCommandCenterRequestHandler)
                 .ConfigureAwait(false);
 
             lifecycle.TransitionTo(RuntimeLifecycleState.Ready);

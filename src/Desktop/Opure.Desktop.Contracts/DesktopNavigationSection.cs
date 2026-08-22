@@ -9,5 +9,6 @@ public enum DesktopNavigationSection
     Projects = 1,
     Workflows = 2,
     TrustCentre = 3,
-    License = 4
+    License = 4,
+    McpCommandCenter = 5
 }

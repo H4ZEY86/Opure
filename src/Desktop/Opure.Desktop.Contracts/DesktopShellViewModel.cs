@@ -33,7 +33,8 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
         DesktopRecoveryViewModel? recoveryAudits = null,
         DesktopTrustCentreViewModel? trustCentre = null,
         DesktopLicenseViewModel? license = null,
-        DesktopPatchReviewViewModel? patchReview = null)
+        DesktopPatchReviewViewModel? patchReview = null,
+        DesktopMcpCommandCenterViewModel? mcpCommandCenter = null)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
         ArgumentNullException.ThrowIfNull(runtimeHealth);
@@ -51,6 +52,7 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
             new DesktopTrustCentreViewModel(new UnavailableDesktopTrustCentreSource());
         License = license ?? new DesktopLicenseViewModel();
         PatchReview = patchReview;
+        McpCommandCenter = mcpCommandCenter;
         selectedSection = DesktopNavigationSection.Home;
         pageTitle = "Home";
         pageDetail =
@@ -78,6 +80,8 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
     public DesktopLicenseViewModel License { get; }
 
     public DesktopPatchReviewViewModel? PatchReview { get; }
+
+    public DesktopMcpCommandCenterViewModel? McpCommandCenter { get; }
 
     public string WindowTitle => Snapshot.WindowTitle;
 
@@ -124,6 +128,9 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
     public bool IsLicensePage =>
         selectedSection == DesktopNavigationSection.License;
 
+    public bool IsMcpCommandCenterPage =>
+        selectedSection == DesktopNavigationSection.McpCommandCenter;
+
     public void SelectSection(DesktopNavigationSection section)
     {
         (string title, string detail) = section switch
@@ -143,6 +150,9 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
             DesktopNavigationSection.License => (
                 "Opure Pro",
                 "Activate your offline license for advanced features."),
+            DesktopNavigationSection.McpCommandCenter => (
+                "MCP Command Center",
+                "Inspect registered MCP tools and manage capability leases."),
             _ => throw new ArgumentOutOfRangeException(nameof(section), section, null)
         };
 
@@ -163,6 +173,7 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(IsProjectsPage));
         OnPropertyChanged(nameof(IsTrustCentrePage));
         OnPropertyChanged(nameof(IsLicensePage));
+        OnPropertyChanged(nameof(IsMcpCommandCenterPage));
     }
 
     /// <summary>

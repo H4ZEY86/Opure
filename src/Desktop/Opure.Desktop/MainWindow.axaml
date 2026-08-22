@@ -7,6 +7,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:contracts="using:Opure.Desktop.Contracts"
     xmlns:local="using:Opure.Desktop"
+    xmlns:views="using:Opure.Desktop.Views"
     mc:Ignorable="d"
     d:DesignWidth="1000"
     d:DesignHeight="650"
@@ -103,6 +104,16 @@
             AutomationProperties.Name="Opure Pro Activation"
             AutomationProperties.AutomationId="NavigationLicense"
             AutomationProperties.AccessKey="Alt+O" />
+            
+        <Button
+            x:Name="McpCommandCenterButton"
+            Content="_MCP Command Center"
+            Click="OnMcpCommandCenterClick"
+            IsTabStop="True"
+            TabIndex="6"
+            AutomationProperties.Name="MCP Command Center"
+            AutomationProperties.AutomationId="NavigationMcpCommandCenter"
+            AutomationProperties.AccessKey="Alt+M" />
       </StackPanel>
     </Border>
 
@@ -452,6 +463,13 @@
               DataContext="{Binding License}"
               AutomationProperties.Name="Opure Pro Activation"
               AutomationProperties.AutomationId="LicenseActivationView" />
+        </Border>
+
+        <Border IsVisible="{Binding IsMcpCommandCenterPage}">
+          <views:McpCommandCenterView
+              DataContext="{Binding McpCommandCenter}"
+              AutomationProperties.Name="MCP Command Center"
+              AutomationProperties.AutomationId="McpCommandCenterView" />
         </Border>
 
         <Border

@@ -67,6 +67,11 @@ public partial class MainWindow : Window
         viewModel.SelectSection(DesktopNavigationSection.License);
     }
 
+    private void OnMcpCommandCenterClick(object? sender, RoutedEventArgs eventArgs)
+    {
+        viewModel.SelectSection(DesktopNavigationSection.McpCommandCenter);
+    }
+
     private void OnWindowOpened(object? sender, EventArgs eventArgs)
     {
         _ = sender;

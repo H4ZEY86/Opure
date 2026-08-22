@@ -13,6 +13,12 @@ public static class RuntimeHealthGatewayClient
         return new ProjectListGatewaySource(releaseChannel);
     }
 
+    public static IDesktopMcpCommandCenterSource CreateMcpCommandCenterSource(string releaseChannel)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(releaseChannel);
+        return new McpCommandCenterGatewaySource(releaseChannel);
+    }
+
     public static IDesktopConfigurationSource CreateTrustConfigurationSource(string releaseChannel)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(releaseChannel);

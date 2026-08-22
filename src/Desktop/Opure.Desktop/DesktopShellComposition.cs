@@ -32,6 +32,9 @@ public static class DesktopShellComposition
                     DesktopLaunchContext.ReleaseChannel)),
             patchReview: new DesktopPatchReviewViewModel(
                 RuntimeHealthGatewayClient.CreatePatchReviewSource(
+                    DesktopLaunchContext.ReleaseChannel)),
+            mcpCommandCenter: new DesktopMcpCommandCenterViewModel(
+                RuntimeHealthGatewayClient.CreateMcpCommandCenterSource(
                     DesktopLaunchContext.ReleaseChannel)));
     }
 
