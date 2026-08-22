@@ -131,9 +131,8 @@ internal static class RuntimeBootstrapper
             {
                 try
                 {
-                    while (!sidecarProcess.StandardOutput.EndOfStream)
+                    while (await sidecarProcess.StandardOutput.ReadLineAsync().ConfigureAwait(false) != null)
                     {
-                        await sidecarProcess.StandardOutput.ReadLineAsync().ConfigureAwait(false);
                     }
                 }
                 catch { }
@@ -142,9 +141,8 @@ internal static class RuntimeBootstrapper
             {
                 try
                 {
-                    while (!sidecarProcess.StandardError.EndOfStream)
+                    while (await sidecarProcess.StandardError.ReadLineAsync().ConfigureAwait(false) != null)
                     {
-                        await sidecarProcess.StandardError.ReadLineAsync().ConfigureAwait(false);
                     }
                 }
                 catch { }
