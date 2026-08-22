@@ -294,6 +294,10 @@ The next planned ticket is:
 
 **Gate D: FORMALLY VERIFIED & LOCKED**
 
+The next planned ticket is:
+
+* WP-026 — Workflow Engine (Phase 16). targeting Gate E. Definitions, compiled plans, events, checkpoints, workers, approvals, effects, recovery.
+
 GATE-A-001 passed its repeatable 32-step Development-channel demonstration and
 the complete Release verification at commit
 `b63d284f22dc1c5ec123c00779bcdbfd25a12110`, which is pushed to `origin/main`.
