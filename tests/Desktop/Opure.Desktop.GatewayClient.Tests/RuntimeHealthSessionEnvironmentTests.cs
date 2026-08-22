@@ -84,7 +84,8 @@ public sealed class RuntimeHealthSessionEnvironmentTests
     {
         using EnvironmentVariableScope scope = new(
             ("OPURE_BOOTSTRAP_SESSION_ID", null),
-            ("OPURE_BOOTSTRAP_SESSION_SECRET", null));
+            ("OPURE_BOOTSTRAP_SESSION_SECRET", null),
+            ("OPURE_CHANNEL", "TestIsolation_Session"));
 
         Assert.Null(RuntimeHealthSessionEnvironment.ReadCurrent());
     }

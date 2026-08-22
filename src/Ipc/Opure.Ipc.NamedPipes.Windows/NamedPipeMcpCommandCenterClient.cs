@@ -116,6 +116,8 @@ public sealed class NamedPipeMcpCommandCenterClient : IAsyncDisposable
             out string nonce,
             out string clientProof);
 
+        headers.Add("x-opure-session-secret", sessionMaterial.SessionSecret);
+
         DateTime deadline = timeProvider.GetUtcNow().UtcDateTime.AddSeconds(10);
         using AsyncUnaryCall<TResponse> call = invoke(headers, deadline);
 

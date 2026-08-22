@@ -90,7 +90,8 @@ public sealed class RuntimeHealthEndpointEnvironmentTests
     {
         using EnvironmentVariableScope scope = new(
             ("OPURE_RUNTIME_PIPE_NAME", null),
-            ("OPURE_RUNTIME_BOOT_ID", null));
+            ("OPURE_RUNTIME_BOOT_ID", null),
+            ("OPURE_CHANNEL", "TestIsolation_Endpoint"));
 
         Assert.Null(RuntimeHealthEndpointEnvironment.ReadCurrent());
     }
