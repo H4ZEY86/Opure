@@ -30,6 +30,8 @@ internal static class Program
         using IDisposable traceSession =
             RuntimeHealthGatewayClient.CreateTraceSession(releaseChannel);
 
+        RuntimeBootstrapper.StartRuntime();
+
         DesktopLaunchContext.Initialise(options);
         return BuildAvaloniaApp()
             .StartWithClassicDesktopLifetime(

@@ -60,6 +60,9 @@
     <Project Path="src/Runtime/Opure.Runtime/Opure.Runtime.csproj" />
     <Project Path="src/Runtime/Opure.Runtime.Sqlite/Opure.Runtime.Sqlite.csproj" />
   </Folder>
+  <Folder Name="/src/Setup/">
+    <Project Path="src/Setup/Opure.Setup/Opure.Setup.wixproj" Type="b7dd6f7e-def8-4e67-b5b7-07ef123db6f0" />
+  </Folder>
   <Folder Name="/src/Trust/">
     <Project Path="src/Trust/Opure.TrustEvidence.Contracts/Opure.TrustEvidence.Contracts.csproj" />
     <Project Path="src/Trust/Opure.TrustEvidence.Protocol/Opure.TrustEvidence.Protocol.csproj" />

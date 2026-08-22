@@ -6,7 +6,7 @@
       Text="First-party project names must begin with 'Opure.': $(MSBuildProjectName)" />
 
     <Error
-      Condition="'$(TargetFramework)' != '' and '$(TargetFramework)' != '$(OpureTargetFrameworkBaseline)'"
+      Condition="'$(TargetFramework)' != '' and '$(TargetFramework)' != '$(OpureTargetFrameworkBaseline)' and '$(MSBuildProjectExtension)' != '.wixproj'"
       Text="Unsupported target framework '$(TargetFramework)' in $(MSBuildProjectName). The current baseline is $(OpureTargetFrameworkBaseline)." />
 
     <Error

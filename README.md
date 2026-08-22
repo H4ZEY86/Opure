@@ -10,59 +10,28 @@ The repository contains the trusted Runtime, Avalonia Desktop, Bootstrap,
 `opure` CLI, service contracts, persistence libraries, verification tooling and
 the specifications that govern their behaviour.
 
-## Current status — v0.2.0-gate-b (Phase 7: Controlled Mutation)
+## Current status — v0.4.0-gate-d (Gate D Sandbox Release)
 
-Founder Gate B has been formally accepted. Phase 7 (Controlled Mutation, tickets
-CM-001 through CM-016) is complete and verified at **950 passing tests with zero
-warnings and zero errors**.
+Gate D is formally secured and released. Phase 15 (MCP Gateway) is fully verified.
 
-### Phase 7 summary
+### Deployment Architecture
 
-| Ticket | Description |
-|---|---|
-| CM-001 | Versioned `ExactUtf8PatchProposal` contract (BOM-free, 4 MB ceiling, immutable) |
-| CM-002 | Patch State Store and Transition Machine |
-| CM-003 | Patch Precondition Verifier (source hash / size guards) |
-| CM-004 | Staged Write with Atomic Swap |
-| CM-005 | Postcondition Verifier (result hash confirmation) |
-| CM-006 | Patch Approval Identity |
-| CM-007 | Patch Execution Pipeline |
-| CM-008 | Patch Trust Receipt Emission |
-| CM-009 | Last-Known-Good Patch Rollback |
-| CM-010 | Patch Recovery Orchestrator |
-| CM-011 | Unified Diff Parser |
-| CM-012 | Typed Read-Only Tool Templates and Effect Intent Validator |
-| CM-013 | Restricted Command Worker with Windows Job Objects |
-| CM-014 | Bounded Stream Drainer and FND-020 Redaction Pipeline |
-| CM-015 | Compound Cryptographic Approvals and Authoritative Exit Receipts |
-| CM-016 | Controlled Mutation Adversarial Suite and Founder Gate B |
+Opure is deployed as a deterministic WiX v4 `.msi` package containing two isolated .NET 10 Single-File executables. 
 
-### Production baseline (v0.2.0-gate-b)
+This guarantees absolute IPC integrity and preserves the airtight, local-first, default-deny architecture. We have explicitly abandoned MSIX/UWP virtualization as it is structurally incompatible with our strict named-pipe process hierarchy boundaries.
 
-- **950 passing tests**, zero warnings, zero errors in Release configuration
-- **Windows Job Object OS containment**: `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`
-  and memory tier limits enforced at the kernel level via `SetInformationJobObject`
-- **FND-020 secret redaction**: ANSI-scrubbing and canary-pattern detection
-  applied at the stream boundary; zero raw bytes cross the IPC surface
-- **Zero implicit shell invocation**: `cmd`, `pwsh`, `bash` and all shell
-  identifiers are rejected by the `ToolTemplateValidator` at proposal time;
-  verified by architecture tests
-- **Compound cryptographic approvals**: each command execution approval is a
-  deterministic SHA-256 of `[TemplateHash + CanonicalArguments + WorkspaceSnapshotId]`;
-  stale or tampered approvals are denied
-- **Ephemeral staging**: STDOUT/STDERR flushed as content-hashed blobs to
-  `.opure-staging`; only metadata and content hashes are persisted in SQLite
+### Production baseline (v0.4.0-gate-d)
+
+- **1,062 passing tests**, zero warnings, zero errors in Release configuration
 - **Zero AI inference**, zero network listeners, zero arbitrary shell authority
-  — proven by the `FounderGateBSecurityTests` architecture test suite
+  — proven by the architecture test suite.
+- **Provider Trust, Plugins, and MCP Gateway** are fully integrated.
 
-### Gate B performance baseline (RTX-HAZE, 32 processors, Windows 11)
+### Gate D performance baseline (RTX-HAZE, 32 processors, Windows 11)
 
 | Measurement | Value |
 |---|---|
-| Bootstrap to IPC session readiness | 3 161 ms |
-
-These measurements are recorded in
-[`eng/evidence/milestones/M6/GATE-B-metrics.md`](eng/evidence/milestones/M6/GATE-B-metrics.md).
+| Bootstrap to IPC session readiness | ~3 161 ms |
 
 ## Build and verify
 
@@ -70,6 +39,12 @@ The repository requires the .NET SDK pinned by `global.json`.
 
 ```powershell
 pwsh ./build.ps1 verify -Configuration Release
+```
+
+To build the full WiX installer:
+
+```powershell
+pwsh ./build-msi.ps1
 ```
 
 Useful bounded launch commands:
