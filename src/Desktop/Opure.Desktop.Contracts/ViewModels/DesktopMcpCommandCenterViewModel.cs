@@ -11,6 +11,7 @@ public sealed class DesktopMcpCommandCenterViewModel : INotifyPropertyChanged
     private readonly IDesktopMcpCommandCenterSource source;
     private bool isRefreshing;
     private bool hasError;
+    private string errorMessage = string.Empty;
 
     public DesktopMcpCommandCenterViewModel(IDesktopMcpCommandCenterSource source)
     {
@@ -46,6 +47,19 @@ public sealed class DesktopMcpCommandCenterViewModel : INotifyPropertyChanged
         }
     }
 
+    public string ErrorMessage
+    {
+        get => errorMessage;
+        set
+        {
+            if (errorMessage != value)
+            {
+                errorMessage = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
     public ObservableCollection<McpToolDefinition> Tools { get; } = new();
 
     public async Task RefreshAsync()
@@ -60,17 +74,18 @@ public sealed class DesktopMcpCommandCenterViewModel : INotifyPropertyChanged
 
         try
         {
-            Tools.Clear();
             var response = await source.GetToolsAsync(CancellationToken.None).ConfigureAwait(true);
             
+            Tools.Clear();
             foreach (var tool in response.Tools)
             {
                 Tools.Add(tool);
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             HasError = true;
+            ErrorMessage = ex.Message;
         }
         finally
         {

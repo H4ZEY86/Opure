@@ -174,6 +174,11 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(IsTrustCentrePage));
         OnPropertyChanged(nameof(IsLicensePage));
         OnPropertyChanged(nameof(IsMcpCommandCenterPage));
+
+        if (section == DesktopNavigationSection.McpCommandCenter)
+        {
+            _ = McpCommandCenter?.RefreshAsync();
+        }
     }
 
     /// <summary>

@@ -23,7 +23,7 @@
       <TextBlock Text="Loading..." VerticalAlignment="Center" Foreground="#888"
                  IsVisible="{Binding IsRefreshing}"/>
                  
-      <TextBlock Text="Failed to load MCP tools." VerticalAlignment="Center" Foreground="#FF003C"
+      <TextBlock Text="{Binding ErrorMessage}" VerticalAlignment="Center" Foreground="#FF003C"
                  IsVisible="{Binding HasError}"/>
     </StackPanel>
 
