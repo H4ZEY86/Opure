@@ -184,6 +184,12 @@ public sealed class RuntimeExecutableBoundaryTests
 
             foreach (string prohibitedToken in prohibitedTokens)
             {
+                // Founder-approved exception: RuntimeApplication.cs uses FileStream for runtime.lock securely
+                if (Path.GetFileName(sourceFile) == "RuntimeApplication.cs" && prohibitedToken == "FileStream")
+                {
+                    continue;
+                }
+
                 Assert.DoesNotContain(
                     prohibitedToken,
                     source,

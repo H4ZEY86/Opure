@@ -16,9 +16,45 @@ public static partial class RuntimeHealthSessionEnvironment
                 "OPURE_BOOTSTRAP_SESSION_SECRET")
         };
 
-        return TryCreate(values, out RuntimeHealthSessionMaterial? material)
-            ? material
-            : null;
+        if (TryCreate(values, out RuntimeHealthSessionMaterial? material))
+        {
+            return material;
+        }
+
+        string channel = Environment.GetEnvironmentVariable("OPURE_CHANNEL") ?? "Development";
+        string dataRoot = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        string lockfilePath = Path.Combine(dataRoot, "Opure", channel, "runtime.lock");
+
+        if (System.IO.File.Exists(lockfilePath))
+        {
+            try
+            {
+                using var stream = new System.IO.FileStream(
+                    lockfilePath,
+                    System.IO.FileMode.Open,
+                    System.IO.FileAccess.Read,
+                    System.IO.FileShare.ReadWrite | System.IO.FileShare.Delete);
+                
+                using var document = System.Text.Json.JsonDocument.Parse(stream);
+                if (document.RootElement.TryGetProperty("sessionId", out var sessionId) &&
+                    document.RootElement.TryGetProperty("sessionSecret", out var sessionSecret))
+                {
+                    values["OPURE_BOOTSTRAP_SESSION_ID"] = sessionId.GetString();
+                    values["OPURE_BOOTSTRAP_SESSION_SECRET"] = sessionSecret.GetString();
+
+                    if (TryCreate(values, out material))
+                    {
+                        return material;
+                    }
+                }
+            }
+            catch
+            {
+                // Ignore parsing errors and return null
+            }
+        }
+
+        return null;
     }
 
     public static bool TryCreate(

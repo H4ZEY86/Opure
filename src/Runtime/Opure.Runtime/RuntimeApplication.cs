@@ -36,7 +36,7 @@ public sealed class RuntimeApplication
         ArgumentNullException.ThrowIfNull(shutdownSignal);
 
         RuntimeLifecycle lifecycle = new();
-        RuntimeDataRoot dataRoot;
+        RuntimeDataRoot? dataRoot = null;
         RuntimeBootSnapshot bootSnapshot;
         NamedPipeGatewayServer? healthTransport = null;
         RuntimeServiceLifecycleCoordinator? serviceLifecycle = null;
@@ -216,6 +216,29 @@ public sealed class RuntimeApplication
                 healthTransport.Endpoint.PipeName,
                 operationalLogger).ConfigureAwait(false);
 
+            try
+            {
+                string lockfilePath = Path.Combine(dataRoot.FullPath, "runtime.lock");
+                var lockfileData = new
+                {
+                    pipeName = healthTransport.Endpoint.PipeName,
+                    bootId = healthTransport.Endpoint.RuntimeBootId,
+                    sessionId = sessionMaterial.SessionId,
+                    sessionSecret = sessionMaterial.SessionSecret
+                };
+                
+                using var stream = new FileStream(
+                    lockfilePath,
+                    FileMode.Create,
+                    FileAccess.Write,
+                    FileShare.Read);
+                await System.Text.Json.JsonSerializer.SerializeAsync(stream, lockfileData).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                // Silently ignore lockfile write failures.
+            }
+
             using CancellationTokenSource timerCancellation = new();
             Task timerTask = ScheduleAutomaticShutdownAsync(
                 options.AutomaticShutdownDelay,
@@ -319,6 +342,21 @@ public sealed class RuntimeApplication
             if (healthTransport is not null)
             {
                 await healthTransport.DisposeAsync().ConfigureAwait(false);
+            }
+
+            try
+            {
+                if (dataRoot is not null)
+                {
+                    string lockfilePath = Path.Combine(dataRoot.FullPath, "runtime.lock");
+                    if (File.Exists(lockfilePath))
+                    {
+                        File.Delete(lockfilePath);
+                    }
+                }
+            }
+            catch (Exception)
+            {
             }
 
             serviceLifecycle?.Dispose();
