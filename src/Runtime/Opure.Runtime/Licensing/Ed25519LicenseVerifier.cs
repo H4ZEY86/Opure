@@ -33,7 +33,7 @@ public sealed class Ed25519LicenseVerifier : ILicenseVerifier
 #else
     // 32-byte compressed Ed25519 X-coordinate (dev placeholder).
     private const string PublicKeyHex =
-        "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a";
+        "337d7042ffe1b4c5ebc73788244c8e282fe0738b7150ffbcf400b07166fc9934";
 #endif
 
     private const int SignatureLengthBytes = 64;
