@@ -11,6 +11,7 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
     private DesktopNavigationSection selectedSection;
     private string pageTitle;
     private string pageDetail;
+    private bool isProActivated;
 
     public DesktopShellViewModel(DesktopShellSnapshot snapshot)
         : this(
@@ -97,6 +98,24 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
 
     public DesktopNavigationSection SelectedSection => selectedSection;
 
+    public bool IsProActivated
+    {
+        get => isProActivated;
+        private set
+        {
+            if (isProActivated != value)
+            {
+                isProActivated = value;
+                OnPropertyChanged();
+                // The nav button visibility is the logical inverse.
+                OnPropertyChanged(nameof(ShowProTab));
+            }
+        }
+    }
+
+    /// <summary>True while the Pro tab should be visible (i.e. not yet activated).</summary>
+    public bool ShowProTab => !isProActivated;
+
     public string PageTitle => pageTitle;
 
     public string PageDetail => pageDetail;
@@ -151,7 +170,16 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(IsLicensePage));
     }
 
-    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    /// <summary>
+    /// Applies an updated health snapshot, propagating relevant properties.
+    /// </summary>
+    public void ApplyHealthSnapshot(DesktopRuntimeHealthSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        IsProActivated = snapshot.IsProActivated;
+    }
+
+    private void OnPropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string? propertyName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }

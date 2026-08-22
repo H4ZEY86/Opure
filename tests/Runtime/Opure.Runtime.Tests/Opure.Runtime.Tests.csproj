@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="NSec.Cryptography" />
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="xunit.runner.visualstudio">
       <PrivateAssets>all</PrivateAssets>
@@ -22,9 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None
-      Update="Fixtures\*.hex"
-      CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Fixtures\*.hex" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

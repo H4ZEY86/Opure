@@ -15,6 +15,9 @@
     <Project Path="src/Desktop/Opure.Desktop.GatewayClient/Opure.Desktop.GatewayClient.csproj" />
     <Project Path="src/Desktop/Opure.Desktop/Opure.Desktop.csproj" />
   </Folder>
+  <Folder Name="/src/DevTools/">
+    <Project Path="src/DevTools/Opure.DevTools/Opure.DevTools.csproj" />
+  </Folder>
   <Folder Name="/src/Filesystem/">
     <Project Path="src/Filesystem/Opure.Filesystem.Contracts/Opure.Filesystem.Contracts.csproj" />
     <Project Path="src/Filesystem/Opure.Filesystem.Windows/Opure.Filesystem.Windows.csproj" />

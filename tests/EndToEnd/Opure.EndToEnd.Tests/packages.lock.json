@@ -200,6 +200,11 @@
         "resolved": "2.0.324",
         "contentHash": "5YZVGNuO9nYFQfzRQGPGY9fdpSsABwlF2jSaZ7ydxCfjvt5Krbj/eHbXkvvgAQzp4lkjvgDrlAuuI4KTmqhDlA=="
       },
+      "libsodium": {
+        "type": "Transitive",
+        "resolved": "1.0.19",
+        "contentHash": "tupm/HViwBN6Knd/gckR+cLaJGR39GLmiU4iDMM5hp/1BoczMr8fwJhSU+3/C2V4hi9nBK/4FICRKtTLU30TCA=="
+      },
       "MicroCom.Runtime": {
         "type": "Transitive",
         "resolved": "0.11.6",
@@ -654,6 +659,7 @@
       "opure.runtime": {
         "type": "Project",
         "dependencies": {
+          "NSec.Cryptography": "[24.4.0, )",
           "Opure.Configuration": "[1.0.0, )",
           "Opure.Ipc.Abstractions": "[1.0.0, )",
           "Opure.Ipc.NamedPipes.Windows": "[1.0.0, )",
@@ -890,6 +896,15 @@
         "contentHash": "f+iWRizqQtf5Y1ikhWreKUryHizbciL/mhh5fS2+hbu5ECgth2ZbI7KSi9otQOe3z3PFPp7USgUnyFIVav2Qhg==",
         "dependencies": {
           "Google.Protobuf": "3.19.6"
+        }
+      },
+      "NSec.Cryptography": {
+        "type": "CentralTransitive",
+        "requested": "[24.4.0, )",
+        "resolved": "24.4.0",
+        "contentHash": "R89OF0T5OY9QnPRoTsMCaPKMqtXcWKZSWAO4zyUaFHI+ZRMgXU7WaIwg/rPP3vOfdaLl8HdUHWkDB+2B9FOO7g==",
+        "dependencies": {
+          "libsodium": "[1.0.19, 1.0.20)"
         }
       },
       "System.IO.FileSystem.AccessControl": {

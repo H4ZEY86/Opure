@@ -214,6 +214,7 @@ public partial class MainWindow : Window
             while (!cancellationToken.IsCancellationRequested)
             {
                 await viewModel.RuntimeHealth.RefreshAsync(cancellationToken);
+                viewModel.ApplyHealthSnapshot(viewModel.RuntimeHealth.CurrentSnapshot);
                 if (viewModel.IsProjectsPage)
                 {
                     await viewModel.ProjectList.RefreshAsync(cancellationToken);

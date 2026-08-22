@@ -110,7 +110,7 @@ public sealed class LocalIntelligenceViewModelTests
             new StreamPayload(true, JsonSerializer.Serialize(new ToolRequest("list_directory", new Dictionary<string, object> { { "path", "." } }), ModelContractsJsonContext.Default.ToolRequest))
         };
 
-        var source = new MockLocalIntelligenceSource(payloads, TimeSpan.FromMilliseconds(50), true);
+        var source = new MockLocalIntelligenceSource(payloads, TimeSpan.FromMilliseconds(5000), true);
         var viewModel = new LocalIntelligenceViewModel(source);
         
         viewModel.Prompt = "Test cancel";

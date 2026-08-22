@@ -111,10 +111,15 @@ public sealed class RuntimeExecutableBoundaryTests
                     "Opure.Workspace.Execution.csproj"),
                 StringComparison.OrdinalIgnoreCase));
 
-        Assert.False(
-            project.Descendants()
-                .Any(element => element.Name.LocalName == "PackageReference"),
-            "The Runtime project must not declare package references.");
+        var packageReferences = project.Descendants()
+            .Where(element => element.Name.LocalName == "PackageReference")
+            .Select(element => element.Attribute("Include")?.Value)
+            .ToList();
+
+        // NSec.Cryptography is allowed for Ed25519 offline license verification.
+        Assert.True(
+            packageReferences.Count == 0 || (packageReferences.Count == 1 && packageReferences[0] == "NSec.Cryptography"),
+            "The Runtime project must not declare package references other than NSec.Cryptography.");
     }
 
     [Fact]

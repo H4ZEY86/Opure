@@ -75,7 +75,8 @@ public sealed record DesktopRuntimeHealthSnapshot(
     string StableErrorCode,
     bool Retryable,
     long GeneratedUnixTimeMilliseconds,
-    IReadOnlyList<DesktopServiceHealthRow> Services)
+    IReadOnlyList<DesktopServiceHealthRow> Services,
+    bool IsProActivated = false)
 {
     public static DesktopRuntimeHealthSnapshot CreateDisconnected(
         string productVersion,
@@ -105,7 +106,8 @@ public sealed record DesktopRuntimeHealthSnapshot(
             stableErrorCode,
             Retryable: !safeMode,
             GeneratedUnixTimeMilliseconds: 0,
-            Services: Array.Empty<DesktopServiceHealthRow>());
+            Services: Array.Empty<DesktopServiceHealthRow>(),
+            IsProActivated: false);
     }
 }
 

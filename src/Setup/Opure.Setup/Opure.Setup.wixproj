@@ -4,5 +4,7 @@
     <OutputType>Package</OutputType>
     <DebugType>none</DebugType>
     <Platform>x64</Platform>
+    <PlatformTarget>x64</PlatformTarget>
+    <InstallerPlatform>x64</InstallerPlatform>
   </PropertyGroup>
 </Project>

@@ -3,18 +3,32 @@ using System.Globalization;
 
 namespace Opure.Runtime;
 
+/// <summary>Identifies a top-level CLI command mode.</summary>
+public enum RuntimeCommandMode
+{
+    /// <summary>Start the Runtime daemon (default).</summary>
+    Daemon,
+    /// <summary>Verify and activate an offline Pro licence blob, then exit.</summary>
+    ProActivate
+}
+
 public sealed record RuntimeOptions(
     TimeSpan? AutomaticShutdownDelay,
     string? ExplicitDataRoot,
     bool TestStartupFailure,
     bool ShowHelp,
-    TimeSpan? TestCrashAfterReadyDelay = null);
+    TimeSpan? TestCrashAfterReadyDelay = null,
+    RuntimeCommandMode CommandMode = RuntimeCommandMode.Daemon,
+    string? LicenseBlob = null);
 
 public static class RuntimeArguments
 {
     public const string HelpText =
         """
         Opure Runtime
+
+        Commands:
+          pro activate <blob>           Verify and activate an offline Pro licence.
 
         Options:
           --shutdown-after-ms <0-60000>  Request controlled shutdown after a bounded delay.
@@ -34,6 +48,29 @@ public static class RuntimeArguments
         bool testStartupFailure = false;
         int? testCrashAfterReadyMilliseconds = null;
         bool showHelp = false;
+
+        // Handle top-level sub-commands before flag parsing.
+        if (arguments.Count >= 2 &&
+            string.Equals(arguments[0], "pro", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(arguments[1], "activate", StringComparison.OrdinalIgnoreCase))
+        {
+            if (arguments.Count < 3 || string.IsNullOrWhiteSpace(arguments[2]))
+            {
+                options = null;
+                error = "Usage: pro activate <base64-licence-blob>";
+                return false;
+            }
+
+            options = new RuntimeOptions(
+                AutomaticShutdownDelay: null,
+                ExplicitDataRoot: null,
+                TestStartupFailure: false,
+                ShowHelp: false,
+                CommandMode: RuntimeCommandMode.ProActivate,
+                LicenseBlob: arguments[2]);
+            error = null;
+            return true;
+        }
 
         for (int index = 0; index < arguments.Count; index++)
         {

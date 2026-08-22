@@ -148,6 +148,12 @@ public sealed class DesktopRuntimeStatusViewModel : INotifyPropertyChanged
     public string AccessibilitySummary =>
         $"{StatusTitle}. {StatusDetail} {ProjectionFreshnessLabel}.";
 
+    /// <summary>
+    /// The most recently applied health snapshot. May be stale if the Runtime
+    /// is disconnected but a prior snapshot is being preserved.
+    /// </summary>
+    public DesktopRuntimeHealthSnapshot CurrentSnapshot => snapshot;
+
     public async Task RefreshAsync(CancellationToken cancellationToken)
     {
         if (Interlocked.CompareExchange(ref refreshActive, 1, 0) != 0)

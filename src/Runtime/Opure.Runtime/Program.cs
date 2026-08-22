@@ -1,4 +1,6 @@
+using Opure.Runtime.Configuration;
 using Opure.Runtime.Contracts;
+using Opure.Runtime.Licensing;
 
 namespace Opure.Runtime;
 
@@ -65,6 +67,12 @@ internal static class Program
                 return (int)RuntimeExitCode.Success;
             }
 
+            if (options.CommandMode == RuntimeCommandMode.ProActivate)
+            {
+                return (int)await ProActivateAsync(options, bootstrapEnvironment)
+                    .ConfigureAwait(false);
+            }
+
             Func<CancellationToken, Task>? startupHook = options.TestStartupFailure
                 ? static _ => Task.FromException(
                     new InvalidOperationException("Intentional Runtime startup test failure."))
@@ -75,6 +83,7 @@ internal static class Program
                 _ = ExitForSupervisorTestAsync(
                     options.TestCrashAfterReadyDelay.Value);
             }
+
 
             using CancellationTokenSource bootstrapControlCancellation = new();
 
@@ -111,5 +120,30 @@ internal static class Program
     {
         await Task.Delay(delay).ConfigureAwait(false);
         Environment.Exit(70);
+    }
+
+    private static async Task<RuntimeExitCode> ProActivateAsync(
+        RuntimeOptions options,
+        RuntimeBootstrapEnvironment? bootstrapEnvironment)
+    {
+        string dataRoot = RuntimeDataRootResolver
+            .Resolve(options.ExplicitDataRoot, allowTestOverride: false, bootstrapEnvironment)
+            .FullPath;
+
+        var store = new OpureConfigStore(dataRoot);
+        var verifier = new Ed25519LicenseVerifier(store);
+
+        var result = await verifier
+            .VerifyAsync(options.LicenseBlob!, CancellationToken.None)
+            .ConfigureAwait(false);
+
+        if (result.IsValid)
+        {
+            await Console.Out.WriteLineAsync("Opure Pro activated.").ConfigureAwait(false);
+            return RuntimeExitCode.Success;
+        }
+
+        await Console.Out.WriteLineAsync("Invalid licence signature.").ConfigureAwait(false);
+        return RuntimeExitCode.InvalidArguments;
     }
 }
