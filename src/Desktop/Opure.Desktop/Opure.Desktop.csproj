@@ -20,7 +20,6 @@
     <ProjectReference Include="..\Opure.Desktop.GatewayClient\Opure.Desktop.GatewayClient.csproj" />
     <ProjectReference Include="..\..\Filesystem\Opure.Filesystem.Contracts\Opure.Filesystem.Contracts.csproj" />
     <ProjectReference Include="..\..\Filesystem\Opure.Filesystem.Windows\Opure.Filesystem.Windows.csproj" />
-    <ProjectReference Include="..\..\Runtime\Opure.Runtime\Opure.Runtime.csproj" ReferenceOutputAssembly="false" OutputItemType="Content" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
