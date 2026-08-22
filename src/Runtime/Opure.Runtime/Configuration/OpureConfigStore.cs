@@ -25,6 +25,7 @@ public sealed class OpureConfigStore : IOpureConfigStore
 
     // In-memory view, rebuilt after every write.
     private volatile Dictionary<string, JsonElement> _snapshot;
+    private DateTime _lastWriteTimeUtc;
 
     public OpureConfigStore(string dataRootPath)
     {
@@ -32,11 +33,14 @@ public sealed class OpureConfigStore : IOpureConfigStore
 
         _filePath = Path.Combine(dataRootPath, "config.json");
         _snapshot = Load(_filePath);
+        _lastWriteTimeUtc = File.Exists(_filePath) ? File.GetLastWriteTimeUtc(_filePath) : DateTime.MinValue;
     }
 
     public bool GetBool(string key, bool defaultValue = false)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(key);
+
+        EnsureSnapshotCurrent();
 
         if (_snapshot.TryGetValue(key, out JsonElement element) &&
             element.ValueKind == JsonValueKind.True)
@@ -50,6 +54,32 @@ public sealed class OpureConfigStore : IOpureConfigStore
         }
 
         return defaultValue;
+    }
+
+    private void EnsureSnapshotCurrent()
+    {
+        try
+        {
+            var fileInfo = new FileInfo(_filePath);
+            if (fileInfo.Exists)
+            {
+                var currentWriteTime = fileInfo.LastWriteTimeUtc;
+                if (currentWriteTime > _lastWriteTimeUtc)
+                {
+                    _snapshot = Load(_filePath);
+                    _lastWriteTimeUtc = currentWriteTime;
+                }
+            }
+            else if (_lastWriteTimeUtc != DateTime.MinValue)
+            {
+                _snapshot = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
+                _lastWriteTimeUtc = DateTime.MinValue;
+            }
+        }
+        catch (Exception)
+        {
+            // Ignore transient IO errors during check.
+        }
     }
 
     public async Task SetBoolAsync(string key, bool value, CancellationToken ct)
@@ -87,6 +117,7 @@ public sealed class OpureConfigStore : IOpureConfigStore
 
             // Refresh in-memory snapshot.
             _snapshot = Load(_filePath);
+            _lastWriteTimeUtc = File.GetLastWriteTimeUtc(_filePath);
         }
         finally
         {
