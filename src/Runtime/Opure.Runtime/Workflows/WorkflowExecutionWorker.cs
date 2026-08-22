@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
@@ -10,10 +11,12 @@ namespace Opure.Runtime.Workflows;
 public sealed class WorkflowExecutionWorker : IWorkflowExecutionWorker
 {
     private readonly IWorkflowEventStore _eventStore;
+    private readonly IStepExecutionDispatcher _dispatcher;
 
-    public WorkflowExecutionWorker(IWorkflowEventStore eventStore)
+    public WorkflowExecutionWorker(IWorkflowEventStore eventStore, IStepExecutionDispatcher dispatcher)
     {
         _eventStore = eventStore;
+        _dispatcher = dispatcher;
     }
 
     public async Task ExecuteAsync(CompiledPlan plan, WorkflowDefinition definition, string instanceId, CancellationToken ct)
@@ -39,26 +42,22 @@ public sealed class WorkflowExecutionWorker : IWorkflowExecutionWorker
             {
                 if (checkpoint.CurrentStepId != null)
                 {
-                    // A step is running. In a real system, we'd wait for it to complete.
-                    // For now, we mock the step execution right here.
-                    
                     var currentStep = definition.Steps.FirstOrDefault(s => s.StepId == checkpoint.CurrentStepId);
                     if (currentStep == null)
                     {
-                        var errorPayload = JsonSerializer.Serialize(new { error = $"Step {checkpoint.CurrentStepId} not found in definition" });
+                        var errorPayload = JsonSerializer.Serialize(new { error = $"Step '{checkpoint.CurrentStepId}' not found in definition." });
                         await _eventStore.AppendEventAsync(instanceId, "WorkflowFailed", errorPayload, ct);
                         continue;
                     }
 
                     try
                     {
-                        // Mock execution: wait briefly, then succeed
-                        await Task.Delay(10, ct);
+                        var resultJson = await _dispatcher.DispatchStepAsync(currentStep, checkpoint.StateJson, ct);
 
-                        var outputPayload = JsonSerializer.Serialize(new { stepId = currentStep.StepId, outputJson = "{ \"status\": \"success\" }" });
+                        var outputPayload = JsonSerializer.Serialize(new { stepId = currentStep.StepId, outputJson = resultJson });
                         await _eventStore.AppendEventAsync(instanceId, "StepCompleted", outputPayload, ct);
                     }
-                    catch (Exception ex)
+                    catch (Exception ex) when (ex is not OperationCanceledException)
                     {
                         var errorPayload = JsonSerializer.Serialize(new { stepId = currentStep.StepId, errorJson = ex.Message });
                         await _eventStore.AppendEventAsync(instanceId, "StepFailed", errorPayload, ct);
@@ -67,9 +66,8 @@ public sealed class WorkflowExecutionWorker : IWorkflowExecutionWorker
                 }
                 else
                 {
-                    // Find the next step to execute
-                    var stateDict = JsonSerializer.Deserialize<System.Collections.Generic.Dictionary<string, string>>(checkpoint.StateJson) ?? new();
-                    
+                    var stateDict = JsonSerializer.Deserialize<Dictionary<string, string>>(checkpoint.StateJson) ?? new();
+
                     var nextStep = definition.Steps.FirstOrDefault(s => !stateDict.ContainsKey(s.StepId));
                     if (nextStep != null)
                     {
@@ -79,7 +77,6 @@ public sealed class WorkflowExecutionWorker : IWorkflowExecutionWorker
                     }
                     else
                     {
-                        // All steps completed
                         var outputPayload = JsonSerializer.Serialize(new { outputJson = "{ \"status\": \"done\" }" });
                         await _eventStore.AppendEventAsync(instanceId, "WorkflowCompleted", outputPayload, ct);
                         continue;
