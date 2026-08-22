@@ -8,6 +8,7 @@ using Opure.Observability.Contracts;
 using Opure.Project.Service;
 using Opure.TrustEvidence.Service;
 using Opure.Workspace.Service;
+using Opure.Runtime.Configuration;
 
 namespace Opure.Runtime;
 
@@ -166,11 +167,14 @@ public sealed class RuntimeApplication
                 shutdownSignal.Token);
             var patchReviewHandler = new PatchReviewRequestHandler(patchService.StateStore);
 
+            var configStore = new OpureConfigStore(dataRoot.FullPath);
+            
             healthTransport = await NamedPipeGatewayServer.StartAsync(
                 endpoint,
                 new RuntimeHealthRequestHandler(
                     bootSnapshot,
                     serviceRegistry,
+                    configStore,
                     operationalLogHealthProvider:
                         operationalLogger.GetHealthSnapshot),
                 sessionPolicy,

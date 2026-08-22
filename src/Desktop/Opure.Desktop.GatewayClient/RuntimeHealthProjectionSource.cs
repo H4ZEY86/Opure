@@ -116,7 +116,8 @@ public sealed class RuntimeHealthProjectionSource : IDesktopRuntimeHealthSource
             stableErrorCode,
             Retryable: false,
             projection.GeneratedUnixTimeMilliseconds,
-            services);
+            services,
+            projection.IsProActivated);
     }
 
     private DesktopRuntimeHealthSnapshot CreateErrorSnapshot(

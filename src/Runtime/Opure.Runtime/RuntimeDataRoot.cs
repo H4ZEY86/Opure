@@ -48,11 +48,12 @@ public static class RuntimeDataRootResolver
                 "The local application-data directory could not be resolved.");
         }
 
-        string developmentRoot = Path.GetFullPath(
-            Path.Combine(localApplicationData, "Opure", "Development"));
+        string channel = Environment.GetEnvironmentVariable("OPURE_CHANNEL") ?? "Development";
+        string channelRoot = Path.GetFullPath(
+            Path.Combine(localApplicationData, "Opure", channel));
 
         return new RuntimeDataRoot(
-            developmentRoot,
-            "DevelopmentDefault");
+            channelRoot,
+            $"{channel}Default");
     }
 }

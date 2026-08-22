@@ -99,7 +99,7 @@
             Click="OnLicenseClick"
             IsTabStop="True"
             TabIndex="5"
-            IsVisible="{Binding ShowProTab}"
+            IsVisible="{Binding IsProActivated, Converter={x:Static BoolConverters.Not}}"
             AutomationProperties.Name="Opure Pro Activation"
             AutomationProperties.AutomationId="NavigationLicense"
             AutomationProperties.AccessKey="Alt+O" />

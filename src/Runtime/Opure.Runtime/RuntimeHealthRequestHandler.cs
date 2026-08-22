@@ -3,12 +3,14 @@ using Opure.Observability.Contracts;
 using Opure.Runtime.Contracts;
 using Opure.Runtime.Contracts.Health.V1;
 using Opure.Runtime.Contracts.Registry.V1;
+using Opure.Runtime.Contracts.Configuration;
 
 namespace Opure.Runtime;
 
 internal sealed class RuntimeHealthRequestHandler(
     RuntimeBootSnapshot bootSnapshot,
     RuntimeServiceRegistry serviceRegistry,
+    IOpureConfigStore configStore,
     TimeProvider? timeProvider = null,
     Func<OperationalLogHealthSnapshot>? operationalLogHealthProvider = null)
     : IRuntimeHealthRequestHandler
@@ -52,7 +54,8 @@ internal sealed class RuntimeHealthRequestHandler(
                 Readiness = readiness,
                 OverallHealth = overallHealth,
                 GeneratedUnixTimeMilliseconds =
-                    clock.GetUtcNow().ToUnixTimeMilliseconds()
+                    clock.GetUtcNow().ToUnixTimeMilliseconds(),
+                IsProActivated = configStore.GetBool(OpureConfigKeys.IsProActivated)
             }
         };
 

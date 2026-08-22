@@ -2,6 +2,7 @@ using Opure.Observability.Contracts;
 using Opure.Runtime.Contracts;
 using Opure.Runtime.Contracts.Health.V1;
 using Opure.Runtime.Contracts.Registry.V1;
+using Opure.Runtime.Contracts.Configuration;
 using Xunit;
 
 namespace Opure.Runtime.Tests;
@@ -93,6 +94,7 @@ public sealed class RuntimeHealthRequestHandlerTests
                 "1.0.0-test",
                 "1"),
             CreateRegistry(),
+            new StubConfigStore(),
             new FixedTimeProvider(instant));
 
         GetRuntimeHealthResponse response = await handler.HandleAsync(
@@ -112,6 +114,7 @@ public sealed class RuntimeHealthRequestHandlerTests
         RuntimeHealthRequestHandler handler = new(
             CreateBootSnapshot(),
             registry,
+            new StubConfigStore(),
             operationalLogHealthProvider: static () =>
                 new OperationalLogHealthSnapshot(
                     OperationalLogHealthState.Degraded,
@@ -152,6 +155,7 @@ public sealed class RuntimeHealthRequestHandlerTests
         RuntimeHealthRequestHandler handler = new(
             CreateBootSnapshot(),
             registry,
+            new StubConfigStore(),
             operationalLogHealthProvider: static () =>
                 throw new InvalidOperationException("unsafe provider detail"));
 
@@ -176,7 +180,8 @@ public sealed class RuntimeHealthRequestHandlerTests
     {
         return new RuntimeHealthRequestHandler(
             CreateBootSnapshot(),
-            registry);
+            registry,
+            new StubConfigStore());
     }
 
     private static RuntimeBootSnapshot CreateBootSnapshot()
@@ -191,6 +196,12 @@ public sealed class RuntimeHealthRequestHandlerTests
     private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
     {
         public override DateTimeOffset GetUtcNow() => utcNow;
+    }
+
+    private sealed class StubConfigStore : IOpureConfigStore
+    {
+        public bool GetBool(string key, bool defaultValue = false) => defaultValue;
+        public Task SetBoolAsync(string key, bool value, CancellationToken ct) => Task.CompletedTask;
     }
 
     private static RuntimeServiceRegistry CreateRegistry()

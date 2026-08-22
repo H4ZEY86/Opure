@@ -139,7 +139,7 @@ internal static class Program
 
         if (result.IsValid)
         {
-            await Console.Out.WriteLineAsync("Opure Pro activated.").ConfigureAwait(false);
+            await Console.Out.WriteLineAsync($"Opure Pro activated. Saved to: {Path.Combine(dataRoot, "config.json")}").ConfigureAwait(false);
             return RuntimeExitCode.Success;
         }
 

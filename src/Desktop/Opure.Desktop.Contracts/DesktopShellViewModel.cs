@@ -106,15 +106,10 @@ public sealed class DesktopShellViewModel : INotifyPropertyChanged
             if (isProActivated != value)
             {
                 isProActivated = value;
-                OnPropertyChanged();
-                // The nav button visibility is the logical inverse.
-                OnPropertyChanged(nameof(ShowProTab));
+                OnPropertyChanged(nameof(IsProActivated));
             }
         }
     }
-
-    /// <summary>True while the Pro tab should be visible (i.e. not yet activated).</summary>
-    public bool ShowProTab => !isProActivated;
 
     public string PageTitle => pageTitle;
 

@@ -34,6 +34,7 @@ message RuntimeHealthProjection {
   RuntimeHealthState overall_health = 5;
   int64 generated_unix_time_milliseconds = 6;
   repeated ServiceHealthSummary services = 7;
+  bool is_pro_activated = 8;
 }
 
 message ServiceHealthSummary {
